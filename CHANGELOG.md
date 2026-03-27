@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.2.10 - 2026-03-27
+
+### [0.2.10](https://github.com/wenisch-tech/s3webui/compare/v0.2.9...v0.2.10) (2026-03-27)
+
+
+### Documentation
+
+* clean Readme.md after refactoring ([92f594e](https://github.com/wenisch-tech/s3webui/commit/92f594ec6a9151126646b54a1bb3e5f0ddf7934a))
+
+
+
+Docker image: ghcr.io/wenisch-tech/s3webui:0.2.10
+
+
 ## v0.2.9 - 2026-03-27
 
 ### [0.2.9](https://github.com/wenisch-tech/s3webui/compare/v0.2.8...v0.2.9) (2026-03-27)
