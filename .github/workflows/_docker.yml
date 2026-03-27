@@ -65,6 +65,18 @@ jobs:
             BUILD_VERSION=${{ inputs.version }}
             BUILD_REVISION=${{ github.sha }}
 
+      - name: Docker metadata (GHCR tags)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ inputs.image }}
+          tags: |
+            type=raw,value=${{ inputs.version }}
+            type=raw,value=latest
+            type=raw,value=main
+            type=sha,format=short,prefix=sha-
+
       - name: Set up Trivy
         uses: aquasecurity/setup-trivy@v0.2.6
 
@@ -144,23 +156,20 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Push Docker tags to GHCR
+      - name: BuildKit push Docker tags to GHCR
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        shell: bash
-        run: |
-          set -euo pipefail
-          image="${{ inputs.image }}"
-          version="${{ inputs.version }}"
-          short_sha="${GITHUB_SHA::7}"
-
-          docker tag "$image:$version" "$image:latest"
-          docker tag "$image:$version" "$image:main"
-          docker tag "$image:$version" "$image:sha-$short_sha"
-
-          docker push "$image:$version"
-          docker push "$image:latest"
-          docker push "$image:main"
-          docker push "$image:sha-$short_sha"
+        id: docker_push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            BUILD_DATE=${{ steps.build_meta.outputs.date }}
+            BUILD_VERSION=${{ inputs.version }}
+            BUILD_REVISION=${{ github.sha }}
 
       - name: Install Cosign
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -175,7 +184,13 @@ jobs:
           image="${{ inputs.image }}"
           version="${{ inputs.version }}"
           short_sha="${GITHUB_SHA::7}"
-          digest=$(docker inspect --format='{{index .RepoDigests 0}}' "$image:$version" | cut -d@ -f2)
+          digest="${{ steps.docker_push.outputs.digest }}"
+          if [ -z "$digest" ]; then
+            echo "Failed to determine image digest from BuildKit push output" >&2
+            exit 1
+          fi
+
+          cosign sign --yes "$image@$digest"
           for tag in "$image:$version" "$image:latest" "$image:main" "$image:sha-$short_sha"; do
             cosign sign --yes "$tag"
           done
