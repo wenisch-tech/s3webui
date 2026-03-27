@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.2.7 - 2026-03-27
+
+### [0.2.7](https://github.com/wenisch-tech/s3webui/compare/v0.2.6...v0.2.7) (2026-03-27)
+
+
+### Bug Fixes
+
+* removed incompatible API Call for cleintbuilder trustmanager ([a4a6cbb](https://github.com/wenisch-tech/s3webui/commit/a4a6cbbe9156595a2fb63767900355be890da858))
+
+
+
+Docker image: ghcr.io/wenisch-tech/s3webui:0.2.7
+
+
 ## v0.2.5 - 2026-03-27
 
 ### [0.2.5](https://github.com/wenisch-tech/s3webui/compare/v0.2.4...v0.2.5) (2026-03-27)
