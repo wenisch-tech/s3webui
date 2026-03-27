@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.1.0 - 2026-03-27
+
+## [0.1.0](https://github.com/wenisch-tech/s3webui/compare/v0.0.3...v0.1.0) (2026-03-27)
+
+
+### Features
+
+* Added support for skip TLS ([45ee66f](https://github.com/wenisch-tech/s3webui/commit/45ee66f76ff5c3fe81f101f9d1fbed66337c6008))
+
+
+
+Docker image: ghcr.io/wenisch-tech/s3webui:0.1.0
+
+
 ## v0.0.3 - 2026-03-27
 
 ### [0.0.3](https://github.com/wenisch-tech/s3webui/compare/v0.0.2...v0.0.3) (2026-03-27)
