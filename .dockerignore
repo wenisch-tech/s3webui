@@ -1,0 +1,13 @@
+target/surefire-reports/
+target/site/
+target/classes/
+target/test-classes/
+*.class
+*.war
+*.ear
+.idea/
+*.iml
+.eclipse
+.settings/
+.classpath
+.project

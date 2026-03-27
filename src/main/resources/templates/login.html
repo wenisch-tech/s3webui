@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en"
+      data-bs-theme="dark"
+      xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <script>(function(){var t=localStorage.getItem('s3webui-theme')||'dark';document.documentElement.setAttribute('data-bs-theme',t);})();</script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Sign In — S3 Web UI</title>
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}"/>
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap-icons/font/bootstrap-icons.css}"/>
+    <link rel="stylesheet" th:href="@{/css/app.css}"/>
+</head>
+<body class="d-flex align-items-center justify-content-center min-vh-100">
+
+<div class="container" style="max-width: 420px">
+
+    <!-- Logo / brand -->
+    <div class="text-center mb-4">
+        <i class="bi bi-cloud-fill text-cyan display-4"></i>
+        <h1 class="h4 fw-bold mt-2">S3 Web UI</h1>
+        <p class="s3-kicker">Object Storage Interface</p>
+    </div>
+
+    <!-- Login card -->
+    <div class="login-card p-4">
+
+        <!-- Logged-out confirmation -->
+        <div th:if="${loggedOut}" class="alert alert-success d-flex align-items-center gap-2 mb-3" role="alert">
+            <i class="bi bi-check-circle-fill"></i>
+            <span>You have been signed out successfully.</span>
+        </div>
+
+        <!-- Login error -->
+        <div th:if="${loginError}" class="alert alert-danger d-flex align-items-center gap-2 mb-3" role="alert">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            <span>Sign-in failed. Please check your credentials and try again.</span>
+        </div>
+
+        <h2 class="h5 fw-semibold mb-1">Welcome back</h2>
+        <p class="text-muted small mb-4">Sign in with your identity provider to continue.</p>
+
+        <!-- Sign in with Keycloak -->
+        <a th:href="@{/oauth2/authorization/keycloak}" class="btn btn-primary w-100 py-2">
+            <i class="bi bi-shield-lock me-2"></i>Sign in with Keycloak
+        </a>
+
+        <div th:if="${oidcRequiredRole != null and !oidcRequiredRole.isEmpty()}"
+             class="mt-3 text-center small text-muted">
+            <i class="bi bi-info-circle me-1"></i>
+            Required role: <code th:text="${oidcRequiredRole}">role</code>
+        </div>
+    </div>
+
+    <!-- Theme toggle + footer -->
+    <div class="d-flex justify-content-between align-items-center mt-3 px-1">
+        <small class="text-muted">S3 Web UI</small>
+        <button class="btn btn-sm btn-outline-secondary" onclick="toggleTheme()" title="Toggle theme">
+            <i class="bi bi-sun-fill" id="themeIcon"></i>
+        </button>
+    </div>
+
+</div>
+
+<script th:src="@{/webjars/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/js/app.js}"></script>
+</body>
+</html>

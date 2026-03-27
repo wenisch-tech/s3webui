@@ -1,0 +1,189 @@
+name: Docker
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        required: true
+        type: string
+      image:
+        required: true
+        type: string
+    outputs:
+      digest:
+        description: Pushed image digest
+        value: ${{ jobs.docker.outputs.digest }}
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      pull-requests: write
+      issues: write
+      id-token: write
+      attestations: write
+    outputs:
+      digest: ${{ steps.sign.outputs.digest }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+
+      - name: Set Maven version
+        run: mvn -B versions:set -DnewVersion=${{ inputs.version }} -DgenerateBackupPoms=false
+
+      - name: Build application JAR
+        run: mvn -B -DskipTests package
+
+      - name: Generate build metadata
+        id: build_meta
+        run: echo "date=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image (local)
+        id: docker_build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: false
+          load: true
+          tags: ${{ inputs.image }}:${{ inputs.version }}
+          build-args: |
+            BUILD_DATE=${{ steps.build_meta.outputs.date }}
+            BUILD_VERSION=${{ inputs.version }}
+            BUILD_REVISION=${{ github.sha }}
+
+      - name: Set up Trivy
+        uses: aquasecurity/setup-trivy@v0.2.6
+
+      - name: Run Trivy scan
+        shell: bash
+        run: |
+          set +e
+          image="${{ inputs.image }}:${{ inputs.version }}"
+          status=1
+
+          for attempt in 1 2 3; do
+            trivy image \
+              --format table \
+              --output trivy-report.txt \
+              --scanners vuln \
+              --vuln-type os,library \
+              --severity CRITICAL,HIGH,MEDIUM \
+              "$image"
+            status=$?
+            if [ "$status" -eq 0 ]; then
+              break
+            fi
+            sleep 10
+          done
+
+          if [ ! -s trivy-report.txt ]; then
+            {
+              echo "Trivy scan could not complete after retries."
+              echo "Image: $image"
+              echo "Exit status: $status"
+            } > trivy-report.txt
+          fi
+
+          exit 0
+
+      - name: Upload Trivy report artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-report-${{ github.run_id }}
+          path: trivy-report.txt
+
+      - name: Add Trivy report to PR
+        if: always() && github.event_name == 'pull_request'
+        continue-on-error: true
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            let report = fs.readFileSync('trivy-report.txt', 'utf8');
+            const maxLen = 60000;
+            if (report.length > maxLen) {
+              report = report.slice(0, maxLen) + '\n... output truncated ...';
+            }
+            const body = [
+              '## Trivy vulnerability report',
+              '',
+              `Image: ${{ inputs.image }}:${{ inputs.version }}`,
+              '',
+              '```text',
+              report,
+              '```'
+            ].join('\n');
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body
+            });
+
+      - name: Log in to GitHub Container Registry
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push Docker tags to GHCR
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        shell: bash
+        run: |
+          set -euo pipefail
+          image="${{ inputs.image }}"
+          version="${{ inputs.version }}"
+          short_sha="${GITHUB_SHA::7}"
+
+          docker tag "$image:$version" "$image:latest"
+          docker tag "$image:$version" "$image:main"
+          docker tag "$image:$version" "$image:sha-$short_sha"
+
+          docker push "$image:$version"
+          docker push "$image:latest"
+          docker push "$image:main"
+          docker push "$image:sha-$short_sha"
+
+      - name: Install Cosign
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: sigstore/cosign-installer@v3
+
+      - name: Sign Docker image
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        id: sign
+        shell: bash
+        run: |
+          set -euo pipefail
+          image="${{ inputs.image }}"
+          version="${{ inputs.version }}"
+          short_sha="${GITHUB_SHA::7}"
+          digest=$(docker inspect --format='{{index .RepoDigests 0}}' "$image:$version" | cut -d@ -f2)
+          for tag in "$image:$version" "$image:latest" "$image:main" "$image:sha-$short_sha"; do
+            cosign sign --yes "$tag"
+          done
+          echo "digest=$digest" >> "$GITHUB_OUTPUT"
+
+      - name: Attest build provenance
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-name: ${{ inputs.image }}
+          subject-digest: ${{ steps.sign.outputs.digest }}

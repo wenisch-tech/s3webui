@@ -1,0 +1,12 @@
+target/
+*.class
+*.jar
+*.war
+*.ear
+.idea/
+*.iml
+.eclipse
+.settings/
+.classpath
+.project
+.vscode/launch.json

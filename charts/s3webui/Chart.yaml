@@ -1,0 +1,29 @@
+apiVersion: v2
+name: s3webui
+description: A graphical web interface for S3 object storage
+type: application
+version: 0.0.1
+appVersion: "0.0.1"
+keywords:
+  - s3
+  - object-storage
+  - minio
+  - webui
+home: https://github.com/JFWenisch/s3webui
+sources:
+  - https://github.com/JFWenisch/s3webui
+maintainers:
+  - name: JFWenisch
+    url: https://github.com/JFWenisch
+annotations:
+  artifacthub.io/category: storage
+  artifacthub.io/license: GPL-3.0
+  artifacthub.io/prerelease: "false"
+  artifacthub.io/images: |
+    - name: s3webui
+      image: ghcr.io/jfwendisch/s3webui:latest
+  artifacthub.io/links: |
+    - name: GitHub Repository
+      url: https://github.com/JFWenisch/s3webui
+    - name: Container Registry
+      url: https://github.com/JFWenisch/s3webui/pkgs/container/s3webui
