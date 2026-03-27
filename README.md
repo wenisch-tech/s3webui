@@ -1,40 +1,34 @@
 # S3 Web UI
 
-A modern, clean graphical web interface for S3-compatible object storage, built with Spring Boot and Bootstrap 5.  
-Dark theme by default — switch to light with the toggle in the top-right corner.
-
-> **Security:** CVE scanning via [Trivy](https://github.com/aquasecurity/trivy) is an essential part of the development process and runs automatically on every pull request. Fixing identified vulnerabilities is a mandatory step before merging.
-
 [![CI](https://github.com/wenisch-tech/s3webui/actions/workflows/ci.yml/badge.svg)](https://github.com/wenisch-tech/s3webui/actions/workflows/ci.yml)
-[![Docker Image](https://ghcr-badge.egpl.dev/wenisch-tech/s3webui/latest_tag?trim=major&label=docker)](https://ghcr.io/wenisch-tech/s3webui)
-[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
-[![Helm Chart](https://img.shields.io/badge/Helm-jfwendisch%2Fs3webui-0f1689?logo=helm)](https://jfwendisch.github.io/charts)
-[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.x-6DB33F?logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)
-[![Bootstrap](https://img.shields.io/badge/Bootstrap-5-7952B3?logo=bootstrap&logoColor=white)](https://getbootstrap.com)
+[![GitHub Release](https://img.shields.io/github/v/release/wenisch-tech/s3webui?logo=github)](https://github.com/wenisch-tech/Kairos/releases)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE.md)
+[![Container](https://img.shields.io/badge/container-ghcr.io-blue?logo=github)](https://github.com/wenisch-tech/s3webui/pkgs/container/s3webui)
+[![Signed](https://img.shields.io/badge/signed-cosign-green?logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0id2hpdGUiIGQ9Ik0xMiAxTDMgNXY2YzAgNS41NSAzLjg0IDEwLjc0IDkgMTIgNS4xNi0xLjI2IDktNi40NSA5LTEyVjVsLTktNHoiLz48L3N2Zz4=)](https://github.com/wenisch-tech/Kairos/releases)
+
+![Buckets dark](docs/img/buckets-dark.png)
+A modern, clean graphical web interface for S3-compatible object storage, with optional OIDC Support, audit history and clientside multipart upload built with Spring Boot and Bootstrap 5.  
+
 
 ## Screenshots
-
-| Dark theme — Buckets | Dark theme — Bucket browser |
-|---|---|
-| ![Buckets dark](docs/img/buckets-dark.png) | ![Bucket browser dark](docs/img/bucket-browser-dark.png) |
-
-| Upload modal with progress | Light theme |
-|---|---|
-| ![Upload modal](docs/img/upload-modal-dark.png) | ![Buckets light](docs/img/buckets-light.png) |
+Dark theme by default — switch to light with the toggle in the top-right corner.
+| Dark theme — Bucket browser | Upload modal with progress | Light theme |
+|---|---|---|
+| ![Bucket browser dark](docs/img/bucket-browser-dark.png)| ![Upload modal](docs/img/upload-modal-dark.png) | ![Buckets light](docs/img/buckets-light.png) |
 
 ## Features
 
-- 🗂 **Browse buckets** — list all buckets with creation date
-- 📁 **Navigate folders** — browse objects with breadcrumb navigation
-- ➕ **Create buckets** — create new buckets directly from the UI
-- ⬆️ **Upload files** — client-side multipart upload with real-time progress bar and ETA
-- ⬇️ **Download files** — download any object in a single click
-- ✏️ **Rename objects** — rename files without re-uploading
-- 🗑 **Delete** — delete individual objects or entire buckets
-- 📦 **Folder support** — create virtual folders (prefix-based)
-- 📋 **Audit history** — per-session activity log (uploads, downloads, deletes, renames) with user and action filters
-- 🌗 **Dark / Light theme** — toggle stored in `localStorage`, dark is the default
-- 🔒 **OIDC / Keycloak** — optional single-sign-on with role-based access control
+-  **Browse buckets** — list all buckets with creation date
+-  **Navigate folders** — browse objects with breadcrumb navigation
+-  **Create buckets** — create new buckets directly from the UI
+-  **Upload files** — client-side multipart upload with real-time progress bar and ETA
+-  **Download files** — download any object in a single click
+-  **Rename objects** — rename files without re-uploading
+-  **Delete** — delete individual objects or entire buckets
+-  **Folder support** — create virtual folders (prefix-based)
+-  **Audit history** — per-session activity log (uploads, downloads, deletes, renames) with user and action filters
+-  **Dark / Light theme** — toggle stored in `localStorage`, dark is the default
+-  **OIDC / Keycloak** — optional single-sign-on with role-based access control
 
 ## Configuration
 
@@ -118,7 +112,7 @@ docker run -d -p 8080:8080 \
   -e S3_ACCESS_KEY=minioadmin \
   -e S3_SECRET_KEY=minioadmin \
   -e S3_ENDPOINT_URL=http://host.docker.internal:9000 \
-  ghcr.io/jfwendisch/s3webui:latest
+  ghcr.io/wenisch-tech/s3webui:latest
 ```
 
 ## Docker
@@ -129,7 +123,7 @@ docker run -d -p 8080:8080 \
   -e S3_SECRET_KEY=your-secret-key \
   -e S3_ENDPOINT_URL=http://your-s3-endpoint:9000 \
   -e S3_REGION=us-east-1 \
-  ghcr.io/jfwendisch/s3webui:latest
+  ghcr.io/wenisch-tech/s3webui:latest
 ```
 
 With Keycloak OIDC:
@@ -144,16 +138,16 @@ docker run -d -p 8080:8080 \
   -e OIDC_CLIENT_SECRET=your-client-secret \
   -e OIDC_ISSUER_URI=http://keycloak:8080/realms/myrealm \
   -e OIDC_REQUIRED_ROLE=s3-access \
-  ghcr.io/jfwendisch/s3webui:latest
+  ghcr.io/wenisch-tech/s3webui:latest
 ```
 
 ## Helm chart
 
 ```bash
-helm repo add jfwendisch https://jfwendisch.github.io/charts
+helm repo add wenisch-tech https://charts.wenisch.tech
 helm repo update
 
-helm install s3webui jfwendisch/s3webui \
+helm install s3webui wenisch-tech/s3webui \
   --set env.S3_ENDPOINT_URL=http://minio:9000 \
   --set secrets.S3_ACCESS_KEY=your-access-key \
   --set secrets.S3_SECRET_KEY=your-secret-key
@@ -229,6 +223,11 @@ Files **> 5 MB** use **server-proxied S3 multipart upload**:
 Routing parts through the backend avoids cross-origin (CORS) issues that would occur if the browser PUTted directly to the S3 endpoint.
 
 Progress percentage and estimated time remaining are computed entirely in the browser using `XMLHttpRequest` upload events.
+
+## Contributing
+Pull requests welcomed.
+
+> **Please note :** CVE scanning via [Trivy](https://github.com/aquasecurity/trivy) is an essential part of the development process and runs automatically on every pull request. Fixing identified vulnerabilities is a mandatory step before merging.
 
 ## License
 
