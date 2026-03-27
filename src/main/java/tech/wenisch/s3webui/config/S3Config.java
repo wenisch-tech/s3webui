@@ -64,15 +64,9 @@ public class S3Config {
     @Bean
     public S3Presigner s3Presigner() {
         var credentials = AwsBasicCredentials.create(accessKey, secretKey);
-        UrlConnectionHttpClient.Builder httpClientBuilder = UrlConnectionHttpClient.builder();
-        if (s3InsecureSkipTlsVerify) {
-            httpClientBuilder.tlsTrustManagersProvider(this::insecureTrustManagers);
-        }
-
         var builder = S3Presigner.builder()
                 .credentialsProvider(StaticCredentialsProvider.create(credentials))
                 .region(Region.of(region))
-                .httpClientBuilder(httpClientBuilder)
                 .serviceConfiguration(S3Configuration.builder()
                         .pathStyleAccessEnabled(true)
                         .build());
