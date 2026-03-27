@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.2.5 - 2026-03-27
+
+### [0.2.5](https://github.com/wenisch-tech/s3webui/compare/v0.2.4...v0.2.5) (2026-03-27)
+
+
+### Bug Fixes
+
+* when s3 insecure is activated ssl context also switched to accept all certs ([6f25ec9](https://github.com/wenisch-tech/s3webui/commit/6f25ec9487790dbcb16072000e02423aaa1a021d))
+
+
+
+Docker image: ghcr.io/wenisch-tech/s3webui:0.2.5
+
+
 ## v0.2.4 - 2026-03-27
 
 ### [0.2.4](https://github.com/wenisch-tech/s3webui/compare/v0.2.3...v0.2.4) (2026-03-27)
