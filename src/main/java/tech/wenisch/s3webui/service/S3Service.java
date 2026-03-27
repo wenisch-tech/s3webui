@@ -17,6 +17,7 @@ import software.amazon.awssdk.services.s3.presigner.model.UploadPartPresignReque
 import java.io.InputStream;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -171,37 +172,124 @@ public class S3Service {
     }
 
     public String uploadPart(String bucket, String key, String uploadId, int partNumber,
-                             InputStream inputStream, long contentLength) {
+                             byte[] partBytes) {
         var response = s3Client.uploadPart(
                 UploadPartRequest.builder()
                         .bucket(bucket)
                         .key(key)
                         .uploadId(uploadId)
                         .partNumber(partNumber)
-                        .contentLength(contentLength)
+                        .contentLength((long) partBytes.length)
                         .build(),
-                RequestBody.fromInputStream(inputStream, contentLength));
-        return response.eTag().replace("\"", "");
+                RequestBody.fromBytes(partBytes));
+        return response.eTag();
     }
 
     public void completeMultipartUpload(String bucket, String key, String uploadId,
                                         List<CompleteMultipartRequest.PartETag> parts) {
-        List<CompletedPart> completedParts = parts.stream()
-                .map(p -> CompletedPart.builder()
-                        .partNumber(p.getPartNumber())
-                        .eTag(p.getETag())
-                        .build())
-                .collect(Collectors.toList());
+                List<CompletedPart> completedParts = resolveCompletedParts(bucket, key, uploadId, parts);
 
-        s3Client.completeMultipartUpload(CompleteMultipartUploadRequest.builder()
-                .bucket(bucket)
-                .key(key)
-                .uploadId(uploadId)
-                .multipartUpload(CompletedMultipartUpload.builder()
-                        .parts(completedParts)
-                        .build())
-                .build());
+                try {
+                        completeMultipart(bucket, key, uploadId, completedParts);
+                } catch (S3Exception original) {
+                        List<CompletedPart> quoteToggledParts = completedParts.stream()
+                                        .map(part -> CompletedPart.builder()
+                                                        .partNumber(part.partNumber())
+                                                        .eTag(toggleQuoteStyle(part.eTag()))
+                                                        .build())
+                                        .collect(Collectors.toList());
+
+                        if (!quoteToggledParts.equals(completedParts)) {
+                                log.warn("CompleteMultipartUpload failed, retrying with alternate ETag quote style. code={}, requestId={}",
+                                                original.awsErrorDetails() != null ? original.awsErrorDetails().errorCode() : "unknown",
+                                                original.requestId());
+                                completeMultipart(bucket, key, uploadId, quoteToggledParts);
+                                return;
+                        }
+
+                        throw original;
+                }
     }
+
+        private List<CompletedPart> resolveCompletedParts(String bucket, String key, String uploadId,
+                                                                                                          List<CompleteMultipartRequest.PartETag> clientParts) {
+                Map<Integer, String> listedEtags = listUploadedPartEtags(bucket, key, uploadId);
+
+                List<Integer> partNumbers = (clientParts == null ? List.<CompleteMultipartRequest.PartETag>of() : clientParts)
+                                .stream()
+                                .map(CompleteMultipartRequest.PartETag::getPartNumber)
+                                .distinct()
+                                .sorted()
+                                .collect(Collectors.toList());
+
+                if (partNumbers.isEmpty()) {
+                        partNumbers = listedEtags.keySet().stream().sorted().collect(Collectors.toList());
+                }
+
+                if (partNumbers.isEmpty()) {
+                        throw new IllegalArgumentException("No uploaded multipart parts found for completion");
+                }
+
+                return partNumbers.stream()
+                                .map(partNumber -> CompletedPart.builder()
+                                                .partNumber(partNumber)
+                                                .eTag(listedEtags.get(partNumber))
+                                                .build())
+                                .collect(Collectors.toList());
+        }
+
+        private Map<Integer, String> listUploadedPartEtags(String bucket, String key, String uploadId) {
+                Map<Integer, String> partEtags = new HashMap<>();
+                int marker = 0;
+
+                while (true) {
+                        ListPartsResponse response = s3Client.listParts(ListPartsRequest.builder()
+                                        .bucket(bucket)
+                                        .key(key)
+                                        .uploadId(uploadId)
+                                        .partNumberMarker(marker)
+                                        .build());
+
+                        for (Part part : response.parts()) {
+                                partEtags.put(part.partNumber(), part.eTag());
+                        }
+
+                        if (!Boolean.TRUE.equals(response.isTruncated())) {
+                                break;
+                        }
+
+                        Integer nextMarker = response.nextPartNumberMarker();
+                        if (nextMarker == null || nextMarker == marker) {
+                                break;
+                        }
+                        marker = nextMarker;
+                }
+
+                return partEtags;
+        }
+
+        private void completeMultipart(String bucket, String key, String uploadId, List<CompletedPart> completedParts) {
+                s3Client.completeMultipartUpload(CompleteMultipartUploadRequest.builder()
+                                .bucket(bucket)
+                                .key(key)
+                                .uploadId(uploadId)
+                                .multipartUpload(CompletedMultipartUpload.builder()
+                                                .parts(completedParts)
+                                                .build())
+                                .build());
+        }
+
+        private String toggleQuoteStyle(String eTag) {
+                if (eTag == null || eTag.isBlank()) {
+                        return eTag;
+                }
+
+                String trimmed = eTag.trim();
+                if (trimmed.length() >= 2 && trimmed.startsWith("\"") && trimmed.endsWith("\"")) {
+                        return trimmed.substring(1, trimmed.length() - 1);
+                }
+                return "\"" + trimmed + "\"";
+        }
 
     public void abortMultipartUpload(String bucket, String key, String uploadId) {
         s3Client.abortMultipartUpload(AbortMultipartUploadRequest.builder()

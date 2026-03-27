@@ -14,6 +14,18 @@
 const PART_SIZE = 5 * 1024 * 1024; // 5 MB minimum S3 part size
 
 let _pendingFiles = [];
+let _reloadAfterUploadClose = false;
+
+document.addEventListener('DOMContentLoaded', () => {
+    const uploadModal = document.getElementById('uploadModal');
+    if (!uploadModal) return;
+
+    uploadModal.addEventListener('hidden.bs.modal', () => {
+        if (_reloadAfterUploadClose) {
+            location.reload();
+        }
+    });
+});
 
 // ── File selection ───────────────────────────────────────────────────────────
 
@@ -70,14 +82,28 @@ function renderFileList() {
 }
 
 function resetUploadModal() {
+    _reloadAfterUploadClose = false;
+    resetUploadBatchState();
+}
+
+function resetUploadBatchState() {
     _pendingFiles = [];
     renderFileList();
     document.getElementById('overallProgressArea').classList.add('d-none');
-    document.getElementById('overallProgressBar').style.width = '0%';
+    const overallProgressBar = document.getElementById('overallProgressBar');
+    overallProgressBar.style.width = '0%';
+    overallProgressBar.classList.remove('bg-success', 'bg-warning', 'bg-danger');
+    overallProgressBar.classList.add('progress-bar-striped', 'progress-bar-animated');
     document.getElementById('overallStatus').textContent = 'Uploading…';
     document.getElementById('overallEta').textContent = '';
     document.getElementById('startUploadBtn').disabled = false;
     document.getElementById('uploadCloseBtn').disabled = false;
+    document.getElementById('uploadFooterCloseBtn').disabled = false;
+    document.getElementById('uploadAnotherBtn').classList.add('d-none');
+}
+
+function prepareNextUploadBatch() {
+    resetUploadBatchState();
 }
 
 // ── Upload orchestration ─────────────────────────────────────────────────────
@@ -90,10 +116,14 @@ async function startUpload() {
 
     document.getElementById('startUploadBtn').disabled = true;
     document.getElementById('uploadCloseBtn').disabled = true;
+    document.getElementById('uploadFooterCloseBtn').disabled = true;
+    document.getElementById('uploadAnotherBtn').classList.add('d-none');
     document.getElementById('overallProgressArea').classList.remove('d-none');
 
     const totalBytes = _pendingFiles.reduce((s, f) => s + f.size, 0);
     let uploadedBytes = 0;
+    let successfulFiles = 0;
+    let failedFiles = 0;
     const startTime = Date.now();
 
     for (let i = 0; i < _pendingFiles.length; i++) {
@@ -140,18 +170,37 @@ async function startUpload() {
                 progressBar.style.width = '100%';
             }
             if (progressText) progressText.textContent = '✓ Done';
+            successfulFiles++;
         } catch (err) {
             if (progressBar) progressBar.classList.add('bg-danger');
             if (progressText) progressText.textContent = '✗ ' + err.message;
+            failedFiles++;
             showToast(`Failed to upload ${file.name}: ${err.message}`, 'danger');
         }
     }
 
-    document.getElementById('overallStatus').textContent = 'Upload complete!';
+    const overallProgressBar = document.getElementById('overallProgressBar');
+    overallProgressBar.classList.remove('progress-bar-animated', 'progress-bar-striped');
+    overallProgressBar.classList.toggle('bg-success', failedFiles === 0);
+    overallProgressBar.classList.toggle('bg-warning', failedFiles > 0 && successfulFiles > 0);
+    overallProgressBar.classList.toggle('bg-danger', failedFiles > 0 && successfulFiles === 0);
+
+    if (failedFiles === 0) {
+        document.getElementById('overallStatus').textContent = `Upload complete: ${successfulFiles} file(s)`;
+        showToast('Upload complete!', 'success');
+    } else if (successfulFiles > 0) {
+        document.getElementById('overallStatus').textContent =
+            `Upload finished: ${successfulFiles} succeeded, ${failedFiles} failed`;
+        showToast(`Upload finished with ${failedFiles} failed file(s).`, 'warning');
+    } else {
+        document.getElementById('overallStatus').textContent = `Upload failed for ${failedFiles} file(s)`;
+    }
+
     document.getElementById('overallEta').textContent = '';
     document.getElementById('uploadCloseBtn').disabled = false;
-    showToast('Upload complete!', 'success');
-    setTimeout(() => location.reload(), 1500);
+    document.getElementById('uploadFooterCloseBtn').disabled = false;
+    document.getElementById('uploadAnotherBtn').classList.remove('d-none');
+    _reloadAfterUploadClose = _reloadAfterUploadClose || successfulFiles > 0;
 }
 
 // ── Simple upload (file ≤ 5 MB, goes through backend) ───────────────────────

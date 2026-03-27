@@ -36,6 +36,7 @@ public class S3Config {
                 .region(Region.of(region))
                 .httpClientBuilder(UrlConnectionHttpClient.builder())
                 .serviceConfiguration(S3Configuration.builder()
+                        .checksumValidationEnabled(false)
                         .pathStyleAccessEnabled(true)
                         .build());
 

@@ -209,7 +209,10 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" id="uploadFooterCloseBtn">Cancel</button>
+                <button type="button" class="btn btn-outline-primary d-none" id="uploadAnotherBtn" onclick="prepareNextUploadBatch()">
+                    <i class="bi bi-plus-circle me-1"></i>Upload Another Batch
+                </button>
                 <button type="button" class="btn btn-primary" id="startUploadBtn" onclick="startUpload()">
                     <i class="bi bi-cloud-upload me-1"></i>Upload
                 </button>

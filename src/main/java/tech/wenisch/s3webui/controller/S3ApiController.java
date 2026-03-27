@@ -132,9 +132,8 @@ public class S3ApiController {
             @RequestParam String uploadId,
             @RequestParam int partNumber,
             HttpServletRequest request) throws IOException {
-        long contentLength = request.getContentLengthLong();
-        String eTag = s3Service.uploadPart(bucket, key, uploadId, partNumber,
-                request.getInputStream(), contentLength);
+        byte[] partBytes = request.getInputStream().readAllBytes();
+        String eTag = s3Service.uploadPart(bucket, key, uploadId, partNumber, partBytes);
         return ResponseEntity.ok(Map.of("eTag", eTag));
     }
 
