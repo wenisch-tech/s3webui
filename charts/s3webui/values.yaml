@@ -63,6 +63,7 @@ env:
   OIDC_CLIENT_ID: ""
   OIDC_ISSUER_URI: ""
   OIDC_REQUIRED_ROLE: ""
+  OIDC_INSECURE_SKIP_TLS_VERIFY: "false"
 
 # Sensitive values (stored in a Kubernetes secret)
 secrets: {}

@@ -14,6 +14,9 @@
                 "OIDC_ENABLED": {
                     "type": "string"
                 },
+                "OIDC_INSECURE_SKIP_TLS_VERIFY": {
+                    "type": "string"
+                },
                 "OIDC_ISSUER_URI": {
                     "type": "string"
                 },
