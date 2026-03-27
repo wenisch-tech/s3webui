@@ -3,6 +3,7 @@ package tech.wenisch.s3webui.controller;
 import tech.wenisch.s3webui.service.S3Service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -15,6 +16,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 public class UiController {
 
     private final S3Service s3Service;
+
+    @Value("${oidc.enabled:false}")
+    private boolean oidcEnabled;
 
     @GetMapping("/")
     public String buckets(Model model) {
@@ -46,6 +50,23 @@ public class UiController {
             model.addAttribute("error", e.getMessage());
         }
         return "bucket";
+    }
+
+    @GetMapping("/login")
+    public String login(@RequestParam(required = false) String error,
+                        @RequestParam(required = false) String logout,
+                        Model model) {
+        if (!oidcEnabled) {
+            return "redirect:/";
+        }
+        model.addAttribute("loginError", error != null);
+        model.addAttribute("loggedOut", logout != null);
+        return "login";
+    }
+
+    @GetMapping("/access-denied")
+    public String accessDenied() {
+        return "access-denied";
     }
 
     private java.util.List<java.util.Map<String, String>> buildBreadcrumbs(String prefix) {

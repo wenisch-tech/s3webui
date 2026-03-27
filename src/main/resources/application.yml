@@ -24,3 +24,10 @@ s3:
   secret-key: ${S3_SECRET_KEY:minioadmin}
   endpoint-url: ${S3_ENDPOINT_URL:http://localhost:9000}
   region: ${S3_REGION:us-east-1}
+
+oidc:
+  enabled: ${OIDC_ENABLED:false}
+  client-id: ${OIDC_CLIENT_ID:}
+  client-secret: ${OIDC_CLIENT_SECRET:}
+  issuer-uri: ${OIDC_ISSUER_URI:}
+  required-role: ${OIDC_REQUIRED_ROLE:}

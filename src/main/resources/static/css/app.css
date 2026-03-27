@@ -1,55 +1,139 @@
-/* ─── Variables ──────────────────────────────────────────────────────────── */
+/* ─── Kairos color palette ────────────────────────────────────────────────── */
 :root {
-    --brand: #2563eb;
-    --brand-light: #eff6ff;
+    --s3-cyan: #0dcaf0;
+    --s3-cyan-rgb: 13, 202, 240;
 }
 
-/* ─── Body ───────────────────────────────────────────────────────────────── */
+/* ─── Theme-aware surface variables ──────────────────────────────────────── */
+[data-bs-theme="dark"] {
+    --s3-surface:      rgba(255, 255, 255, 0.04);
+    --s3-surface-soft: rgba(255, 255, 255, 0.025);
+    --s3-border:       rgba(255, 255, 255, 0.1);
+    --s3-border-soft:  rgba(255, 255, 255, 0.07);
+    --s3-muted:        rgba(255, 255, 255, 0.68);
+    /* Override Bootstrap primary to cyan */
+    --bs-primary:      #0dcaf0;
+    --bs-primary-rgb:  13, 202, 240;
+    --bs-link-color:   #0dcaf0;
+    --bs-link-hover-color: #31d2f3;
+}
+
+[data-bs-theme="light"] {
+    --s3-surface:      rgba(255, 255, 255, 0.9);
+    --s3-surface-soft: rgba(255, 255, 255, 0.78);
+    --s3-border:       rgba(27, 43, 59, 0.16);
+    --s3-border-soft:  rgba(27, 43, 59, 0.12);
+    --s3-muted:        rgba(27, 43, 59, 0.72);
+    --bs-primary:      #0a9fbd;
+    --bs-primary-rgb:  10, 159, 189;
+    --bs-link-color:   #0a9fbd;
+    --bs-link-hover-color: #0891ab;
+}
+
+/* ─── Font ────────────────────────────────────────────────────────────────── */
 body {
     min-height: 100vh;
-    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    font-family: "Space Grotesk", "Segoe UI", system-ui, -apple-system, sans-serif;
+}
+
+/* ─── Gradient background (dark theme) ───────────────────────────────────── */
+[data-bs-theme="dark"] body {
+    background:
+        radial-gradient(1200px 400px at 10% -5%,  rgba(13, 202, 240, 0.09), transparent 55%),
+        radial-gradient(800px  300px at 95%   0%,  rgba(25, 135, 84,  0.07), transparent 60%);
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+}
+
+/* ─── Bootstrap btn-primary → Kairos cyan ────────────────────────────────── */
+.btn-primary {
+    --bs-btn-color:               #0b1f25;
+    --bs-btn-bg:                  rgb(13, 202, 240);
+    --bs-btn-border-color:        rgb(13, 202, 240);
+    --bs-btn-hover-color:         #08181d;
+    --bs-btn-hover-bg:            rgb(49, 210, 243);
+    --bs-btn-hover-border-color:  rgb(49, 210, 243);
+    --bs-btn-focus-shadow-rgb:    13, 202, 240;
+    --bs-btn-active-color:        #071418;
+    --bs-btn-active-bg:           rgb(77, 217, 245);
+    --bs-btn-active-border-color: rgb(77, 217, 245);
+    --bs-btn-disabled-color:      #0b1f25;
+    --bs-btn-disabled-bg:         rgb(13, 202, 240);
+    --bs-btn-disabled-border-color: rgb(13, 202, 240);
 }
 
 /* ─── Navbar ─────────────────────────────────────────────────────────────── */
-.navbar {
-    background-color: var(--brand) !important;
+.s3-navbar {
+    background-color: rgba(13, 202, 240, 0.07) !important;
+    border-bottom: 1px solid rgba(13, 202, 240, 0.18);
+    backdrop-filter: blur(8px);
+}
+[data-bs-theme="light"] .s3-navbar {
+    background-color: rgba(13, 202, 240, 0.08) !important;
+    border-bottom: 1px solid rgba(13, 202, 240, 0.25);
+}
+.s3-navbar .navbar-brand {
+    color: #0dcaf0;
+    letter-spacing: -0.01em;
+}
+.s3-navbar .navbar-brand:hover { color: #31d2f3; }
+
+/* ─── Page hero kicker (cyan label like Kairos) ──────────────────────────── */
+.s3-kicker {
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    color: rgba(13, 202, 240, 0.9);
+    font-weight: 700;
+    text-transform: uppercase;
 }
 
 /* ─── Bucket card ─────────────────────────────────────────────────────────── */
 .bucket-card {
-    transition: transform .15s, box-shadow .15s;
+    border: 1px solid var(--s3-border-soft);
+    background: linear-gradient(135deg, var(--s3-surface), transparent);
+    transition: transform .15s, box-shadow .15s, border-color .15s;
     cursor: pointer;
 }
 .bucket-card:hover {
     transform: translateY(-3px);
-    box-shadow: 0 .5rem 1.5rem rgba(0,0,0,.12) !important;
+    border-color: rgba(13, 202, 240, 0.35);
+    box-shadow: 0 .5rem 1.5rem rgba(13, 202, 240, 0.1) !important;
 }
 .bucket-icon {
     width: 52px;
     height: 52px;
-    background: var(--brand-light);
+    background: rgba(13, 202, 240, 0.12);
+    border-radius: .5rem;
 }
 
-/* ─── Table ──────────────────────────────────────────────────────────────── */
-.table > :not(caption) > * > * {
+/* ─── Objects table card ─────────────────────────────────────────────────── */
+.s3-table-card {
+    border: 1px solid var(--s3-border);
+    background-color: var(--s3-surface-soft);
+}
+.s3-table-card .table > :not(caption) > * > * {
     padding: .6rem .75rem;
+}
+.s3-table-card .table-hover tbody tr:hover > * {
+    background-color: var(--s3-surface);
 }
 
 /* ─── Drop zone ──────────────────────────────────────────────────────────── */
 .drop-zone {
-    border: 2px dashed #cbd5e1;
-    background: #f8fafc;
+    border: 2px dashed rgba(13, 202, 240, 0.35);
+    background: var(--s3-surface-soft, #f8fafc);
     transition: background .15s, border-color .15s;
     cursor: pointer;
 }
 .drop-zone.dragover {
-    background: var(--brand-light);
-    border-color: var(--brand);
+    background: rgba(13, 202, 240, 0.08);
+    border-color: #0dcaf0;
 }
 
 /* ─── Upload file item ───────────────────────────────────────────────────── */
 .upload-item {
-    background: #f8fafc;
+    background: var(--s3-surface-soft, #f8fafc);
+    border: 1px solid var(--s3-border-soft, #e2e8f0);
     border-radius: .5rem;
     padding: .6rem .75rem;
     margin-bottom: .5rem;
@@ -58,11 +142,27 @@ body {
     height: 5px;
     margin-top: .4rem;
 }
+.progress-bar {
+    background-color: #0dcaf0;
+}
 
 /* ─── Breadcrumb ─────────────────────────────────────────────────────────── */
 .breadcrumb-item + .breadcrumb-item::before {
     content: "›";
 }
 
+/* ─── Login / landing card ───────────────────────────────────────────────── */
+.login-card {
+    border: 1px solid var(--s3-border, rgba(255,255,255,0.12));
+    border-radius: 1rem;
+    background: linear-gradient(140deg, var(--s3-surface, rgba(255,255,255,0.05)), transparent);
+    backdrop-filter: blur(4px);
+}
+[data-bs-theme="dark"] .login-card .form-control {
+    border-color: var(--s3-border-soft);
+    background-color: rgba(255,255,255,0.05);
+}
+
 /* ─── Utility ────────────────────────────────────────────────────────────── */
 .border-dashed { border-style: dashed !important; }
+.text-cyan { color: #0dcaf0 !important; }
