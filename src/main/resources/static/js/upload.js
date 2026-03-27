@@ -197,15 +197,8 @@ async function multipartUpload(file, bucket, key, onProgress) {
         const end = Math.min(p * PART_SIZE, file.size);
         const blob = file.slice(start, end);
 
-        // Get presigned URL
-        const presignRes = await fetch(
-            `/api/buckets/${encodeURIComponent(bucket)}/multipart/presign` +
-            `?key=${encodeURIComponent(key)}&uploadId=${encodeURIComponent(uploadId)}&partNumber=${p}`);
-        if (!presignRes.ok) throw new Error(`Failed to get presigned URL for part ${p}`);
-        const {url} = await presignRes.json();
-
-        // Upload part via XHR (so we get progress events)
-        const eTag = await uploadPart(url, blob, loaded => {
+        // Upload part through backend (avoids cross-origin PUT to S3)
+        const eTag = await uploadPart(bucket, key, uploadId, p, blob, loaded => {
             onProgress(loadedTotal + loaded);
         });
         loadedTotal += blob.size;
@@ -224,7 +217,7 @@ async function multipartUpload(file, bucket, key, onProgress) {
     if (!completeRes.ok) throw new Error('Failed to complete multipart upload');
 }
 
-function uploadPart(presignedUrl, blob, onProgress) {
+function uploadPart(bucket, key, uploadId, partNumber, blob, onProgress) {
     return new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();
         xhr.upload.addEventListener('progress', e => {
@@ -232,14 +225,17 @@ function uploadPart(presignedUrl, blob, onProgress) {
         });
         xhr.addEventListener('load', () => {
             if (xhr.status >= 200 && xhr.status < 300) {
-                const eTag = xhr.getResponseHeader('ETag') || '';
-                resolve(eTag.replace(/"/g, ''));
+                const resp = JSON.parse(xhr.responseText);
+                resolve(resp.eTag);
             } else {
-                reject(new Error(`HTTP ${xhr.status}`));
+                reject(new Error(`HTTP ${xhr.status}: ${xhr.responseText}`));
             }
         });
         xhr.addEventListener('error', () => reject(new Error('Network error during part upload')));
-        xhr.open('PUT', presignedUrl);
+        const url = `/api/buckets/${encodeURIComponent(bucket)}/multipart/part` +
+            `?key=${encodeURIComponent(key)}&uploadId=${encodeURIComponent(uploadId)}&partNumber=${partNumber}`;
+        xhr.open('PUT', url);
+        xhr.setRequestHeader('Content-Type', 'application/octet-stream');
         xhr.send(blob);
     });
 }

@@ -198,10 +198,12 @@ src/main/java/tech/wenisch/s3webui/
 
 Files **≤ 5 MB** are uploaded via a simple multipart form POST through the backend.
 
-Files **> 5 MB** use **client-side S3 multipart upload**:
+Files **> 5 MB** use **server-proxied S3 multipart upload**:
 1. Browser calls `POST /api/buckets/{b}/multipart/initiate` to get an `uploadId`
-2. For each 5 MB chunk, it calls `GET /api/buckets/{b}/multipart/presign` for a presigned URL, then PUTs the chunk directly to S3
+2. For each 5 MB chunk, the browser PUTs the raw bytes to `PUT /api/buckets/{b}/multipart/part` — the backend forwards the chunk directly to S3 using the AWS SDK and returns the `ETag`
 3. Browser calls `POST /api/buckets/{b}/multipart/complete` to finish the upload
+
+Routing parts through the backend avoids cross-origin (CORS) issues that would occur if the browser PUTted directly to the S3 endpoint.
 
 Progress percentage and estimated time remaining are computed entirely in the browser using `XMLHttpRequest` upload events.
 

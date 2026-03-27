@@ -170,6 +170,20 @@ public class S3Service {
         return presigned.url().toString();
     }
 
+    public String uploadPart(String bucket, String key, String uploadId, int partNumber,
+                             InputStream inputStream, long contentLength) {
+        var response = s3Client.uploadPart(
+                UploadPartRequest.builder()
+                        .bucket(bucket)
+                        .key(key)
+                        .uploadId(uploadId)
+                        .partNumber(partNumber)
+                        .contentLength(contentLength)
+                        .build(),
+                RequestBody.fromInputStream(inputStream, contentLength));
+        return response.eTag().replace("\"", "");
+    }
+
     public void completeMultipartUpload(String bucket, String key, String uploadId,
                                         List<CompleteMultipartRequest.PartETag> parts) {
         List<CompletedPart> completedParts = parts.stream()

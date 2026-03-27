@@ -3,6 +3,7 @@ package tech.wenisch.s3webui.controller;
 import tech.wenisch.s3webui.model.CompleteMultipartRequest;
 import tech.wenisch.s3webui.model.S3ObjectDto;
 import tech.wenisch.s3webui.service.S3Service;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -121,6 +122,20 @@ public class S3ApiController {
             @RequestParam int partNumber) {
         String url = s3Service.presignUploadPart(bucket, key, uploadId, partNumber);
         return ResponseEntity.ok(Map.of("url", url));
+    }
+
+    @PutMapping(value = "/buckets/{bucket}/multipart/part",
+                consumes = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+    public ResponseEntity<Map<String, String>> uploadMultipartPart(
+            @PathVariable String bucket,
+            @RequestParam String key,
+            @RequestParam String uploadId,
+            @RequestParam int partNumber,
+            HttpServletRequest request) throws IOException {
+        long contentLength = request.getContentLengthLong();
+        String eTag = s3Service.uploadPart(bucket, key, uploadId, partNumber,
+                request.getInputStream(), contentLength);
+        return ResponseEntity.ok(Map.of("eTag", eTag));
     }
 
     @PostMapping("/buckets/{bucket}/multipart/complete")
