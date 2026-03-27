@@ -1,6 +1,7 @@
 package tech.wenisch.s3webui.config;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -26,6 +27,7 @@ import java.util.Set;
 
 @Configuration
 @EnableWebSecurity
+@ConditionalOnClass(name = "org.springframework.security.web.SecurityFilterChain")
 public class SecurityConfig {
 
     @Value("${oidc.enabled:false}")
