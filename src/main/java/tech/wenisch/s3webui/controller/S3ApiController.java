@@ -124,6 +124,9 @@ public class S3ApiController {
         return ResponseEntity.ok(Map.of("url", url));
     }
 
+        // Maximum part size: 5GB (S3 part limit is 5TB, but we limit for DoS protection)
+    private static final long MAX_PART_SIZE = 5 * 1024 * 1024 * 1024L; // 5GB
+
     @PutMapping(value = "/buckets/{bucket}/multipart/part",
                 consumes = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     public ResponseEntity<Map<String, String>> uploadMultipartPart(
@@ -132,7 +135,16 @@ public class S3ApiController {
             @RequestParam String uploadId,
             @RequestParam int partNumber,
             HttpServletRequest request) throws IOException {
-        byte[] partBytes = request.getInputStream().readAllBytes();
+        // CVE-2026-22732: Validate Content-Length to prevent unbounded memory reads
+        long contentLength = request.getContentLengthLong();
+        if (contentLength > MAX_PART_SIZE) {
+            return ResponseEntity.badRequest().build();
+        }
+        if (contentLength < 0) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        byte[] partBytes = request.getInputStream().readNBytes((int)contentLength);
         String eTag = s3Service.uploadPart(bucket, key, uploadId, partNumber, partBytes);
         return ResponseEntity.ok(Map.of("eTag", eTag));
     }

@@ -3,7 +3,7 @@
 A modern, clean graphical web interface for S3-compatible object storage, built with Spring Boot and Bootstrap 5.  
 Dark theme by default — switch to light with the toggle in the top-right corner.
 
-![CI](https://github.com/JFWenisch/s3webui/actions/workflows/ci.yml/badge.svg)
+![CI](https://github.com/wenisch-tech/s3webui/actions/workflows/ci.yml/badge.svg)
 
 ## Features
 

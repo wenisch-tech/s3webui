@@ -22,7 +22,7 @@
         <java.version>17</java.version>
         <aws-sdk.version>2.29.51</aws-sdk.version>
         <spring-framework.version>6.2.11</spring-framework.version>
-        <spring-security.version>6.4.10</spring-security.version>
+        <spring-security.version>6.5.9</spring-security.version>
         <tomcat.version>10.1.50</tomcat.version>
         <jackson.version>2.18.6</jackson.version>
         <logback.version>1.5.19</logback.version>
