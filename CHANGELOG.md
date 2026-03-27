@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.1.2 - 2026-03-27
+
+### [0.1.2](https://github.com/wenisch-tech/s3webui/compare/v0.1.1...v0.1.2) (2026-03-27)
+
+
+### Bug Fixes
+
+* fixed release step by unifying secret usage ([c1854bd](https://github.com/wenisch-tech/s3webui/commit/c1854bd3b478d64f5cb9459d539cba8c279a1376))
+
+
+
+Docker image: ghcr.io/wenisch-tech/s3webui:0.1.2
+
+
 ## v0.1.0 - 2026-03-27
 
 ## [0.1.0](https://github.com/wenisch-tech/s3webui/compare/v0.0.3...v0.1.0) (2026-03-27)
