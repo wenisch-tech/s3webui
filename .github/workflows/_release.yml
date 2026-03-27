@@ -126,7 +126,7 @@ jobs:
 
       - name: Publish Helm chart to charts repository
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUBTOKEN }}
         run: |
           git clone https://$GH_TOKEN@github.com/JFWenisch/charts.git charts-repo
           cp ./release/*.tgz charts-repo/s3webui/ 2>/dev/null || true
