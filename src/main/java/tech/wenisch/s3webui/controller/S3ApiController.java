@@ -2,6 +2,7 @@ package tech.wenisch.s3webui.controller;
 
 import tech.wenisch.s3webui.model.CompleteMultipartRequest;
 import tech.wenisch.s3webui.model.S3ObjectDto;
+import tech.wenisch.s3webui.service.AuditHistoryService;
 import tech.wenisch.s3webui.service.S3Service;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -18,6 +19,7 @@ import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.security.Principal;
 import java.util.List;
 import java.util.Map;
 
@@ -28,18 +30,21 @@ import java.util.Map;
 public class S3ApiController {
 
     private final S3Service s3Service;
+    private final AuditHistoryService auditHistoryService;
 
     // ── Buckets ────────────────────────────────────────────────────────────
 
     @PostMapping("/buckets")
-    public ResponseEntity<Void> createBucket(@RequestParam String name) {
+    public ResponseEntity<Void> createBucket(@RequestParam String name, Principal principal) {
         s3Service.createBucket(name);
+        auditHistoryService.record(username(principal), "CREATE", "BUCKET", name, null, "Created bucket");
         return ResponseEntity.ok().build();
     }
 
     @DeleteMapping("/buckets/{bucket}")
-    public ResponseEntity<Void> deleteBucket(@PathVariable String bucket) {
+    public ResponseEntity<Void> deleteBucket(@PathVariable String bucket, Principal principal) {
         s3Service.deleteBucket(bucket);
+        auditHistoryService.record(username(principal), "DELETE", "BUCKET", bucket, null, "Deleted bucket");
         return ResponseEntity.ok().build();
     }
 
@@ -55,8 +60,10 @@ public class S3ApiController {
     @DeleteMapping("/buckets/{bucket}/objects")
     public ResponseEntity<Void> deleteObject(
             @PathVariable String bucket,
-            @RequestParam String key) {
+            @RequestParam String key,
+            Principal principal) {
         s3Service.deleteObject(bucket, key);
+        auditHistoryService.record(username(principal), "DELETE", "OBJECT", bucket, key, "Deleted object");
         return ResponseEntity.ok().build();
     }
 
@@ -64,8 +71,11 @@ public class S3ApiController {
     public ResponseEntity<Void> renameObject(
             @PathVariable String bucket,
             @RequestParam String oldKey,
-            @RequestParam String newKey) {
+            @RequestParam String newKey,
+            Principal principal) {
         s3Service.renameObject(bucket, oldKey, newKey);
+        auditHistoryService.record(username(principal), "EDIT", "OBJECT", bucket, newKey,
+                "Renamed object from '" + oldKey + "' to '" + newKey + "'");
         return ResponseEntity.ok().build();
     }
 
@@ -94,12 +104,14 @@ public class S3ApiController {
     public ResponseEntity<Void> uploadObject(
             @PathVariable String bucket,
             @RequestParam String prefix,
-            @RequestParam("file") MultipartFile file) throws IOException {
+            @RequestParam("file") MultipartFile file,
+            Principal principal) throws IOException {
         String key = (prefix == null || prefix.isBlank())
                 ? file.getOriginalFilename()
                 : (prefix.endsWith("/") ? prefix : prefix + "/") + file.getOriginalFilename();
         s3Service.putObject(bucket, key, file.getInputStream(),
                 file.getSize(), file.getContentType());
+        auditHistoryService.record(username(principal), "CREATE", "OBJECT", bucket, key, "Uploaded object");
         return ResponseEntity.ok().build();
     }
 
@@ -153,9 +165,12 @@ public class S3ApiController {
     public ResponseEntity<Void> completeMultipart(
             @PathVariable String bucket,
             @RequestParam String key,
-            @RequestBody CompleteMultipartRequest request) {
+            @RequestBody CompleteMultipartRequest request,
+            Principal principal) {
         request.setKey(key);
         s3Service.completeMultipartUpload(bucket, key, request.getUploadId(), request.getParts());
+        auditHistoryService.record(username(principal), "CREATE", "OBJECT", bucket, key,
+                "Completed multipart upload");
         return ResponseEntity.ok().build();
     }
 
@@ -173,5 +188,9 @@ public class S3ApiController {
     @GetMapping("/buckets/{bucket}/stats")
     public ResponseEntity<Map<String, String>> getBucketStats(@PathVariable String bucket) {
         return ResponseEntity.ok(s3Service.getBucketStats(bucket));
+    }
+
+    private String username(Principal principal) {
+        return principal == null ? null : principal.getName();
     }
 }

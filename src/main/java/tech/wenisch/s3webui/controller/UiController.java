@@ -69,6 +69,11 @@ public class UiController {
         return "access-denied";
     }
 
+    @GetMapping("/history")
+    public String history() {
+        return "history";
+    }
+
     private java.util.List<java.util.Map<String, String>> buildBreadcrumbs(String prefix) {
         var crumbs = new java.util.ArrayList<java.util.Map<String, String>>();
         if (prefix == null || prefix.isBlank()) {

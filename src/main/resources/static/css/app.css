@@ -118,6 +118,16 @@ body {
     background-color: var(--s3-surface);
 }
 
+.s3-table-card .form-select {
+    background-color: var(--s3-surface-soft);
+    border-color: var(--s3-border-soft);
+}
+
+.s3-table-card .badge {
+    font-weight: 600;
+    letter-spacing: 0.01em;
+}
+
 /* ─── Drop zone ──────────────────────────────────────────────────────────── */
 .drop-zone {
     border: 2px dashed rgba(13, 202, 240, 0.35);

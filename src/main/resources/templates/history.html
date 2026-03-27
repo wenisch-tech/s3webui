@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en"
+      data-bs-theme="dark"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8"/>
+    <script>(function(){var t=localStorage.getItem('s3webui-theme')||'dark';document.documentElement.setAttribute('data-bs-theme',t);})();</script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>History - S3 Web UI</title>
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}"/>
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap-icons/font/bootstrap-icons.css}"/>
+    <link rel="stylesheet" th:href="@{/css/app.css}"/>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg s3-navbar">
+    <div class="container-fluid px-4">
+        <a class="navbar-brand d-flex align-items-center gap-2 fw-bold" th:href="@{/}">
+            <i class="bi bi-cloud-fill fs-4"></i>
+            S3 Web UI
+        </a>
+        <div class="d-flex align-items-center gap-2 ms-3 me-auto">
+            <a class="btn btn-sm btn-outline-secondary" th:href="@{/}">
+                <i class="bi bi-bucket me-1"></i>Buckets
+            </a>
+            <a class="btn btn-sm btn-primary" th:href="@{/history}">
+                <i class="bi bi-clock-history me-1"></i>History
+            </a>
+        </div>
+        <div class="d-flex align-items-center gap-2 ms-auto">
+            <span sec:authorize="isAuthenticated()" th:if="${oidcEnabled}"
+                  class="text-muted small d-none d-md-inline">
+                <i class="bi bi-person-circle me-1"></i>
+                <span sec:authentication="name">username</span>
+            </span>
+            <form sec:authorize="isAuthenticated()" th:if="${oidcEnabled}"
+                  th:action="@{/logout}" method="post" class="d-inline">
+                <button type="submit" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-box-arrow-right me-1"></i>Logout
+                </button>
+            </form>
+            <button class="btn btn-sm btn-outline-secondary" id="themeToggle"
+                    onclick="toggleTheme()" title="Toggle light/dark theme">
+                <i class="bi bi-sun-fill" id="themeIcon"></i>
+            </button>
+        </div>
+    </div>
+</nav>
+
+<div class="container-fluid px-4 py-4">
+    <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+        <div>
+            <p class="s3-kicker mb-1">Audit</p>
+            <h1 class="h3 mb-0 fw-semibold">History</h1>
+            <p class="text-muted small mb-0">Newest actions are listed first</p>
+        </div>
+    </div>
+
+    <div class="card s3-table-card border-0 shadow-sm mb-3">
+        <div class="card-body">
+            <div class="row g-2">
+                <div class="col-12 col-md-4">
+                    <label class="form-label small text-muted mb-1" for="filterUser">Filter by user</label>
+                    <select id="filterUser" class="form-select">
+                        <option value="">All users</option>
+                    </select>
+                </div>
+                <div class="col-12 col-md-4">
+                    <label class="form-label small text-muted mb-1" for="filterAction">Filter by action</label>
+                    <select id="filterAction" class="form-select">
+                        <option value="">All actions</option>
+                    </select>
+                </div>
+                <div class="col-12 col-md-4 d-flex align-items-end">
+                    <button class="btn btn-outline-secondary w-100" type="button" onclick="resetFilters()">
+                        <i class="bi bi-arrow-counterclockwise me-1"></i>Reset filters
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card s3-table-card border-0 shadow-sm">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                <tr>
+                    <th style="width: 210px;">Time</th>
+                    <th style="width: 170px;">User</th>
+                    <th style="width: 130px;">Action</th>
+                    <th style="width: 130px;">Type</th>
+                    <th style="width: 170px;">Bucket</th>
+                    <th>Object / Details</th>
+                </tr>
+                </thead>
+                <tbody id="historyTableBody">
+                <tr>
+                    <td colspan="6" class="text-center py-4 text-muted">Loading history...</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script th:src="@{/webjars/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/js/app.js}"></script>
+<script>
+    let allHistory = [];
+
+    const actionBadgeClass = {
+        CREATE: 'text-bg-success',
+        DELETE: 'text-bg-danger',
+        EDIT: 'text-bg-warning'
+    };
+
+    function escapeHtml(value) {
+        return String(value || '')
+            .replaceAll('&', '&amp;')
+            .replaceAll('<', '&lt;')
+            .replaceAll('>', '&gt;')
+            .replaceAll('"', '&quot;')
+            .replaceAll("'", '&#39;');
+    }
+
+    function formatDate(iso) {
+        if (!iso) return '-';
+        const date = new Date(iso);
+        return date.toLocaleString();
+    }
+
+    function fillSelect(selectId, values) {
+        const select = document.getElementById(selectId);
+        const current = select.value;
+        values.forEach(v => {
+            const opt = document.createElement('option');
+            opt.value = v;
+            opt.textContent = v;
+            select.appendChild(opt);
+        });
+        select.value = current;
+    }
+
+    function renderTable() {
+        const tbody = document.getElementById('historyTableBody');
+        const selectedUser = document.getElementById('filterUser').value;
+        const selectedAction = document.getElementById('filterAction').value;
+
+        const rows = allHistory.filter(e => {
+            const userMatch = !selectedUser || e.user === selectedUser;
+            const actionMatch = !selectedAction || e.action === selectedAction;
+            return userMatch && actionMatch;
+        });
+
+        if (rows.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted">No history entries found for the selected filters.</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = rows.map(e => {
+            const badgeClass = actionBadgeClass[e.action] || 'text-bg-secondary';
+            const keyPart = e.key ? '<span class="text-body-secondary small d-block mt-1">' + escapeHtml(e.key) + '</span>' : '';
+            const detailsPart = e.details ? '<span class="text-muted small">' + escapeHtml(e.details) + '</span>' : '-';
+            return '<tr>' +
+                '<td class="small text-muted">' + escapeHtml(formatDate(e.timestamp)) + '</td>' +
+                '<td><span class="badge rounded-pill bg-body-tertiary text-body border">' + escapeHtml(e.user || 'anonymous') + '</span></td>' +
+                '<td><span class="badge ' + badgeClass + '">' + escapeHtml(e.action || '-') + '</span></td>' +
+                '<td class="small">' + escapeHtml(e.resourceType || '-') + '</td>' +
+                '<td class="small">' + escapeHtml(e.bucket || '-') + '</td>' +
+                '<td>' + detailsPart + keyPart + '</td>' +
+                '</tr>';
+        }).join('');
+    }
+
+    function resetFilters() {
+        document.getElementById('filterUser').value = '';
+        document.getElementById('filterAction').value = '';
+        renderTable();
+    }
+
+    function setupFilters() {
+        const users = [...new Set(allHistory.map(e => e.user).filter(Boolean))].sort();
+        const actions = [...new Set(allHistory.map(e => e.action).filter(Boolean))].sort();
+
+        fillSelect('filterUser', users);
+        fillSelect('filterAction', actions);
+
+        document.getElementById('filterUser').addEventListener('change', renderTable);
+        document.getElementById('filterAction').addEventListener('change', renderTable);
+    }
+
+    async function loadHistory() {
+        try {
+            const response = await fetch('/api/history');
+            if (!response.ok) {
+                throw new Error('Failed to load history');
+            }
+
+            const data = await response.json();
+            allHistory = data.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+            setupFilters();
+            renderTable();
+        } catch (error) {
+            document.getElementById('historyTableBody').innerHTML =
+                '<tr><td colspan="6" class="text-center py-4 text-danger">Could not load history.</td></tr>';
+            showToast(error.message || 'Could not load history', 'danger');
+        }
+    }
+
+    loadHistory();
+</script>
+</body>
+</html>
