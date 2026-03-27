@@ -84,12 +84,7 @@ public class SecurityConfig {
                         .authenticationEntryPoint(new LoginUrlAuthenticationEntryPoint("/login"))
                         .accessDeniedPage("/access-denied")
                 )
-                .csrf(csrf -> csrf
-                        // Only GET, HEAD, OPTIONS, TRACE are exempt from CSRF by default
-                        // API endpoints will use OAuth2 token for authentication, which is CSRF-safe
-                        .ignoringRequestMatchers("/api/buckets/*/multipart/part")
-                        // Alternative: disable CSRF only for stateless API endpoints that use Bearer tokens
-                );
+                .csrf(csrf -> csrf.ignoringRequestMatchers("/api/**"));
 
         return http.build();
     }
