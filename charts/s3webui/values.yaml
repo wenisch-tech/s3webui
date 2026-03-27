@@ -58,6 +58,7 @@ env:
   S3_SECRET_KEY: ""
   S3_ENDPOINT_URL: ""
   S3_REGION: "us-east-1"
+  S3_INSECURE_SKIP_TLS_VERIFY: "false"
   # OIDC / Keycloak (optional)
   OIDC_ENABLED: "false"
   OIDC_CLIENT_ID: ""

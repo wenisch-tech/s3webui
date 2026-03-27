@@ -29,6 +29,9 @@
                 "S3_ENDPOINT_URL": {
                     "type": "string"
                 },
+                "S3_INSECURE_SKIP_TLS_VERIFY": {
+                    "type": "string"
+                },
                 "S3_REGION": {
                     "type": "string"
                 },

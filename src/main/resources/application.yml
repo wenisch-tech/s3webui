@@ -24,6 +24,7 @@ s3:
   secret-key: ${S3_SECRET_KEY:minioadmin}
   endpoint-url: ${S3_ENDPOINT_URL:http://localhost:9000}
   region: ${S3_REGION:us-east-1}
+  insecure-skip-tls-verify: ${S3_INSECURE_SKIP_TLS_VERIFY:false}
 
 oidc:
   enabled: ${OIDC_ENABLED:false}
