@@ -105,6 +105,8 @@ public class S3Config {
 
             SSLContext sslContext = SSLContext.getInstance("TLS");
             sslContext.init(null, trustAllCerts, new SecureRandom());
+            // AWS SDK URLConnection client may use the JVM default SSLContext directly.
+            SSLContext.setDefault(sslContext);
             HttpsURLConnection.setDefaultSSLSocketFactory(sslContext.getSocketFactory());
 
             HostnameVerifier insecureHostnameVerifier = new HostnameVerifier() {
