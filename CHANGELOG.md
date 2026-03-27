@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.2.8 - 2026-03-27
+
+### [0.2.8](https://github.com/wenisch-tech/s3webui/compare/v0.2.7...v0.2.8) (2026-03-27)
+
+
+### Bug Fixes
+
+* updated security config to ignore csrf again for api endpoint ([3f49067](https://github.com/wenisch-tech/s3webui/commit/3f49067682f8657a4089c242846dc42c9d7d1040))
+
+
+
+Docker image: ghcr.io/wenisch-tech/s3webui:0.2.8
+
+
 ## v0.2.7 - 2026-03-27
 
 ### [0.2.7](https://github.com/wenisch-tech/s3webui/compare/v0.2.6...v0.2.7) (2026-03-27)
