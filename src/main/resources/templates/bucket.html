@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title th:text="${bucket} + ' — S3 Web UI'">Bucket — S3 Web UI</title>
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}"/>
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap-icons/font/bootstrap-icons.css}"/>
+    <link rel="stylesheet" th:href="@{/css/app.css}"/>
+</head>
+<body class="bg-body-tertiary">
+
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg bg-primary navbar-dark shadow-sm">
+    <div class="container-fluid px-4">
+        <a class="navbar-brand d-flex align-items-center gap-2 fw-bold" th:href="@{/}">
+            <i class="bi bi-cloud-fill fs-4"></i>
+            S3 Web UI
+        </a>
+    </div>
+</nav>
+
+<div class="container-fluid px-4 py-4">
+
+    <!-- Error alert -->
+    <div th:if="${error}" class="alert alert-danger d-flex align-items-center gap-2" role="alert">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+        <span th:text="${error}">Error</span>
+    </div>
+
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a th:href="@{/}">Buckets</a></li>
+            <li class="breadcrumb-item" th:if="${#lists.isEmpty(breadcrumbs)}">
+                <span class="text-body" th:text="${bucket}">bucket</span>
+            </li>
+            <li class="breadcrumb-item" th:if="${!#lists.isEmpty(breadcrumbs)}">
+                <a th:href="@{/buckets/{b}(b=${bucket})}" th:text="${bucket}">bucket</a>
+            </li>
+            <li class="breadcrumb-item" th:each="crumb, iter : ${breadcrumbs}"
+                th:classappend="${iter.last} ? 'active' : ''">
+                <a th:if="${!iter.last}"
+                   th:href="@{/buckets/{b}(b=${bucket}, prefix=${crumb.prefix})}"
+                   th:text="${crumb.name}">folder</a>
+                <span th:if="${iter.last}" th:text="${crumb.name}">folder</span>
+            </li>
+        </ol>
+    </nav>
+
+    <!-- Header -->
+    <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+        <div>
+            <h1 class="h4 mb-0 fw-semibold">
+                <i class="bi bi-bucket-fill text-primary me-2"></i>
+                <span th:text="${bucket}">bucket-name</span>
+            </h1>
+            <small class="text-muted" th:text="${#lists.size(objects)} + ' item(s)'">0 items</small>
+        </div>
+        <div class="d-flex gap-2">
+            <button class="btn btn-outline-secondary btn-sm" onclick="createFolder()">
+                <i class="bi bi-folder-plus me-1"></i>New Folder
+            </button>
+            <button class="btn btn-primary btn-sm" onclick="openUploadModal()">
+                <i class="bi bi-cloud-upload me-1"></i>Upload
+            </button>
+        </div>
+    </div>
+
+    <!-- Objects table -->
+    <div class="card border-0 shadow-sm" th:if="${!#lists.isEmpty(objects)}">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width:40px">
+                            <input type="checkbox" class="form-check-input" id="selectAll"
+                                   onchange="toggleSelectAll(this)"/>
+                        </th>
+                        <th>Name</th>
+                        <th class="d-none d-md-table-cell">Size</th>
+                        <th class="d-none d-lg-table-cell">Last Modified</th>
+                        <th style="width:100px">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="obj : ${objects}" th:data-key="${obj.key}">
+                        <td>
+                            <input type="checkbox" class="form-check-input obj-check"
+                                   th:value="${obj.key}" th:unless="${obj.directory}"/>
+                        </td>
+                        <td>
+                            <!-- Folder -->
+                            <a th:if="${obj.directory}"
+                               th:href="@{/buckets/{b}(b=${bucket}, prefix=${obj.prefix})}"
+                               class="text-decoration-none d-flex align-items-center gap-2">
+                                <i class="bi bi-folder-fill text-warning fs-5"></i>
+                                <span th:text="${obj.name}">folder/</span>
+                            </a>
+                            <!-- File -->
+                            <div th:unless="${obj.directory}"
+                                 class="d-flex align-items-center gap-2">
+                                <i class="bi fs-5" th:classappend="${@fileIconHelper.icon(obj.name)}"></i>
+                                <span th:text="${obj.name}" class="text-break">file.txt</span>
+                            </div>
+                        </td>
+                        <td class="d-none d-md-table-cell text-muted small"
+                            th:unless="${obj.directory}"
+                            th:text="${@fileSizeFormatter.format(obj.size)}">1.2 MB</td>
+                        <td class="d-none d-md-table-cell" th:if="${obj.directory}"></td>
+                        <td class="d-none d-lg-table-cell text-muted small"
+                            th:unless="${obj.directory}"
+                            th:text="${obj.lastModified != null ? #temporals.format(obj.lastModified, 'yyyy-MM-dd HH:mm') : '-'}">2024-01-01</td>
+                        <td class="d-none d-lg-table-cell" th:if="${obj.directory}"></td>
+                        <td>
+                            <div class="d-flex gap-1" th:unless="${obj.directory}">
+                                <a th:href="@{/api/buckets/{b}/objects/download(b=${bucket}, key=${obj.key})}"
+                                   class="btn btn-sm btn-light" title="Download">
+                                    <i class="bi bi-download"></i>
+                                </a>
+                                <button class="btn btn-sm btn-light" title="Rename"
+                                        th:attr="data-bucket=${bucket},data-key=${obj.key},data-name=${obj.name}"
+                                        onclick="openRenameModal(this.dataset.bucket, this.dataset.key, this.dataset.name)">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <button class="btn btn-sm btn-light text-danger" title="Delete"
+                                        th:attr="data-bucket=${bucket},data-key=${obj.key}"
+                                        onclick="confirmDeleteObject(this.dataset.bucket, this.dataset.key)">
+                                    <i class="bi bi-trash3"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Empty state -->
+    <div class="text-center py-5" th:if="${#lists.isEmpty(objects) and error == null}">
+        <i class="bi bi-folder2-open display-1 text-muted"></i>
+        <p class="lead mt-3 text-muted">This bucket is empty</p>
+        <button class="btn btn-primary" onclick="openUploadModal()">
+            <i class="bi bi-cloud-upload me-1"></i>Upload files
+        </button>
+    </div>
+
+</div>
+
+<!-- ══ Upload Modal ══════════════════════════════════════════════════════ -->
+<div class="modal fade" id="uploadModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-cloud-upload me-2"></i>Upload Files</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" id="uploadCloseBtn"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Drop zone -->
+                <div id="dropZone" class="drop-zone rounded-3 border-2 border-dashed p-5 text-center mb-3"
+                     ondragover="event.preventDefault(); this.classList.add('dragover')"
+                     ondragleave="this.classList.remove('dragover')"
+                     ondrop="handleDrop(event)">
+                    <i class="bi bi-cloud-arrow-up display-4 text-muted"></i>
+                    <p class="mt-2 text-muted">Drag &amp; drop files here, or
+                        <label for="fileInput" class="text-primary fw-semibold" style="cursor:pointer">browse</label>
+                    </p>
+                    <input type="file" id="fileInput" multiple class="d-none" onchange="handleFileSelect(this)"/>
+                </div>
+
+                <!-- File list -->
+                <div id="fileList"></div>
+
+                <!-- Overall progress -->
+                <div id="overallProgressArea" class="d-none mt-3">
+                    <div class="d-flex justify-content-between small text-muted mb-1">
+                        <span id="overallStatus">Uploading…</span>
+                        <span id="overallEta"></span>
+                    </div>
+                    <div class="progress" style="height:8px">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" id="overallProgressBar"
+                             style="width:0%"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="startUploadBtn" onclick="startUpload()">
+                    <i class="bi bi-cloud-upload me-1"></i>Upload
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══ Rename Modal ══════════════════════════════════════════════════════ -->
+<div class="modal fade" id="renameModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-pencil me-2"></i>Rename Object</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">New name</label>
+                    <input type="text" class="form-control" id="renameInput"/>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="doRename()">Rename</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══ Delete Object Confirmation Modal ══════════════════════════════════ -->
+<div class="modal fade" id="deleteObjectModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title text-danger"><i class="bi bi-trash3 me-2"></i>Delete Object</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Delete <strong id="deleteObjectKey"></strong>?</p>
+                <div class="alert alert-warning"><i class="bi bi-exclamation-triangle me-2"></i>
+                    This action cannot be undone.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" onclick="doDeleteObject()">Delete</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast container -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3" id="toastContainer"></div>
+
+<script th:src="@{/webjars/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/js/app.js}"></script>
+<script th:src="@{/js/upload.js}"></script>
+<script th:inline="javascript">
+    const BUCKET = /*[[${bucket}]]*/ '';
+    const PREFIX = /*[[${prefix}]]*/ '';
+</script>
+<script>
+    // ── Delete object ────────────────────────────────────────────────────
+    let _deleteKey = null;
+
+    function confirmDeleteObject(bucket, key) {
+        _deleteKey = key;
+        document.getElementById('deleteObjectKey').textContent = key;
+        new bootstrap.Modal(document.getElementById('deleteObjectModal')).show();
+    }
+
+    function doDeleteObject() {
+        if (!_deleteKey) return;
+        fetch(`/api/buckets/${encodeURIComponent(BUCKET)}/objects?key=${encodeURIComponent(_deleteKey)}`,
+            {method: 'DELETE'})
+            .then(r => { if (r.ok) location.reload(); else r.text().then(t => showToast(t, 'danger')); })
+            .catch(e => showToast(e.message, 'danger'));
+    }
+
+    // ── Rename ───────────────────────────────────────────────────────────
+    let _renameOldKey = null;
+
+    function openRenameModal(bucket, key, name) {
+        _renameOldKey = key;
+        document.getElementById('renameInput').value = name;
+        new bootstrap.Modal(document.getElementById('renameModal')).show();
+    }
+
+    function doRename() {
+        const newName = document.getElementById('renameInput').value.trim();
+        if (!newName || !_renameOldKey) return;
+        const prefix = _renameOldKey.substring(0, _renameOldKey.lastIndexOf('/') + 1);
+        const newKey = prefix + newName;
+        fetch(`/api/buckets/${encodeURIComponent(BUCKET)}/objects/rename` +
+              `?oldKey=${encodeURIComponent(_renameOldKey)}&newKey=${encodeURIComponent(newKey)}`,
+            {method: 'POST'})
+            .then(r => { if (r.ok) location.reload(); else r.text().then(t => showToast(t, 'danger')); })
+            .catch(e => showToast(e.message, 'danger'));
+    }
+
+    // ── Create folder ────────────────────────────────────────────────────
+    function createFolder() {
+        const name = prompt('Folder name:');
+        if (!name || !name.trim()) return;
+        const folderPrefix = (PREFIX ? (PREFIX.endsWith('/') ? PREFIX : PREFIX + '/') : '') + name.trim() + '/';
+        const keepFile = new File([''], '.keep');
+        const fd = new FormData();
+        fd.append('file', keepFile);
+        fetch(`/api/buckets/${encodeURIComponent(BUCKET)}/objects/upload` +
+              `?prefix=${encodeURIComponent(folderPrefix)}`,
+            {method: 'POST', body: fd})
+            .then(r => { if (r.ok) location.reload(); else r.text().then(t => showToast(t, 'danger')); })
+            .catch(e => showToast(e.message, 'danger'));
+    }
+
+    // ── Select all ───────────────────────────────────────────────────────
+    function toggleSelectAll(cb) {
+        document.querySelectorAll('.obj-check').forEach(c => c.checked = cb.checked);
+    }
+
+    // ── Upload modal ─────────────────────────────────────────────────────
+    function openUploadModal() {
+        resetUploadModal();
+        new bootstrap.Modal(document.getElementById('uploadModal')).show();
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,68 @@
+/* ─── Variables ──────────────────────────────────────────────────────────── */
+:root {
+    --brand: #2563eb;
+    --brand-light: #eff6ff;
+}
+
+/* ─── Body ───────────────────────────────────────────────────────────────── */
+body {
+    min-height: 100vh;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+/* ─── Navbar ─────────────────────────────────────────────────────────────── */
+.navbar {
+    background-color: var(--brand) !important;
+}
+
+/* ─── Bucket card ─────────────────────────────────────────────────────────── */
+.bucket-card {
+    transition: transform .15s, box-shadow .15s;
+    cursor: pointer;
+}
+.bucket-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 .5rem 1.5rem rgba(0,0,0,.12) !important;
+}
+.bucket-icon {
+    width: 52px;
+    height: 52px;
+    background: var(--brand-light);
+}
+
+/* ─── Table ──────────────────────────────────────────────────────────────── */
+.table > :not(caption) > * > * {
+    padding: .6rem .75rem;
+}
+
+/* ─── Drop zone ──────────────────────────────────────────────────────────── */
+.drop-zone {
+    border: 2px dashed #cbd5e1;
+    background: #f8fafc;
+    transition: background .15s, border-color .15s;
+    cursor: pointer;
+}
+.drop-zone.dragover {
+    background: var(--brand-light);
+    border-color: var(--brand);
+}
+
+/* ─── Upload file item ───────────────────────────────────────────────────── */
+.upload-item {
+    background: #f8fafc;
+    border-radius: .5rem;
+    padding: .6rem .75rem;
+    margin-bottom: .5rem;
+}
+.upload-item .progress {
+    height: 5px;
+    margin-top: .4rem;
+}
+
+/* ─── Breadcrumb ─────────────────────────────────────────────────────────── */
+.breadcrumb-item + .breadcrumb-item::before {
+    content: "›";
+}
+
+/* ─── Utility ────────────────────────────────────────────────────────────── */
+.border-dashed { border-style: dashed !important; }

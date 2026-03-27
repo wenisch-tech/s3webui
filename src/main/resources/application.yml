@@ -1,0 +1,26 @@
+spring:
+  application:
+    name: s3webui
+  servlet:
+    multipart:
+      max-file-size: 5GB
+      max-request-size: 5GB
+      file-size-threshold: 10MB
+
+server:
+  port: 8080
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: never
+
+s3:
+  access-key: ${S3_ACCESS_KEY:minioadmin}
+  secret-key: ${S3_SECRET_KEY:minioadmin}
+  endpoint-url: ${S3_ENDPOINT_URL:http://localhost:9000}
+  region: ${S3_REGION:us-east-1}

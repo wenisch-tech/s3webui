@@ -1,0 +1,151 @@
+package tech.wenisch.s3webui.controller;
+
+import tech.wenisch.s3webui.model.CompleteMultipartRequest;
+import tech.wenisch.s3webui.model.S3ObjectDto;
+import tech.wenisch.s3webui.service.S3Service;
+import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import software.amazon.awssdk.core.ResponseInputStream;
+import software.amazon.awssdk.services.s3.model.GetObjectResponse;
+
+import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.Map;
+
+@Slf4j
+@RestController
+@RequestMapping("/api")
+@RequiredArgsConstructor
+public class S3ApiController {
+
+    private final S3Service s3Service;
+
+    // ── Buckets ────────────────────────────────────────────────────────────
+
+    @PostMapping("/buckets")
+    public ResponseEntity<Void> createBucket(@RequestParam String name) {
+        s3Service.createBucket(name);
+        return ResponseEntity.ok().build();
+    }
+
+    @DeleteMapping("/buckets/{bucket}")
+    public ResponseEntity<Void> deleteBucket(@PathVariable String bucket) {
+        s3Service.deleteBucket(bucket);
+        return ResponseEntity.ok().build();
+    }
+
+    // ── Objects ────────────────────────────────────────────────────────────
+
+    @GetMapping("/buckets/{bucket}/objects")
+    public ResponseEntity<List<S3ObjectDto>> listObjects(
+            @PathVariable String bucket,
+            @RequestParam(required = false, defaultValue = "") String prefix) {
+        return ResponseEntity.ok(s3Service.listObjects(bucket, prefix));
+    }
+
+    @DeleteMapping("/buckets/{bucket}/objects")
+    public ResponseEntity<Void> deleteObject(
+            @PathVariable String bucket,
+            @RequestParam String key) {
+        s3Service.deleteObject(bucket, key);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/buckets/{bucket}/objects/rename")
+    public ResponseEntity<Void> renameObject(
+            @PathVariable String bucket,
+            @RequestParam String oldKey,
+            @RequestParam String newKey) {
+        s3Service.renameObject(bucket, oldKey, newKey);
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/buckets/{bucket}/objects/download")
+    public void downloadObject(
+            @PathVariable String bucket,
+            @RequestParam String key,
+            HttpServletResponse response) throws IOException {
+        String filename = key.contains("/") ? key.substring(key.lastIndexOf('/') + 1) : key;
+        response.setHeader(HttpHeaders.CONTENT_DISPOSITION,
+                "attachment; filename=\"" + URLEncoder.encode(filename, StandardCharsets.UTF_8) + "\"");
+        response.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
+
+        try (ResponseInputStream<GetObjectResponse> s3Stream = s3Service.getObject(bucket, key)) {
+            GetObjectResponse meta = s3Stream.response();
+            if (meta.contentLength() != null) {
+                response.setContentLengthLong(meta.contentLength());
+            }
+            s3Stream.transferTo(response.getOutputStream());
+        }
+    }
+
+    // ── Simple upload (for small files or fallback) ────────────────────────
+
+    @PostMapping("/buckets/{bucket}/objects/upload")
+    public ResponseEntity<Void> uploadObject(
+            @PathVariable String bucket,
+            @RequestParam String prefix,
+            @RequestParam("file") MultipartFile file) throws IOException {
+        String key = (prefix == null || prefix.isBlank())
+                ? file.getOriginalFilename()
+                : (prefix.endsWith("/") ? prefix : prefix + "/") + file.getOriginalFilename();
+        s3Service.putObject(bucket, key, file.getInputStream(),
+                file.getSize(), file.getContentType());
+        return ResponseEntity.ok().build();
+    }
+
+    // ── Multipart upload (client-side) ─────────────────────────────────────
+
+    @PostMapping("/buckets/{bucket}/multipart/initiate")
+    public ResponseEntity<Map<String, String>> initiateMultipart(
+            @PathVariable String bucket,
+            @RequestParam String key,
+            @RequestParam(defaultValue = "application/octet-stream") String contentType) {
+        String uploadId = s3Service.initiateMultipartUpload(bucket, key, contentType);
+        return ResponseEntity.ok(Map.of("uploadId", uploadId));
+    }
+
+    @GetMapping("/buckets/{bucket}/multipart/presign")
+    public ResponseEntity<Map<String, String>> presignPart(
+            @PathVariable String bucket,
+            @RequestParam String key,
+            @RequestParam String uploadId,
+            @RequestParam int partNumber) {
+        String url = s3Service.presignUploadPart(bucket, key, uploadId, partNumber);
+        return ResponseEntity.ok(Map.of("url", url));
+    }
+
+    @PostMapping("/buckets/{bucket}/multipart/complete")
+    public ResponseEntity<Void> completeMultipart(
+            @PathVariable String bucket,
+            @RequestParam String key,
+            @RequestBody CompleteMultipartRequest request) {
+        request.setKey(key);
+        s3Service.completeMultipartUpload(bucket, key, request.getUploadId(), request.getParts());
+        return ResponseEntity.ok().build();
+    }
+
+    @DeleteMapping("/buckets/{bucket}/multipart/abort")
+    public ResponseEntity<Void> abortMultipart(
+            @PathVariable String bucket,
+            @RequestParam String key,
+            @RequestParam String uploadId) {
+        s3Service.abortMultipartUpload(bucket, key, uploadId);
+        return ResponseEntity.ok().build();
+    }
+
+    // ── Stats ──────────────────────────────────────────────────────────────
+
+    @GetMapping("/buckets/{bucket}/stats")
+    public ResponseEntity<Map<String, String>> getBucketStats(@PathVariable String bucket) {
+        return ResponseEntity.ok(s3Service.getBucketStats(bucket));
+    }
+}

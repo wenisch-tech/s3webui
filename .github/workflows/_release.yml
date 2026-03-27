@@ -1,0 +1,172 @@
+name: Release
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        required: true
+        type: string
+      tag:
+        required: true
+        type: string
+      changelog:
+        required: true
+        type: string
+      image:
+        required: true
+        type: string
+      digest:
+        required: false
+        type: string
+        default: ''
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: read
+      id-token: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+
+      - name: Update CHANGELOG.md
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag="${{ inputs.tag }}"
+          image="${{ inputs.image }}:${{ inputs.version }}"
+          date="$(date -u +%Y-%m-%d)"
+          changelog="${{ inputs.changelog }}"
+
+          {
+            echo "## ${tag} - ${date}"
+            echo
+            echo "$changelog"
+            echo
+            echo "Docker image: ${image}"
+            echo
+          } > .release_entry.md
+
+          if [ -f CHANGELOG.md ]; then
+            {
+              head -n 1 CHANGELOG.md
+              echo
+              cat .release_entry.md
+              tail -n +2 CHANGELOG.md
+            } > CHANGELOG.new.md
+            mv CHANGELOG.new.md CHANGELOG.md
+          else
+            {
+              echo "# Changelog"
+              echo
+              cat .release_entry.md
+            } > CHANGELOG.md
+          fi
+
+      - name: Set Maven version
+        run: mvn -B versions:set -DnewVersion=${{ inputs.version }} -DgenerateBackupPoms=false
+
+      - name: Update Helm chart version
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="${{ inputs.version }}"
+          yq eval ".appVersion = \"$version\"" -i charts/s3webui/Chart.yaml
+          yq eval ".version = \"$version\"" -i charts/s3webui/Chart.yaml
+
+      - name: Generate Helm values schema
+        shell: bash
+        run: |
+          set -euo pipefail
+          helm plugin install https://github.com/karuppiah7890/helm-schema-gen.git --version 0.0.4
+          helm schema-gen charts/s3webui/values.yaml > charts/s3webui/values.schema.json
+
+      - name: Commit release files
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add pom.xml CHANGELOG.md charts/s3webui/Chart.yaml charts/s3webui/values.schema.json
+          git commit -m "chore(release): ${{ inputs.tag }} [skip ci]" || exit 0
+          git push
+
+      - name: Package Helm chart
+        run: helm package charts/s3webui/ --destination ./release
+
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@v3
+
+      - name: Sign Helm chart
+        shell: bash
+        run: |
+          set -euo pipefail
+          tgz=$(ls ./release/*.tgz | head -1)
+          cosign sign-blob --yes "$tgz" --bundle "${tgz}.cosign.bundle"
+
+      - name: Upload Helm chart artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: helm-chart
+          path: |
+            ./release/*.tgz
+            ./release/*.cosign.bundle
+
+      - name: Publish Helm chart to charts repository
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git clone https://$GH_TOKEN@github.com/JFWenisch/charts.git charts-repo
+          cp ./release/*.tgz charts-repo/s3webui/ 2>/dev/null || true
+          cp ./release/*.cosign.bundle charts-repo/s3webui/ 2>/dev/null || true
+          cd charts-repo
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git add .
+          git commit -m "Add s3webui helm chart in version ${{ inputs.version }}" || echo "No chart changes to commit"
+          git push https://$GH_TOKEN@github.com/JFWenisch/charts.git main
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.tag }}
+          name: ${{ inputs.tag }}
+          body: |
+            ${{ inputs.changelog }}
+
+            ## Docker image
+            ```
+            ${{ inputs.image }}:${{ inputs.version }}
+            ${{ inputs.image }}@${{ inputs.digest }}
+            ```
+
+            ## Signature & Attestation
+            This image was signed using [Sigstore Cosign](https://docs.sigstore.dev/cosign/overview/) with keyless signing via GitHub Actions OIDC.
+            A [SLSA provenance attestation](https://slsa.dev/provenance) is attached and visible under the package's **Attestations** tab.
+
+            **Verify image signature:**
+            ```bash
+            cosign verify ${{ inputs.image }}@${{ inputs.digest }} \
+              --certificate-identity-regexp="https://github.com/JFWenisch/s3webui" \
+              --certificate-oidc-issuer="https://token.actions.githubusercontent.com"
+            ```
+
+            **Verify Helm chart signature:**
+            ```bash
+            cosign verify-blob s3webui-${{ inputs.version }}.tgz \
+              --bundle s3webui-${{ inputs.version }}.tgz.cosign.bundle \
+              --certificate-identity-regexp="https://github.com/JFWenisch/s3webui" \
+              --certificate-oidc-issuer="https://token.actions.githubusercontent.com"
+            ```
