@@ -12,15 +12,9 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.S3Configuration;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 
-import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSession;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 import java.net.URI;
-import java.security.GeneralSecurityException;
-import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 
 @Slf4j
@@ -44,15 +38,17 @@ public class S3Config {
 
     @Bean
     public S3Client s3Client() {
+        var credentials = AwsBasicCredentials.create(accessKey, secretKey);
+        UrlConnectionHttpClient.Builder httpClientBuilder = UrlConnectionHttpClient.builder();
         if (s3InsecureSkipTlsVerify) {
-            enableInsecureTlsForS3();
+            httpClientBuilder.tlsTrustManagersProvider(this::insecureTrustManagers);
+            log.warn("S3_INSECURE_SKIP_TLS_VERIFY is enabled. TLS certificate verification is disabled for S3 HTTP client. Do not use this in production.");
         }
 
-        var credentials = AwsBasicCredentials.create(accessKey, secretKey);
         var builder = S3Client.builder()
                 .credentialsProvider(StaticCredentialsProvider.create(credentials))
                 .region(Region.of(region))
-                .httpClientBuilder(UrlConnectionHttpClient.builder())
+                .httpClientBuilder(httpClientBuilder)
                 .serviceConfiguration(S3Configuration.builder()
                         .checksumValidationEnabled(false)
                         .pathStyleAccessEnabled(true)
@@ -67,14 +63,16 @@ public class S3Config {
 
     @Bean
     public S3Presigner s3Presigner() {
+        var credentials = AwsBasicCredentials.create(accessKey, secretKey);
+        UrlConnectionHttpClient.Builder httpClientBuilder = UrlConnectionHttpClient.builder();
         if (s3InsecureSkipTlsVerify) {
-            enableInsecureTlsForS3();
+            httpClientBuilder.tlsTrustManagersProvider(this::insecureTrustManagers);
         }
 
-        var credentials = AwsBasicCredentials.create(accessKey, secretKey);
         var builder = S3Presigner.builder()
                 .credentialsProvider(StaticCredentialsProvider.create(credentials))
                 .region(Region.of(region))
+                .httpClientBuilder(httpClientBuilder)
                 .serviceConfiguration(S3Configuration.builder()
                         .pathStyleAccessEnabled(true)
                         .build());
@@ -86,40 +84,20 @@ public class S3Config {
         return builder.build();
     }
 
-    private void enableInsecureTlsForS3() {
-        try {
-            TrustManager[] trustAllCerts = new TrustManager[]{new X509TrustManager() {
-                @Override
-                public void checkClientTrusted(X509Certificate[] chain, String authType) {
-                }
+    private TrustManager[] insecureTrustManagers() {
+        return new TrustManager[]{new X509TrustManager() {
+            @Override
+            public void checkClientTrusted(X509Certificate[] chain, String authType) {
+            }
 
-                @Override
-                public void checkServerTrusted(X509Certificate[] chain, String authType) {
-                }
+            @Override
+            public void checkServerTrusted(X509Certificate[] chain, String authType) {
+            }
 
-                @Override
-                public X509Certificate[] getAcceptedIssuers() {
-                    return new X509Certificate[0];
-                }
-            }};
-
-            SSLContext sslContext = SSLContext.getInstance("TLS");
-            sslContext.init(null, trustAllCerts, new SecureRandom());
-            // AWS SDK URLConnection client may use the JVM default SSLContext directly.
-            SSLContext.setDefault(sslContext);
-            HttpsURLConnection.setDefaultSSLSocketFactory(sslContext.getSocketFactory());
-
-            HostnameVerifier insecureHostnameVerifier = new HostnameVerifier() {
-                @Override
-                public boolean verify(String hostname, SSLSession session) {
-                    return true;
-                }
-            };
-            HttpsURLConnection.setDefaultHostnameVerifier(insecureHostnameVerifier);
-
-            log.warn("S3_INSECURE_SKIP_TLS_VERIFY is enabled. TLS certificate and hostname verification are disabled for HTTPS connections. Do not use this in production.");
-        } catch (GeneralSecurityException e) {
-            throw new IllegalStateException("Failed to enable insecure S3 TLS mode", e);
-        }
+            @Override
+            public X509Certificate[] getAcceptedIssuers() {
+                return new X509Certificate[0];
+            }
+        }};
     }
 }
