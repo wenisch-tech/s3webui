@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.2.4 - 2026-03-27
+
+### [0.2.4](https://github.com/wenisch-tech/s3webui/compare/v0.2.3...v0.2.4) (2026-03-27)
+
+
+### Bug Fixes
+
+* use default driver for building docker ([06ff065](https://github.com/wenisch-tech/s3webui/commit/06ff0652703f05a4cf0b23367e5efc857ac49e8d))
+
+
+
+Docker image: ghcr.io/wenisch-tech/s3webui:0.2.4
+
+
 ## v0.1.2 - 2026-03-27
 
 ### [0.1.2](https://github.com/wenisch-tech/s3webui/compare/v0.1.1...v0.1.2) (2026-03-27)
