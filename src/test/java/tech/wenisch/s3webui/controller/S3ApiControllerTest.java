@@ -3,12 +3,12 @@ package tech.wenisch.s3webui.controller;
 import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
+import tech.wenisch.s3webui.service.AuditHistoryService;
 import tech.wenisch.s3webui.service.S3Service;
 
 import java.nio.charset.StandardCharsets;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -20,10 +20,11 @@ class S3ApiControllerTest {
     @Test
     void uploadMultipartPartReadsBodyWithoutContentLength() throws Exception {
         S3Service s3Service = mock(S3Service.class);
+        AuditHistoryService auditHistoryService = mock(AuditHistoryService.class);
         when(s3Service.uploadPart(any(), any(), any(), any(Integer.class), any(byte[].class)))
                 .thenReturn("\"etag-123\"");
 
-        S3ApiController controller = new S3ApiController(s3Service);
+        S3ApiController controller = new S3ApiController(s3Service, auditHistoryService);
 
         byte[] requestBody = "part-body".getBytes(StandardCharsets.UTF_8);
         MockHttpServletRequest request = new MockHttpServletRequest();
