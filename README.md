@@ -3,7 +3,24 @@
 A modern, clean graphical web interface for S3-compatible object storage, built with Spring Boot and Bootstrap 5.  
 Dark theme by default — switch to light with the toggle in the top-right corner.
 
-![CI](https://github.com/wenisch-tech/s3webui/actions/workflows/ci.yml/badge.svg)
+> **Security:** CVE scanning via [Trivy](https://github.com/aquasecurity/trivy) is an essential part of the development process and runs automatically on every pull request. Fixing identified vulnerabilities is a mandatory step before merging.
+
+[![CI](https://github.com/wenisch-tech/s3webui/actions/workflows/ci.yml/badge.svg)](https://github.com/wenisch-tech/s3webui/actions/workflows/ci.yml)
+[![Docker Image](https://ghcr-badge.egpl.dev/wenisch-tech/s3webui/latest_tag?trim=major&label=docker)](https://ghcr.io/wenisch-tech/s3webui)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![Helm Chart](https://img.shields.io/badge/Helm-jfwendisch%2Fs3webui-0f1689?logo=helm)](https://jfwendisch.github.io/charts)
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.x-6DB33F?logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)
+[![Bootstrap](https://img.shields.io/badge/Bootstrap-5-7952B3?logo=bootstrap&logoColor=white)](https://getbootstrap.com)
+
+## Screenshots
+
+| Dark theme — Buckets | Dark theme — Bucket browser |
+|---|---|
+| ![Buckets dark](docs/img/buckets-dark.png) | ![Bucket browser dark](docs/img/bucket-browser-dark.png) |
+
+| Upload modal with progress | Light theme |
+|---|---|
+| ![Upload modal](docs/img/upload-modal-dark.png) | ![Buckets light](docs/img/buckets-light.png) |
 
 ## Features
 
@@ -15,6 +32,7 @@ Dark theme by default — switch to light with the toggle in the top-right corne
 - ✏️ **Rename objects** — rename files without re-uploading
 - 🗑 **Delete** — delete individual objects or entire buckets
 - 📦 **Folder support** — create virtual folders (prefix-based)
+- 📋 **Audit history** — per-session activity log (uploads, downloads, deletes, renames) with user and action filters
 - 🌗 **Dark / Light theme** — toggle stored in `localStorage`, dark is the default
 - 🔒 **OIDC / Keycloak** — optional single-sign-on with role-based access control
 
@@ -30,6 +48,7 @@ All settings are provided via environment variables:
 | `S3_SECRET_KEY` | S3 secret key / password | `minioadmin` |
 | `S3_ENDPOINT_URL` | S3-compatible endpoint URL | `http://localhost:9000` |
 | `S3_REGION` | AWS region (optional) | `us-east-1` |
+| `S3_INSECURE_SKIP_TLS_VERIFY` | Skip TLS certificate verification for S3 endpoint | `false` |
 
 ### OIDC / Keycloak (optional)
 
@@ -40,6 +59,7 @@ All settings are provided via environment variables:
 | `OIDC_CLIENT_SECRET` | OAuth2 client secret | — |
 | `OIDC_ISSUER_URI` | Keycloak realm issuer URI (e.g. `http://keycloak:8080/realms/myrealm`) | — |
 | `OIDC_REQUIRED_ROLE` | Keycloak realm role required to access the app (optional) | — |
+| `OIDC_INSECURE_SKIP_TLS_VERIFY` | Skip TLS certificate verification for the OIDC issuer | `false` |
 
 When `OIDC_ENABLED=true`, unauthenticated users are redirected to the login page where they can sign in via Keycloak.  
 If `OIDC_REQUIRED_ROLE` is set, users without that realm role receive an **Access Denied** page.
@@ -184,13 +204,16 @@ src/main/java/tech/wenisch/s3webui/
 │   ├── FileIconHelper.java          # Maps file extension → Bootstrap icon
 │   └── FileSizeFormatter.java       # Formats byte counts for display
 ├── controller/
-│   ├── UiController.java            # Thymeleaf MVC (buckets, bucket, login, access-denied)
-│   └── S3ApiController.java         # REST API (CRUD + multipart upload)
+│   ├── UiController.java            # Thymeleaf MVC (buckets, bucket, history, login, access-denied)
+│   ├── S3ApiController.java         # REST API (CRUD + multipart upload)
+│   └── AuditController.java         # REST API for the in-memory audit history
 ├── service/
-│   └── S3Service.java               # All S3 SDK interactions
+│   ├── S3Service.java               # All S3 SDK interactions
+│   └── AuditHistoryService.java     # In-memory session-scoped audit event store
 └── model/
     ├── BucketDto.java
     ├── S3ObjectDto.java
+    ├── AuditEvent.java
     └── CompleteMultipartRequest.java
 ```
 
