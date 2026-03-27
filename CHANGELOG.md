@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.2.9 - 2026-03-27
+
+### [0.2.9](https://github.com/wenisch-tech/s3webui/compare/v0.2.8...v0.2.9) (2026-03-27)
+
+
+### Documentation
+
+* update README with screenshots, badges, and CVE scanning note ([f334143](https://github.com/wenisch-tech/s3webui/commit/f334143f954643d2fee8edc3cf6974d7472160fb))
+
+
+
+Docker image: ghcr.io/wenisch-tech/s3webui:0.2.9
+
+
 ## v0.2.8 - 2026-03-27
 
 ### [0.2.8](https://github.com/wenisch-tech/s3webui/compare/v0.2.7...v0.2.8) (2026-03-27)
