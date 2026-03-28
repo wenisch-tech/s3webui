@@ -6,7 +6,8 @@
     <meta charset="UTF-8"/>
     <script>(function(){var t=localStorage.getItem('s3webui-theme')||'dark';document.documentElement.setAttribute('data-bs-theme',t);})();</script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Sign In — S3 Web UI</title>
+    <title>S3WEBUI</title>
+    <link rel="icon" type="image/png" th:href="@{/img/logo.png}" href="/img/logo.png"/>
     <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}"/>
     <link rel="stylesheet" th:href="@{/webjars/bootstrap-icons/font/bootstrap-icons.css}"/>
     <link rel="stylesheet" th:href="@{/css/app.css}"/>
@@ -17,8 +18,8 @@
 
     <!-- Logo / brand -->
     <div class="text-center mb-4">
-        <i class="bi bi-cloud-fill text-cyan display-4"></i>
-        <h1 class="h4 fw-bold mt-2">S3 Web UI</h1>
+        <img th:src="@{/img/logo.png}" src="/img/logo.png" alt="S3WEBUI logo" class="brand-logo-lg"/>
+        <h1 class="h4 fw-bold mt-2">S3WEBUI</h1>
         <p class="s3-kicker">Object Storage Interface</p>
     </div>
 
@@ -54,13 +55,16 @@
 
     <!-- Theme toggle + footer -->
     <div class="d-flex justify-content-between align-items-center mt-3 px-1">
-        <small class="text-muted">S3 Web UI</small>
+        <small class="text-muted">S3WEBUI</small>
         <button class="btn btn-sm btn-outline-secondary" onclick="toggleTheme()" title="Toggle theme">
             <i class="bi bi-sun-fill" id="themeIcon"></i>
         </button>
     </div>
 
 </div>
+
+<div th:replace="~{fragments/app-meta :: appMeta}"></div>
+<div th:replace="~{fragments/app-meta :: appAttribution}"></div>
 
 <script th:src="@{/webjars/bootstrap/js/bootstrap.bundle.min.js}"></script>
 <script th:src="@{/js/app.js}"></script>

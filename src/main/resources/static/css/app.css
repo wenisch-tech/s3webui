@@ -11,6 +11,7 @@
     --s3-border:       rgba(255, 255, 255, 0.1);
     --s3-border-soft:  rgba(255, 255, 255, 0.07);
     --s3-muted:        rgba(255, 255, 255, 0.68);
+    --s3-muted-subtle: rgba(255, 255, 255, 0.5);
     /* Override Bootstrap primary to cyan */
     --bs-primary:      #0dcaf0;
     --bs-primary-rgb:  13, 202, 240;
@@ -24,6 +25,7 @@
     --s3-border:       rgba(27, 43, 59, 0.16);
     --s3-border-soft:  rgba(27, 43, 59, 0.12);
     --s3-muted:        rgba(27, 43, 59, 0.72);
+    --s3-muted-subtle: rgba(27, 43, 59, 0.48);
     --bs-primary:      #0a9fbd;
     --bs-primary-rgb:  10, 159, 189;
     --bs-link-color:   #0a9fbd;
@@ -77,6 +79,18 @@ body {
     letter-spacing: -0.01em;
 }
 .s3-navbar .navbar-brand:hover { color: #31d2f3; }
+
+.brand-logo {
+    height: 1.25rem;
+    width: auto;
+    display: block;
+}
+
+.brand-logo-lg {
+    height: 3rem;
+    width: auto;
+    display: inline-block;
+}
 
 /* ─── Page hero kicker (cyan label like Kairos) ──────────────────────────── */
 .s3-kicker {
@@ -176,3 +190,75 @@ body {
 /* ─── Utility ────────────────────────────────────────────────────────────── */
 .border-dashed { border-style: dashed !important; }
 .text-cyan { color: #0dcaf0 !important; }
+
+/* ─── Fixed app metadata badge (version + license) ─────────────────────── */
+.app-meta {
+    position: fixed;
+    right: 0.9rem;
+    bottom: 0.75rem;
+    z-index: 1080;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.3rem 0.6rem;
+    border-radius: 999px;
+    border: 1px solid var(--s3-border-soft);
+    background: color-mix(in srgb, var(--s3-surface-soft) 92%, transparent);
+    backdrop-filter: blur(8px);
+    font-size: 0.76rem;
+    line-height: 1;
+}
+
+.app-meta-link {
+    color: var(--s3-muted);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.app-meta-link:hover {
+    color: var(--bs-link-color);
+}
+
+.app-attribution {
+    position: fixed;
+    left: 50%;
+    bottom: 0.75rem;
+    transform: translateX(-50%);
+    z-index: 1075;
+    max-width: min(92vw, 920px);
+    text-align: center;
+    font-size: 0.5rem;
+    color: var(--s3-muted-subtle);
+    padding: 0.1rem 0.25rem;
+    line-height: 1.25;
+}
+
+.app-attribution-link {
+    color: var(--s3-muted-subtle);
+    text-underline-offset: 2px;
+}
+
+.app-attribution-link:hover {
+    color: var(--s3-muted);
+}
+
+.app-attribution-heart {
+    color: var(--s3-muted-subtle);
+    vertical-align: -0.05em;
+}
+
+@media (max-width: 576px) {
+    .app-meta {
+        right: 0.6rem;
+        bottom: 2.55rem;
+        font-size: 0.72rem;
+        padding: 0.28rem 0.52rem;
+    }
+
+    .app-attribution {
+        bottom: 0.55rem;
+        max-width: 95vw;
+        font-size: 0.5rem;
+        padding: 0.26rem 0.45rem;
+    }
+}

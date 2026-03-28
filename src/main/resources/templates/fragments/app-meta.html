@@ -1,0 +1,27 @@
+<div th:fragment="appMeta" class="app-meta">
+    <a class="app-meta-link"
+       th:href="${releasePageUrl}"
+       target="_blank"
+       rel="noopener noreferrer"
+       title="Open releases page">
+        <i class="bi bi-tag me-1"></i>
+        <span>v</span><span th:text="${appVersion}">0.0.0</span>
+    </a>
+</div>
+
+<div class="app-attribution" th:fragment="appAttribution">
+    <a class="app-attribution-link"
+       href="https://github.com/wenisch-tech/s3webui"
+       target="_blank"
+       rel="noopener noreferrer"
+    title="Open S3WEBUI on GitHub">S3WEBUI</a>
+    <span> is released under the </span>
+    <a class="app-attribution-link"
+       th:href="${licensePageUrl}"
+       target="_blank"
+       rel="noopener noreferrer"
+       title="Open GNU AGPL license">GNU AGPL license</a>
+    <span> &middot; Built with </span>
+    <i class="bi bi-heart-fill app-attribution-heart" aria-hidden="true"></i>
+    <span> in Germany by Jean-Fabian Wenisch</span>
+</div>
