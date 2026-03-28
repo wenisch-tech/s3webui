@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.2.11 - 2026-03-28
+
+### [0.2.11](https://github.com/wenisch-tech/s3webui/compare/v0.2.10...v0.2.11) (2026-03-28)
+
+
+### Documentation
+
+* updated licensing information and added logo ([0cdd902](https://github.com/wenisch-tech/s3webui/commit/0cdd90286a8e447617111b7cd302111f3b400e3e))
+
+
+
+Docker image: ghcr.io/wenisch-tech/s3webui:0.2.11
+
+
 ## v0.2.10 - 2026-03-27
 
 ### [0.2.10](https://github.com/wenisch-tech/s3webui/compare/v0.2.9...v0.2.10) (2026-03-27)
