@@ -2,7 +2,7 @@ replicaCount: 1
 
 image:
   registry: ghcr.io
-  repository: jfwendisch/s3webui
+  repository: wenisch-tech/s3webui
   tag: latest
   pullPolicy: IfNotPresent
 
