@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.2.12 - 2026-03-29
+
+### [0.2.12](https://github.com/wenisch-tech/s3webui/compare/v0.2.11...v0.2.12) (2026-03-29)
+
+
+### Bug Fixes
+
+* updated default repository used in chart ([2f423c0](https://github.com/wenisch-tech/s3webui/commit/2f423c0362dc0fd01722f7961eb7fb39c6e11052))
+
+
+
+Docker image: ghcr.io/wenisch-tech/s3webui:0.2.12
+
+
 ## v0.2.11 - 2026-03-28
 
 ### [0.2.11](https://github.com/wenisch-tech/s3webui/compare/v0.2.10...v0.2.11) (2026-03-28)
