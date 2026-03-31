@@ -7,7 +7,8 @@
     <meta charset="UTF-8"/>
     <script>(function(){var t=localStorage.getItem('s3webui-theme')||'dark';document.documentElement.setAttribute('data-bs-theme',t);})();</script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>History - S3 Web UI</title>
+    <title>S3WEBUI</title>
+    <link rel="icon" type="image/png" th:href="@{/img/logo.png}" href="/img/logo.png"/>
     <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}"/>
     <link rel="stylesheet" th:href="@{/webjars/bootstrap-icons/font/bootstrap-icons.css}"/>
     <link rel="stylesheet" th:href="@{/css/app.css}"/>
@@ -17,8 +18,8 @@
 <nav class="navbar navbar-expand-lg s3-navbar">
     <div class="container-fluid px-4">
         <a class="navbar-brand d-flex align-items-center gap-2 fw-bold" th:href="@{/}">
-            <i class="bi bi-cloud-fill fs-4"></i>
-            S3 Web UI
+            <img th:src="@{/img/logo.png}" src="/img/logo.png" alt="S3WEBUI logo" class="brand-logo"/>
+            S3WEBUI
         </a>
         <div class="d-flex align-items-center gap-2 ms-3 me-auto">
             <a class="btn btn-sm btn-outline-secondary" th:href="@{/}">
@@ -104,6 +105,7 @@
     </div>
 </div>
 
+<<<<<<< HEAD
 <!-- S3 runtime configuration modal -->
 <div class="modal fade" id="s3ConfigModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
     <div class="modal-dialog">
@@ -139,6 +141,10 @@
         </div>
     </div>
 </div>
+=======
+<div th:replace="~{fragments/app-meta :: appMeta}"></div>
+<div th:replace="~{fragments/app-meta :: appAttribution}"></div>
+>>>>>>> 3867e98543f04aed5af807e70d5aa76e7d35a09d
 
 <script th:src="@{/webjars/bootstrap/js/bootstrap.bundle.min.js}"></script>
 <script th:src="@{/js/app.js}"></script>
