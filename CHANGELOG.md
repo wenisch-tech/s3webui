@@ -1,5 +1,24 @@
 # Changelog
 
+## v0.3.0 - 2026-03-31
+
+## [0.3.0](https://github.com/wenisch-tech/s3webui/compare/v0.2.12...v0.3.0) (2026-03-31)
+
+
+### Features
+
+* added additional dialog that is shown when no s3 env variables have been set ([c8a23fb](https://github.com/wenisch-tech/s3webui/commit/c8a23fb8e733e0af290dec9c14d80fb522095563))
+
+
+### Bug Fixes
+
+* rebased ui changes ([edf179d](https://github.com/wenisch-tech/s3webui/commit/edf179dfcde20d508b9588fe602b1c40adf13120))
+
+
+
+Docker image: ghcr.io/wenisch-tech/s3webui:0.3.0
+
+
 ## v0.2.12 - 2026-03-29
 
 ### [0.2.12](https://github.com/wenisch-tech/s3webui/compare/v0.2.11...v0.2.12) (2026-03-29)
