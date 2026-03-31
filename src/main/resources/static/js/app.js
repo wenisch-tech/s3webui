@@ -31,6 +31,111 @@ document.addEventListener('DOMContentLoaded', () => {
     updateThemeIcon(current);
 });
 
+// ── Runtime S3 configuration dialog ─────────────────────────────────────────
+
+let _s3ConfigModal;
+
+async function ensureS3ConfigDialog() {
+    const modalEl = document.getElementById('s3ConfigModal');
+    if (!modalEl) return;
+
+    try {
+        const response = await fetch('/api/s3/config/status', {headers: {'Accept': 'application/json'}});
+        if (!response.ok) return;
+
+        const status = await response.json();
+        if (!status.required) return;
+
+        setS3FieldValueAndLock('s3AccessKey', status.accessKey || '', !!status.accessKeyLocked);
+        setS3FieldValueAndLock('s3SecretKey', status.secretKey || '', !!status.secretKeyLocked);
+        setS3FieldValueAndLock('s3EndpointUrl', status.endpointUrl || '', !!status.endpointUrlLocked);
+        setS3FieldValueAndLock('s3Region', status.region || 'us-east-1', !!status.regionLocked);
+        protectSecretField();
+
+        const regionInput = document.getElementById('s3Region');
+        if (regionInput && !regionInput.value) {
+            regionInput.value = status.region || 'us-east-1';
+        }
+
+        if (!_s3ConfigModal) {
+            _s3ConfigModal = new bootstrap.Modal(modalEl, {backdrop: 'static', keyboard: false});
+        }
+        _s3ConfigModal.show();
+    } catch (error) {
+        showToast(error.message || 'Failed to read S3 configuration status', 'danger');
+    }
+}
+
+function setS3FieldValueAndLock(inputId, value, locked) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+
+    input.value = value;
+    input.readOnly = locked;
+    input.disabled = locked;
+}
+
+async function saveS3Config() {
+    const accessKey = (document.getElementById('s3AccessKey')?.value || '').trim();
+    const secretKey = (document.getElementById('s3SecretKey')?.value || '').trim();
+    const endpointUrl = (document.getElementById('s3EndpointUrl')?.value || '').trim();
+    const region = (document.getElementById('s3Region')?.value || '').trim();
+
+    const errorEl = document.getElementById('s3ConfigError');
+    if (errorEl) {
+        errorEl.classList.add('d-none');
+        errorEl.textContent = '';
+    }
+
+    try {
+        const response = await fetch('/api/s3/config', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({accessKey, secretKey, endpointUrl, region})
+        });
+
+        if (!response.ok) {
+            const payload = await response.json().catch(() => ({}));
+            const message = payload.message || 'Unable to save S3 configuration';
+            showS3ConfigError(message);
+            return;
+        }
+
+        location.reload();
+    } catch (error) {
+        showS3ConfigError(error.message || 'Unable to save S3 configuration');
+    }
+}
+
+function showS3ConfigError(message) {
+    const errorEl = document.getElementById('s3ConfigError');
+    if (!errorEl) {
+        showToast(message, 'danger');
+        return;
+    }
+    errorEl.textContent = message;
+    errorEl.classList.remove('d-none');
+}
+
+function protectSecretField() {
+    const secretInput = document.getElementById('s3SecretKey');
+    if (!secretInput || secretInput.dataset.copyProtected === 'true') {
+        return;
+    }
+
+    const block = (event) => {
+        event.preventDefault();
+    };
+
+    secretInput.addEventListener('copy', block);
+    secretInput.addEventListener('cut', block);
+    secretInput.addEventListener('contextmenu', block);
+    secretInput.dataset.copyProtected = 'true';
+}
+
 // ── Toast notifications ───────────────────────────────────────────────────────
 
 /** Show a Bootstrap toast notification */

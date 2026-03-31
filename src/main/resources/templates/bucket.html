@@ -181,6 +181,42 @@
 
 </div>
 
+<!-- S3 runtime configuration modal -->
+<div class="modal fade" id="s3ConfigModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-gear me-2"></i>S3 Connection Required</h5>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted small mb-3">
+                    Configure S3 access for this session. Access key, secret key, and endpoint URL are required.
+                </p>
+                <div id="s3ConfigError" class="alert alert-danger d-none" role="alert"></div>
+                <div class="mb-3" data-s3-field="accessKey">
+                    <label for="s3AccessKey" class="form-label">Access key</label>
+                    <input type="text" class="form-control" id="s3AccessKey" autocomplete="off"/>
+                </div>
+                <div class="mb-3" data-s3-field="secretKey">
+                    <label for="s3SecretKey" class="form-label">Secret key</label>
+                    <input type="password" class="form-control" id="s3SecretKey" autocomplete="off"/>
+                </div>
+                <div class="mb-3" data-s3-field="endpointUrl">
+                    <label for="s3EndpointUrl" class="form-label">Endpoint URL</label>
+                    <input type="url" class="form-control" id="s3EndpointUrl" placeholder="https://s3.example.com" autocomplete="off"/>
+                </div>
+                <div class="mb-0" data-s3-field="region">
+                    <label for="s3Region" class="form-label">Region (optional)</label>
+                    <input type="text" class="form-control" id="s3Region" placeholder="us-east-1" autocomplete="off"/>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" onclick="saveS3Config()">Save configuration</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- ══ Upload Modal ══════════════════════════════════════════════════════ -->
 <div class="modal fade" id="uploadModal" tabindex="-1" data-bs-backdrop="static">
     <div class="modal-dialog modal-lg">
@@ -288,6 +324,10 @@
     const PREFIX = /*[[${prefix}]]*/ '';
 </script>
 <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        ensureS3ConfigDialog();
+    });
+
     // ── Delete object ────────────────────────────────────────────────────
     let _deleteKey = null;
 

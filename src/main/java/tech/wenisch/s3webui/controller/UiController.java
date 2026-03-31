@@ -1,6 +1,7 @@
 package tech.wenisch.s3webui.controller;
 
 import tech.wenisch.s3webui.service.S3Service;
+import tech.wenisch.s3webui.service.S3ConnectionSettingsService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -16,12 +17,19 @@ import org.springframework.web.bind.annotation.RequestParam;
 public class UiController {
 
     private final S3Service s3Service;
+    private final S3ConnectionSettingsService s3ConnectionSettingsService;
 
     @Value("${oidc.enabled:false}")
     private boolean oidcEnabled;
 
     @GetMapping("/")
     public String buckets(Model model) {
+        if (s3ConnectionSettingsService.getStatus().required()) {
+            model.addAttribute("buckets", java.util.List.of());
+            model.addAttribute("error", null);
+            return "buckets";
+        }
+
         try {
             model.addAttribute("buckets", s3Service.listBuckets());
             model.addAttribute("error", null);
@@ -37,6 +45,15 @@ public class UiController {
     public String bucket(@PathVariable String bucket,
                          @RequestParam(required = false, defaultValue = "") String prefix,
                          Model model) {
+        if (s3ConnectionSettingsService.getStatus().required()) {
+            model.addAttribute("bucket", bucket);
+            model.addAttribute("prefix", prefix);
+            model.addAttribute("objects", java.util.List.of());
+            model.addAttribute("breadcrumbs", buildBreadcrumbs(prefix));
+            model.addAttribute("error", null);
+            return "bucket";
+        }
+
         try {
             model.addAttribute("bucket", bucket);
             model.addAttribute("prefix", prefix);

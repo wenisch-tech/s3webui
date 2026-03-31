@@ -4,6 +4,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.web.context.annotation.RequestScope;
+import tech.wenisch.s3webui.service.S3ConnectionSettingsService;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
@@ -21,24 +23,14 @@ import java.security.cert.X509Certificate;
 @Configuration
 public class S3Config {
 
-    @Value("${s3.access-key}")
-    private String accessKey;
-
-    @Value("${s3.secret-key}")
-    private String secretKey;
-
-    @Value("${s3.endpoint-url}")
-    private String endpointUrl;
-
-    @Value("${s3.region:us-east-1}")
-    private String region;
-
     @Value("${s3.insecure-skip-tls-verify:false}")
     private boolean s3InsecureSkipTlsVerify;
 
     @Bean
-    public S3Client s3Client() {
-        var credentials = AwsBasicCredentials.create(accessKey, secretKey);
+    @RequestScope
+    public S3Client s3Client(S3ConnectionSettingsService settingsService) {
+        var settings = settingsService.getEffectiveSettingsOrThrow();
+        var credentials = AwsBasicCredentials.create(settings.accessKey(), settings.secretKey());
         UrlConnectionHttpClient.Builder httpClientBuilder = UrlConnectionHttpClient.builder();
         if (s3InsecureSkipTlsVerify) {
             httpClientBuilder.tlsTrustManagersProvider(this::insecureTrustManagers);
@@ -47,32 +39,34 @@ public class S3Config {
 
         var builder = S3Client.builder()
                 .credentialsProvider(StaticCredentialsProvider.create(credentials))
-                .region(Region.of(region))
+                .region(Region.of(settings.region()))
                 .httpClientBuilder(httpClientBuilder)
                 .serviceConfiguration(S3Configuration.builder()
                         .checksumValidationEnabled(false)
                         .pathStyleAccessEnabled(true)
                         .build());
 
-        if (endpointUrl != null && !endpointUrl.isBlank()) {
-            builder.endpointOverride(URI.create(endpointUrl));
+        if (settings.endpointUrl() != null && !settings.endpointUrl().isBlank()) {
+            builder.endpointOverride(URI.create(settings.endpointUrl()));
         }
 
         return builder.build();
     }
 
     @Bean
-    public S3Presigner s3Presigner() {
-        var credentials = AwsBasicCredentials.create(accessKey, secretKey);
+    @RequestScope
+    public S3Presigner s3Presigner(S3ConnectionSettingsService settingsService) {
+        var settings = settingsService.getEffectiveSettingsOrThrow();
+        var credentials = AwsBasicCredentials.create(settings.accessKey(), settings.secretKey());
         var builder = S3Presigner.builder()
                 .credentialsProvider(StaticCredentialsProvider.create(credentials))
-                .region(Region.of(region))
+                .region(Region.of(settings.region()))
                 .serviceConfiguration(S3Configuration.builder()
                         .pathStyleAccessEnabled(true)
                         .build());
 
-        if (endpointUrl != null && !endpointUrl.isBlank()) {
-            builder.endpointOverride(URI.create(endpointUrl));
+        if (settings.endpointUrl() != null && !settings.endpointUrl().isBlank()) {
+            builder.endpointOverride(URI.create(settings.endpointUrl()));
         }
 
         return builder.build();
