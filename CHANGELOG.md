@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.3.1 - 2026-04-11
+
+### [0.3.1](https://github.com/wenisch-tech/s3webui/compare/v0.3.0...v0.3.1) (2026-04-11)
+
+
+### Bug Fixes
+
+* update image references in chart ([812939b](https://github.com/wenisch-tech/s3webui/commit/812939b207f0f83116c08ddac8de3bcec0d4b2b4))
+
+
+
+Docker image: ghcr.io/wenisch-tech/s3webui:0.3.1
+
+
 ## v0.3.0 - 2026-03-31
 
 ## [0.3.0](https://github.com/wenisch-tech/s3webui/compare/v0.2.12...v0.3.0) (2026-03-31)
