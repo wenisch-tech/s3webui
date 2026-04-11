@@ -9,11 +9,11 @@ keywords:
   - object-storage
   - minio
   - webui
-home: https://github.com/JFWenisch/s3webui
+home: https://github.com/wenisch-tech/s3webui
 sources:
-  - https://github.com/JFWenisch/s3webui
+  - https://github.com/wenisch-tech/s3webui
 maintainers:
-  - name: JFWenisch
+  - name: Jean-Fabian Wenisch
     url: https://github.com/JFWenisch
 annotations:
   artifacthub.io/category: storage
@@ -21,9 +21,9 @@ annotations:
   artifacthub.io/prerelease: "false"
   artifacthub.io/images: |
     - name: s3webui
-      image: ghcr.io/jfwendisch/s3webui:latest
+      image: ghcr.io/wenisch-tech/s3webui:latest
   artifacthub.io/links: |
     - name: GitHub Repository
-      url: https://github.com/JFWenisch/s3webui
+      url: https://github.com/wenisch-tech/s3webui
     - name: Container Registry
-      url: https://github.com/JFWenisch/s3webui/pkgs/container/s3webui
+      url: https://github.com/wenisch-tech/s3webui/pkgs/container/s3webui

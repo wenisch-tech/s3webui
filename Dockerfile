@@ -9,11 +9,11 @@ ARG BUILD_REVISION
 
 LABEL org.opencontainers.image.title="S3 Web UI" \
       org.opencontainers.image.description="Graphical web interface for S3 object storage" \
-      org.opencontainers.image.url="https://github.com/JFWenisch/s3webui" \
-      org.opencontainers.image.source="https://github.com/JFWenisch/s3webui" \
-      org.opencontainers.image.authors="JFWenisch" \
+      org.opencontainers.image.url="https://github.com/wenisch-tech/s3webui" \
+      org.opencontainers.image.source="https://github.com/wenisch-tech/s3webui" \
+      org.opencontainers.image.authors="Jean-Fabian Wenisch" \
       org.opencontainers.image.licenses="GPL-3.0" \
-      org.opencontainers.image.vendor="JFWenisch" \
+      org.opencontainers.image.vendor="wenisch.tech" \
       org.opencontainers.image.version="${BUILD_VERSION}" \
       org.opencontainers.image.revision="${BUILD_REVISION}" \
       org.opencontainers.image.created="${BUILD_DATE}"

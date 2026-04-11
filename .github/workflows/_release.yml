@@ -159,7 +159,7 @@ jobs:
             **Verify image signature:**
             ```bash
             cosign verify ${{ inputs.image }}@${{ inputs.digest }} \
-              --certificate-identity-regexp="https://github.com/JFWenisch/s3webui" \
+              --certificate-identity-regexp="https://github.com/wenisch-tech/s3webui" \
               --certificate-oidc-issuer="https://token.actions.githubusercontent.com"
             ```
 
@@ -167,6 +167,6 @@ jobs:
             ```bash
             cosign verify-blob s3webui-${{ inputs.version }}.tgz \
               --bundle s3webui-${{ inputs.version }}.tgz.cosign.bundle \
-              --certificate-identity-regexp="https://github.com/JFWenisch/s3webui" \
+              --certificate-identity-regexp="https://github.com/wenisch-tech/s3webui" \
               --certificate-oidc-issuer="https://token.actions.githubusercontent.com"
             ```
