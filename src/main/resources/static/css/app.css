@@ -207,6 +207,15 @@ body {
     font-weight: 600;
 }
 
+.bucket-pie-legend-panel {
+    border: 1px solid var(--s3-border-soft);
+    background: #ffffff;
+}
+
+[data-bs-theme="dark"] .bucket-pie-legend-panel {
+    background: color-mix(in srgb, var(--s3-surface-soft) 92%, transparent);
+}
+
 /* ─── Objects table card ─────────────────────────────────────────────────── */
 .s3-table-card {
     border: 1px solid var(--s3-border);

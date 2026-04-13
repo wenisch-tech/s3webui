@@ -79,6 +79,10 @@
                         onclick="switchBucketView('cards')">
                     <i class="bi bi-grid-3x3-gap me-1"></i>Cards
                 </button>
+                <button id="viewPieBtn" type="button" class="btn btn-outline-secondary btn-sm"
+                        onclick="switchBucketView('pie')">
+                    <i class="bi bi-pie-chart me-1"></i>Pie
+                </button>
                 <button id="viewTableBtn" type="button" class="btn btn-outline-secondary btn-sm"
                         onclick="switchBucketView('table')">
                     <i class="bi bi-table me-1"></i>Table
@@ -87,6 +91,26 @@
             <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createBucketModal">
                 <i class="bi bi-plus-lg me-1"></i>New Bucket
             </button>
+        </div>
+    </div>
+
+    <!-- Buckets pie chart -->
+    <div id="bucketPieView" class="d-none" th:if="${!#lists.isEmpty(buckets)}">
+        <div class="row g-3 align-items-center">
+            <div class="col-12 col-xl-8 d-flex justify-content-center">
+                <div id="bucketPieChartWrap" class="position-relative" style="width: min(92vw, 620px); max-width: 620px;">
+                <svg id="bucketPieChart" viewBox="0 0 620 420" width="100%" role="img" aria-label="Bucket size distribution chart"></svg>
+                <div id="bucketPieTooltip"
+                     class="position-absolute d-none px-2 py-1 rounded border small"
+                     style="pointer-events: none; z-index: 3; max-width: 260px;"></div>
+                </div>
+            </div>
+            <div class="col-12 col-xl-4">
+                <div class="bucket-pie-legend-panel p-3 rounded-3 shadow-sm">
+                    <h6 class="mb-2">Buckets</h6>
+                    <div id="bucketPieLegend" class="small"></div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -170,7 +194,7 @@
                 </thead>
                 <tbody id="bucketTableBody">
                 <tr th:each="bucket : ${buckets}"
-                    th:attr="data-name=${bucket.name},data-created=${bucket.creationDate != null ? bucket.creationDate.toEpochMilli() : 0},data-size=0">
+                    th:attr="data-name=${bucket.name},data-created=${bucket.creationDate != null ? bucket.creationDate.toEpochMilli() : 0},data-created-label=${bucket.creationDate != null ? #temporals.format(bucket.creationDate, 'yyyy-MM-dd') : 'Unknown date'},data-size=0">
                     <td>
                         <a th:href="@{/buckets/{b}(b=${bucket.name})}"
                            class="text-decoration-none fw-semibold"
@@ -333,18 +357,22 @@
     function switchBucketView(view) {
         const cards = document.getElementById('bucketCardsView');
         const table = document.getElementById('bucketTableView');
+        const pie = document.getElementById('bucketPieView');
         const cardsBtn = document.getElementById('viewCardsBtn');
         const tableBtn = document.getElementById('viewTableBtn');
-        const targetView = view === 'table' ? 'table' : 'cards';
+        const pieBtn = document.getElementById('viewPieBtn');
+        const targetView = view === 'table' || view === 'pie' ? view : 'cards';
 
-        if (cards && table) {
+        if (cards && table && pie) {
             cards.classList.toggle('d-none', targetView !== 'cards');
             table.classList.toggle('d-none', targetView !== 'table');
+            pie.classList.toggle('d-none', targetView !== 'pie');
         }
 
-        if (cardsBtn && tableBtn) {
+        if (cardsBtn && tableBtn && pieBtn) {
             cardsBtn.classList.toggle('active', targetView === 'cards');
             tableBtn.classList.toggle('active', targetView === 'table');
+            pieBtn.classList.toggle('active', targetView === 'pie');
         }
 
         localStorage.setItem('s3webui-bucket-view', targetView);
@@ -433,6 +461,7 @@
         }
 
         updateTotalBucketSize();
+        renderBucketPieChart();
     }
 
     function updateTotalBucketSize() {
@@ -468,6 +497,254 @@
         if (_bucketSort.key === 'size') {
             sortBucketTable('size');
         }
+        renderBucketPieChart();
+    }
+
+    function renderBucketPieChart() {
+        const chartEl = document.getElementById('bucketPieChart');
+        const tooltipEl = document.getElementById('bucketPieTooltip');
+        const legendEl = document.getElementById('bucketPieLegend');
+        if (!chartEl || !tooltipEl || !legendEl) return;
+        const theme = document.documentElement.getAttribute('data-bs-theme') || 'light';
+        const isDark = theme === 'dark';
+
+        const rows = Array.from(document.querySelectorAll('#bucketTableBody tr[data-name]'));
+        if (rows.length === 0) {
+            chartEl.innerHTML = '<text x="310" y="210" text-anchor="middle" fill="currentColor" opacity="0.6">No buckets available.</text>';
+            legendEl.innerHTML = '<span class="text-muted">No buckets available.</span>';
+            return;
+        }
+
+        const palette = ['#0a9fbd', '#3f5f7a', '#4f9d69', '#d39e3f', '#c96a4b', '#8f7ac8', '#5b8fda', '#7d8b99'];
+        const items = rows.map((row, index) => ({
+            name: row.dataset.name || '-',
+            created: row.dataset.createdLabel || 'Unknown date',
+            size: Number(row.dataset.size || 0),
+            color: palette[index % palette.length]
+        }));
+
+        const total = items.reduce((sum, item) => sum + item.size, 0);
+        if (total <= 0) {
+            chartEl.innerHTML = '';
+            const emptyCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            emptyCircle.setAttribute('cx', '250');
+            emptyCircle.setAttribute('cy', '210');
+            emptyCircle.setAttribute('r', '140');
+            emptyCircle.setAttribute('fill', '#d1d5db');
+            chartEl.appendChild(emptyCircle);
+            const emptyText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            emptyText.setAttribute('x', '250');
+            emptyText.setAttribute('y', '214');
+            emptyText.setAttribute('text-anchor', 'middle');
+            emptyText.setAttribute('font-size', '14');
+            emptyText.setAttribute('fill', 'currentColor');
+            emptyText.setAttribute('opacity', '0.7');
+            emptyText.textContent = 'No size data';
+            chartEl.appendChild(emptyText);
+            legendEl.innerHTML = '<span class="text-muted">No bucket size data available yet.</span>';
+            return;
+        }
+
+        chartEl.innerHTML = '';
+        legendEl.innerHTML = '';
+        const interactionsByBucket = new Map();
+
+        const cx = 250;
+        const cy = 210;
+        const r = 140;
+        const labelRadius = 170;
+        const labelMinY = 56;
+        const labelMaxY = 364;
+        const minGap = 16;
+        let start = -Math.PI / 2;
+
+        const positive = items.filter(item => item.size > 0).map(item => item.size);
+        const minPositive = positive.length > 0 ? Math.min(...positive) : 0;
+        const zeroDisplayValue = minPositive > 0 ? minPositive * 0.05 : 1;
+
+        const displayItems = items.map(item => ({
+            ...item,
+            displayValue: item.size > 0 ? item.size : zeroDisplayValue
+        }));
+        const displayTotal = displayItems.reduce((sum, item) => sum + item.displayValue, 0);
+
+        function polarToCartesian(centerX, centerY, radius, angleInRadians) {
+            return {
+                x: centerX + radius * Math.cos(angleInRadians),
+                y: centerY + radius * Math.sin(angleInRadians)
+            };
+        }
+
+        function slicePath(centerX, centerY, radius, startAngle, endAngle) {
+            const startPoint = polarToCartesian(centerX, centerY, radius, startAngle);
+            const endPoint = polarToCartesian(centerX, centerY, radius, endAngle);
+            const largeArcFlag = endAngle - startAngle > Math.PI ? 1 : 0;
+            return `M ${centerX} ${centerY} L ${startPoint.x} ${startPoint.y} A ${radius} ${radius} 0 ${largeArcFlag} 1 ${endPoint.x} ${endPoint.y} Z`;
+        }
+
+        const labelPoints = [];
+
+        displayItems.forEach(item => {
+            const fraction = item.displayValue / displayTotal;
+            const end = start + fraction * Math.PI * 2;
+            const mid = (start + end) / 2;
+            const outer = polarToCartesian(cx, cy, labelRadius, mid);
+            const side = outer.x >= cx ? 'right' : 'left';
+
+            labelPoints.push({
+                item,
+                start,
+                end,
+                mid,
+                side,
+                targetX: side === 'right' ? 500 : 18,
+                targetY: outer.y
+            });
+            start = end;
+        });
+
+        function distributeLabels(points) {
+            points.sort((a, b) => a.targetY - b.targetY);
+            let prevY = -Infinity;
+            points.forEach(p => {
+                p.targetY = Math.max(p.targetY, prevY + minGap, labelMinY);
+                prevY = p.targetY;
+            });
+            prevY = Infinity;
+            for (let i = points.length - 1; i >= 0; i--) {
+                points[i].targetY = Math.min(points[i].targetY, prevY - minGap, labelMaxY);
+                prevY = points[i].targetY;
+            }
+        }
+
+        distributeLabels(labelPoints.filter(p => p.side === 'left'));
+        distributeLabels(labelPoints.filter(p => p.side === 'right'));
+
+        labelPoints.forEach(point => {
+            const {item, start, end, mid, side, targetX, targetY} = point;
+
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path.setAttribute('d', slicePath(cx, cy, r, start, end));
+            path.setAttribute('fill', item.color);
+            path.setAttribute('stroke', 'rgba(255,255,255,0.82)');
+            path.setAttribute('stroke-width', '1.2');
+            path.style.cursor = 'pointer';
+            path.style.transition = 'opacity .12s, stroke-width .12s';
+
+            const edge = polarToCartesian(cx, cy, r, mid);
+            const bend = polarToCartesian(cx, cy, r + 12, mid);
+            const line = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            line.setAttribute('d', `M ${edge.x} ${edge.y} L ${bend.x} ${bend.y} L ${targetX} ${targetY}`);
+            line.setAttribute('fill', 'none');
+            line.setAttribute('stroke', item.color);
+            line.setAttribute('stroke-width', '1.1');
+            line.setAttribute('opacity', '0.7');
+
+            const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            label.setAttribute('x', String(targetX));
+            label.setAttribute('y', String(targetY));
+            label.setAttribute('font-size', '12');
+            label.setAttribute('fill', 'currentColor');
+            label.setAttribute('text-anchor', 'start');
+            label.setAttribute('dominant-baseline', 'middle');
+            if (!isDark) {
+                label.setAttribute('paint-order', 'stroke');
+                label.setAttribute('stroke', 'rgba(255,255,255,0.65)');
+                label.setAttribute('stroke-width', '3');
+            }
+            label.style.cursor = 'pointer';
+            label.textContent = item.name;
+
+            const tooltipText = `${item.name}\nCreated: ${item.created}\nSize: ${formatBytes(item.size)}`;
+            const setActive = (active) => {
+                path.setAttribute('d', slicePath(cx, cy, active ? r + 8 : r, start, end));
+                path.style.opacity = active ? '0.85' : '1';
+                path.setAttribute('stroke-width', active ? '2.5' : '1.2');
+                line.setAttribute('stroke-width', active ? '2' : '1.1');
+                label.setAttribute('font-size', active ? '14' : '12');
+                label.setAttribute('font-weight', active ? '700' : '400');
+            };
+
+            const showTip = (event) => {
+                tooltipEl.textContent = tooltipText;
+                tooltipEl.classList.remove('d-none');
+                tooltipEl.style.background = 'var(--s3-surface-soft)';
+                tooltipEl.style.borderColor = 'var(--s3-border-soft)';
+                tooltipEl.style.left = `${Math.min(event.offsetX + 14, 450)}px`;
+                tooltipEl.style.top = `${Math.max(event.offsetY - 24, 8)}px`;
+                setActive(true);
+            };
+
+            const hideTip = () => {
+                tooltipEl.classList.add('d-none');
+                setActive(false);
+            };
+
+            path.addEventListener('mouseenter', showTip);
+            path.addEventListener('mousemove', showTip);
+            path.addEventListener('mouseleave', hideTip);
+            path.addEventListener('click', () => {
+                window.location.href = `/buckets/${encodeURIComponent(item.name)}`;
+            });
+
+            label.addEventListener('mouseenter', showTip);
+            label.addEventListener('mousemove', showTip);
+            label.addEventListener('mouseleave', hideTip);
+            label.addEventListener('click', () => {
+                window.location.href = `/buckets/${encodeURIComponent(item.name)}`;
+            });
+
+            chartEl.appendChild(line);
+            chartEl.appendChild(path);
+            chartEl.appendChild(label);
+
+            interactionsByBucket.set(item.name, {
+                activate: () => setActive(true),
+                deactivate: () => setActive(false)
+            });
+        });
+
+        items
+            .slice()
+            .sort((a, b) => b.size - a.size)
+            .forEach(item => {
+                const row = document.createElement('div');
+                row.className = 'd-flex align-items-center justify-content-between py-1 border-bottom border-opacity-25';
+
+                const left = document.createElement('div');
+                left.className = 'd-flex align-items-center gap-2 text-truncate';
+
+                const dot = document.createElement('span');
+                dot.style.width = '10px';
+                dot.style.height = '10px';
+                dot.style.borderRadius = '999px';
+                dot.style.backgroundColor = item.color;
+                dot.style.display = 'inline-block';
+
+                const nameLink = document.createElement('a');
+                nameLink.className = 'text-decoration-none text-truncate';
+                nameLink.href = `/buckets/${encodeURIComponent(item.name)}`;
+                nameLink.textContent = item.name;
+
+                const value = document.createElement('span');
+                value.className = 'text-muted ms-2 flex-shrink-0';
+                value.textContent = formatBytes(item.size);
+
+                left.appendChild(dot);
+                left.appendChild(nameLink);
+                row.appendChild(left);
+                row.appendChild(value);
+
+                const interaction = interactionsByBucket.get(item.name);
+                if (interaction) {
+                    row.addEventListener('mouseenter', () => interaction.activate());
+                    row.addEventListener('mouseleave', () => interaction.deactivate());
+                    nameLink.addEventListener('mouseenter', () => interaction.activate());
+                    nameLink.addEventListener('mouseleave', () => interaction.deactivate());
+                }
+
+                legendEl.appendChild(row);
+            });
     }
 
     function confirmDeleteBucket(name) {
