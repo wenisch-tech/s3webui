@@ -1,5 +1,28 @@
 # Changelog
 
+## v0.5.0 - 2026-04-13
+
+## [0.5.0](https://github.com/wenisch-tech/s3webui/compare/v0.4.0...v0.5.0) (2026-04-13)
+
+
+### Features
+
+* added pie-chart display for buckets based on size ([83721db](https://github.com/wenisch-tech/s3webui/commit/83721db74c70aea0c93a670fb1a7e99a3125a10f))
+* Buckets in Object storage can be displayed as list ([41d3f4e](https://github.com/wenisch-tech/s3webui/commit/41d3f4e0b8a262c679b6c4cccc695400fbab0d63))
+* S3 URL is displayed as starter for Breadcrumb rather then just Buckets ([410cc23](https://github.com/wenisch-tech/s3webui/commit/410cc23e1cccfedce861f0dd3d1dff43f20103ea))
+* size of buckets and total size are displayed on the landing ([3199735](https://github.com/wenisch-tech/s3webui/commit/319973520f497e16a0ebd6a26a1430808c671574))
+
+
+### Bug Fixes
+
+* Delete bucket button is now working as intended from context menu ([d5148b8](https://github.com/wenisch-tech/s3webui/commit/d5148b8fe5bb201e9a8fbcd0f21e296b32ca7926))
+* fixed a problem that lead to card not being properly clickable ([a5d8a59](https://github.com/wenisch-tech/s3webui/commit/a5d8a59d80f1c3d0ea02366de4ae03607123ff86))
+
+
+
+Docker image: ghcr.io/wenisch-tech/s3webui:0.5.0
+
+
 ## v0.4.0 - 2026-04-13
 
 ## [0.4.0](https://github.com/wenisch-tech/s3webui/compare/v0.3.1...v0.4.0) (2026-04-13)
