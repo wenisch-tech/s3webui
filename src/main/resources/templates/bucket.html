@@ -98,6 +98,9 @@
             <button class="btn btn-primary btn-sm" onclick="openUploadModal()">
                 <i class="bi bi-cloud-upload me-1"></i>Upload
             </button>
+            <button class="btn btn-outline-danger btn-sm" onclick="confirmDeleteCurrentBucket()">
+                <i class="bi bi-trash3 me-1"></i>Delete Bucket
+            </button>
         </div>
     </div>
 
@@ -179,6 +182,28 @@
         </button>
     </div>
 
+</div>
+
+<!-- ══ Delete Bucket Confirmation Modal ═════════════════════════════════ -->
+<div class="modal fade" id="deleteBucketModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title text-danger"><i class="bi bi-trash3 me-2"></i>Delete Bucket</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Delete bucket <strong id="deleteBucketName" th:text="${bucket}">bucket-name</strong>?</p>
+                <div class="alert alert-warning"><i class="bi bi-exclamation-triangle me-2"></i>
+                    This action cannot be undone. Make sure the bucket is empty first.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" onclick="doDeleteCurrentBucket()">Delete</button>
+            </div>
+        </div>
+    </div>
 </div>
 
 <!-- S3 runtime configuration modal -->
@@ -326,7 +351,30 @@
 <script>
     document.addEventListener('DOMContentLoaded', () => {
         ensureS3ConfigDialog();
+        const bucketNameEl = document.getElementById('deleteBucketName');
+        if (bucketNameEl && !bucketNameEl.textContent.trim()) {
+            bucketNameEl.textContent = BUCKET;
+        }
     });
+
+    // ── Delete bucket ────────────────────────────────────────────────────
+    function confirmDeleteCurrentBucket() {
+        document.getElementById('deleteBucketName').textContent = BUCKET;
+        new bootstrap.Modal(document.getElementById('deleteBucketModal')).show();
+    }
+
+    function doDeleteCurrentBucket() {
+        fetch(`/api/buckets/${encodeURIComponent(BUCKET)}`, {method: 'DELETE'})
+            .then(async r => {
+                if (r.ok) {
+                    window.location.href = '/';
+                    return;
+                }
+                const msg = await getResponseErrorMessage(r, 'Failed to delete bucket');
+                showToast(msg, 'danger');
+            })
+            .catch(e => showToast(e.message, 'danger'));
+    }
 
     // ── Delete object ────────────────────────────────────────────────────
     let _deleteKey = null;

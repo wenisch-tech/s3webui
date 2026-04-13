@@ -106,7 +106,7 @@
                         </div>
                     </div>
                     <a th:href="@{/buckets/{b}(b=${bucket.name})}"
-                       class="text-decoration-none fw-semibold stretched-link mb-1"
+                       class="text-decoration-none fw-semibold mb-1"
                        th:text="${bucket.name}">bucket-name</a>
                     <small class="text-muted mt-auto"
                            th:text="${bucket.creationDate != null ? #temporals.format(bucket.creationDate, 'yyyy-MM-dd') : 'Unknown date'}">
