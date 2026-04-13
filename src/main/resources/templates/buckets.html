@@ -67,7 +67,11 @@
         <div>
             <p class="s3-kicker mb-1">Object Storage</p>
             <h1 class="h3 mb-0 fw-semibold" th:text="${s3BreadcrumbLabel}">S3</h1>
-            <p class="text-muted small mb-0" th:text="${#lists.size(buckets)} + ' bucket(s)'">0 buckets</p>
+            <p class="text-muted small mb-0">
+                <span th:text="${#lists.size(buckets)} + ' bucket(s)'">0 buckets</span>
+                <span class="ms-2">•</span>
+                <span id="totalBucketSize">Total size: ...</span>
+            </p>
         </div>
         <div class="d-flex align-items-center gap-2">
             <div class="btn-group" role="group" aria-label="Bucket view">
@@ -120,10 +124,18 @@
                     <a th:href="@{/buckets/{b}(b=${bucket.name})}"
                        class="text-decoration-none fw-semibold mb-1"
                        th:text="${bucket.name}">bucket-name</a>
-                    <small class="text-muted mt-auto"
-                           th:text="${bucket.creationDate != null ? #temporals.format(bucket.creationDate, 'yyyy-MM-dd') : 'Unknown date'}">
-                        2024-01-01
-                    </small>
+                    <div class="bucket-meta mt-auto">
+                        <div class="bucket-meta-item">
+                            <i class="bi bi-calendar3"></i>
+                            <span th:text="${bucket.creationDate != null ? #temporals.format(bucket.creationDate, 'yyyy-MM-dd') : 'Unknown date'}">
+                                2024-01-01
+                            </span>
+                        </div>
+                        <div class="bucket-meta-item bucket-meta-size">
+                            <i class="bi bi-hdd-stack"></i>
+                            <span th:attr="data-bucket-size-for=${bucket.name}">...</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -147,12 +159,18 @@
                             Created <i id="bucketSortCreatedIcon" class="bi bi-arrow-down-up ms-1"></i>
                         </button>
                     </th>
+                    <th style="width: 180px;">
+                        <button type="button" class="btn btn-link p-0 text-decoration-none"
+                                onclick="sortBucketTable('size')">
+                            Size <i id="bucketSortSizeIcon" class="bi bi-arrow-down-up ms-1"></i>
+                        </button>
+                    </th>
                     <th style="width: 130px;">Actions</th>
                 </tr>
                 </thead>
                 <tbody id="bucketTableBody">
                 <tr th:each="bucket : ${buckets}"
-                    th:attr="data-name=${bucket.name},data-created=${bucket.creationDate != null ? bucket.creationDate.toEpochMilli() : 0}">
+                    th:attr="data-name=${bucket.name},data-created=${bucket.creationDate != null ? bucket.creationDate.toEpochMilli() : 0},data-size=0">
                     <td>
                         <a th:href="@{/buckets/{b}(b=${bucket.name})}"
                            class="text-decoration-none fw-semibold"
@@ -161,6 +179,10 @@
                     <td class="text-muted small"
                         th:text="${bucket.creationDate != null ? #temporals.format(bucket.creationDate, 'yyyy-MM-dd') : 'Unknown date'}">
                         2024-01-01
+                    </td>
+                    <td class="text-muted small"
+                        th:attr="data-bucket-size-for=${bucket.name}">
+                        ...
                     </td>
                     <td>
                         <div class="dropdown">
@@ -297,6 +319,7 @@
         ensureS3ConfigDialog();
         initBucketView();
         updateBucketSortIcons();
+        loadBucketSizes();
     });
 
     let _bucketToDelete = null;
@@ -345,6 +368,9 @@
             if (key === 'created') {
                 left = Number(a.dataset.created || 0);
                 right = Number(b.dataset.created || 0);
+            } else if (key === 'size') {
+                left = Number(a.dataset.size || 0);
+                right = Number(b.dataset.size || 0);
             } else {
                 left = (a.dataset.name || '').toLowerCase();
                 right = (b.dataset.name || '').toLowerCase();
@@ -362,13 +388,86 @@
     function updateBucketSortIcons() {
         const nameIcon = document.getElementById('bucketSortNameIcon');
         const createdIcon = document.getElementById('bucketSortCreatedIcon');
-        if (!nameIcon || !createdIcon) return;
+        const sizeIcon = document.getElementById('bucketSortSizeIcon');
+        if (!nameIcon || !createdIcon || !sizeIcon) return;
 
         nameIcon.className = 'bi bi-arrow-down-up ms-1';
         createdIcon.className = 'bi bi-arrow-down-up ms-1';
+        sizeIcon.className = 'bi bi-arrow-down-up ms-1';
 
-        const activeIcon = _bucketSort.key === 'created' ? createdIcon : nameIcon;
+        let activeIcon = nameIcon;
+        if (_bucketSort.key === 'created') {
+            activeIcon = createdIcon;
+        } else if (_bucketSort.key === 'size') {
+            activeIcon = sizeIcon;
+        }
         activeIcon.className = _bucketSort.dir === 'asc' ? 'bi bi-sort-down ms-1' : 'bi bi-sort-down-alt ms-1';
+    }
+
+    function formatBytes(bytes) {
+        const size = Number(bytes || 0);
+        if (size < 1024) return `${size} B`;
+        const kb = size / 1024;
+        if (kb < 1024) return `${kb.toFixed(1)} KB`;
+        const mb = kb / 1024;
+        if (mb < 1024) return `${mb.toFixed(1)} MB`;
+        const gb = mb / 1024;
+        return `${gb.toFixed(2)} GB`;
+    }
+
+    function setBucketSize(bucket, totalSize) {
+        const formatted = formatBytes(totalSize);
+
+        document.querySelectorAll(`[data-bucket-size-for="${CSS.escape(bucket)}"]`)
+            .forEach(el => {
+                if (el.tagName.toLowerCase() === 'small') {
+                    el.textContent = `Size: ${formatted}`;
+                } else {
+                    el.textContent = formatted;
+                }
+            });
+
+        const row = document.querySelector(`#bucketTableBody tr[data-name="${CSS.escape(bucket)}"]`);
+        if (row) {
+            row.dataset.size = String(totalSize);
+        }
+
+        updateTotalBucketSize();
+    }
+
+    function updateTotalBucketSize() {
+        const totalEl = document.getElementById('totalBucketSize');
+        if (!totalEl) return;
+
+        const rows = Array.from(document.querySelectorAll('#bucketTableBody tr[data-size]'));
+        const total = rows.reduce((sum, row) => sum + Number(row.dataset.size || 0), 0);
+        totalEl.textContent = `Total size: ${formatBytes(total)}`;
+    }
+
+    async function loadBucketSizes() {
+        const rows = Array.from(document.querySelectorAll('#bucketTableBody tr[data-name]'));
+        if (rows.length === 0) return;
+
+        const buckets = [...new Set(rows.map(row => row.dataset.name).filter(Boolean))];
+
+        await Promise.all(buckets.map(async bucket => {
+            try {
+                const response = await fetch(`/api/buckets/${encodeURIComponent(bucket)}/stats`);
+                if (!response.ok) {
+                    setBucketSize(bucket, 0);
+                    return;
+                }
+                const stats = await response.json();
+                const totalSize = Number(stats.totalSize || 0);
+                setBucketSize(bucket, totalSize);
+            } catch (e) {
+                setBucketSize(bucket, 0);
+            }
+        }));
+
+        if (_bucketSort.key === 'size') {
+            sortBucketTable('size');
+        }
     }
 
     function confirmDeleteBucket(name) {

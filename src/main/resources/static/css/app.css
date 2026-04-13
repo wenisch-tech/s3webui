@@ -168,6 +168,44 @@ body {
     background: rgba(13, 202, 240, 0.24);
     box-shadow: inset 0 0 0 1px rgba(13, 202, 240, 0.32);
 }
+[data-bs-theme="light"] .bucket-card a {
+    color: #182430;
+}
+[data-bs-theme="light"] .bucket-card a:hover {
+    color: #0a9fbd;
+}
+[data-bs-theme="dark"] .bucket-card a {
+    color: #e7eef5;
+}
+[data-bs-theme="dark"] .bucket-card a:hover {
+    color: #6dd8f2;
+}
+.bucket-meta {
+    margin-top: .55rem;
+    display: grid;
+    gap: .4rem;
+}
+.bucket-meta-item {
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+    width: fit-content;
+    max-width: 100%;
+    padding: .22rem .5rem;
+    border-radius: 999px;
+    font-size: .76rem;
+    line-height: 1;
+    border: 1px solid var(--s3-border-soft);
+    color: var(--s3-muted);
+    background: color-mix(in srgb, var(--s3-surface-soft) 88%, transparent);
+}
+.bucket-meta-item i {
+    font-size: .72rem;
+    opacity: .85;
+}
+.bucket-meta-size {
+    font-weight: 600;
+}
 
 /* ─── Objects table card ─────────────────────────────────────────────────── */
 .s3-table-card {
