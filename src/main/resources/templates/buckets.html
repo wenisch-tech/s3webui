@@ -117,7 +117,8 @@
     <!-- Buckets grid -->
     <div id="bucketCardsView" class="row g-3" th:if="${!#lists.isEmpty(buckets)}">
         <div class="col-12 col-sm-6 col-md-4 col-xl-3" th:each="bucket : ${buckets}">
-            <div class="card h-100 bucket-card border-0 shadow-sm">
+            <div class="card h-100 bucket-card border-0 shadow-sm"
+                 th:attr="data-bucket-url=@{/buckets/{b}(b=${bucket.name})}">
                 <div class="card-body d-flex flex-column">
                     <div class="d-flex align-items-start justify-content-between mb-3">
                         <div class="bucket-icon d-flex align-items-center justify-content-center">
@@ -344,6 +345,7 @@
         initBucketView();
         updateBucketSortIcons();
         loadBucketSizes();
+        initBucketCardLinks();
     });
 
     let _bucketToDelete = null;
@@ -352,6 +354,23 @@
     function initBucketView() {
         const preferredView = localStorage.getItem('s3webui-bucket-view') || 'cards';
         switchBucketView(preferredView);
+    }
+
+    function initBucketCardLinks() {
+        document.querySelectorAll('.bucket-card[data-bucket-url]').forEach(card => {
+            const url = card.dataset.bucketUrl;
+            if (!url) return;
+
+            card.addEventListener('click', (event) => {
+                // Keep links/buttons/dropdowns fully interactive.
+                if (event.button !== 0) return;
+                if (event.defaultPrevented) return;
+                if (event.target.closest('a, button, .dropdown, .dropdown-menu, [data-bs-toggle="dropdown"]')) {
+                    return;
+                }
+                window.location.href = url;
+            });
+        });
     }
 
     function switchBucketView(view) {
