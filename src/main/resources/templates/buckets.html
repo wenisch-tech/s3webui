@@ -69,13 +69,25 @@
             <h1 class="h3 mb-0 fw-semibold" th:text="${s3BreadcrumbLabel}">S3</h1>
             <p class="text-muted small mb-0" th:text="${#lists.size(buckets)} + ' bucket(s)'">0 buckets</p>
         </div>
-        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createBucketModal">
-            <i class="bi bi-plus-lg me-1"></i>New Bucket
-        </button>
+        <div class="d-flex align-items-center gap-2">
+            <div class="btn-group" role="group" aria-label="Bucket view">
+                <button id="viewCardsBtn" type="button" class="btn btn-outline-secondary btn-sm"
+                        onclick="switchBucketView('cards')">
+                    <i class="bi bi-grid-3x3-gap me-1"></i>Cards
+                </button>
+                <button id="viewTableBtn" type="button" class="btn btn-outline-secondary btn-sm"
+                        onclick="switchBucketView('table')">
+                    <i class="bi bi-table me-1"></i>Table
+                </button>
+            </div>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createBucketModal">
+                <i class="bi bi-plus-lg me-1"></i>New Bucket
+            </button>
+        </div>
     </div>
 
     <!-- Buckets grid -->
-    <div class="row g-3" th:if="${!#lists.isEmpty(buckets)}">
+    <div id="bucketCardsView" class="row g-3" th:if="${!#lists.isEmpty(buckets)}">
         <div class="col-12 col-sm-6 col-md-4 col-xl-3" th:each="bucket : ${buckets}">
             <div class="card h-100 bucket-card border-0 shadow-sm">
                 <div class="card-body d-flex flex-column">
@@ -114,6 +126,68 @@
                     </small>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- Buckets table -->
+    <div id="bucketTableView" class="card s3-table-card border-0 shadow-sm d-none" th:if="${!#lists.isEmpty(buckets)}">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" id="bucketTable">
+                <thead class="table-light">
+                <tr>
+                    <th>
+                        <button type="button" class="btn btn-link p-0 text-decoration-none"
+                                onclick="sortBucketTable('name')">
+                            Name <i id="bucketSortNameIcon" class="bi bi-arrow-down-up ms-1"></i>
+                        </button>
+                    </th>
+                    <th style="width: 220px;">
+                        <button type="button" class="btn btn-link p-0 text-decoration-none"
+                                onclick="sortBucketTable('created')">
+                            Created <i id="bucketSortCreatedIcon" class="bi bi-arrow-down-up ms-1"></i>
+                        </button>
+                    </th>
+                    <th style="width: 130px;">Actions</th>
+                </tr>
+                </thead>
+                <tbody id="bucketTableBody">
+                <tr th:each="bucket : ${buckets}"
+                    th:attr="data-name=${bucket.name},data-created=${bucket.creationDate != null ? bucket.creationDate.toEpochMilli() : 0}">
+                    <td>
+                        <a th:href="@{/buckets/{b}(b=${bucket.name})}"
+                           class="text-decoration-none fw-semibold"
+                           th:text="${bucket.name}">bucket-name</a>
+                    </td>
+                    <td class="text-muted small"
+                        th:text="${bucket.creationDate != null ? #temporals.format(bucket.creationDate, 'yyyy-MM-dd') : 'Unknown date'}">
+                        2024-01-01
+                    </td>
+                    <td>
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-outline-secondary"
+                                    data-bs-toggle="dropdown">
+                                <i class="bi bi-three-dots"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li>
+                                    <a class="dropdown-item" th:href="@{/buckets/{b}(b=${bucket.name})}">
+                                        <i class="bi bi-folder2-open me-2"></i>Browse
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider"/></li>
+                                <li>
+                                    <button class="dropdown-item text-danger"
+                                            th:attr="data-bucket=${bucket.name}"
+                                            onclick="confirmDeleteBucket(this.dataset.bucket)">
+                                        <i class="bi bi-trash3 me-2"></i>Delete
+                                    </button>
+                                </li>
+                            </ul>
+                        </div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
         </div>
     </div>
 
@@ -221,9 +295,81 @@
 <script>
     document.addEventListener('DOMContentLoaded', () => {
         ensureS3ConfigDialog();
+        initBucketView();
+        updateBucketSortIcons();
     });
 
     let _bucketToDelete = null;
+    let _bucketSort = {key: 'name', dir: 'asc'};
+
+    function initBucketView() {
+        const preferredView = localStorage.getItem('s3webui-bucket-view') || 'cards';
+        switchBucketView(preferredView);
+    }
+
+    function switchBucketView(view) {
+        const cards = document.getElementById('bucketCardsView');
+        const table = document.getElementById('bucketTableView');
+        const cardsBtn = document.getElementById('viewCardsBtn');
+        const tableBtn = document.getElementById('viewTableBtn');
+        const targetView = view === 'table' ? 'table' : 'cards';
+
+        if (cards && table) {
+            cards.classList.toggle('d-none', targetView !== 'cards');
+            table.classList.toggle('d-none', targetView !== 'table');
+        }
+
+        if (cardsBtn && tableBtn) {
+            cardsBtn.classList.toggle('active', targetView === 'cards');
+            tableBtn.classList.toggle('active', targetView === 'table');
+        }
+
+        localStorage.setItem('s3webui-bucket-view', targetView);
+    }
+
+    function sortBucketTable(key) {
+        const tbody = document.getElementById('bucketTableBody');
+        if (!tbody) return;
+
+        if (_bucketSort.key === key) {
+            _bucketSort.dir = _bucketSort.dir === 'asc' ? 'desc' : 'asc';
+        } else {
+            _bucketSort.key = key;
+            _bucketSort.dir = 'asc';
+        }
+
+        const rows = Array.from(tbody.querySelectorAll('tr'));
+        rows.sort((a, b) => {
+            let left;
+            let right;
+            if (key === 'created') {
+                left = Number(a.dataset.created || 0);
+                right = Number(b.dataset.created || 0);
+            } else {
+                left = (a.dataset.name || '').toLowerCase();
+                right = (b.dataset.name || '').toLowerCase();
+            }
+
+            if (left < right) return _bucketSort.dir === 'asc' ? -1 : 1;
+            if (left > right) return _bucketSort.dir === 'asc' ? 1 : -1;
+            return 0;
+        });
+
+        rows.forEach(row => tbody.appendChild(row));
+        updateBucketSortIcons();
+    }
+
+    function updateBucketSortIcons() {
+        const nameIcon = document.getElementById('bucketSortNameIcon');
+        const createdIcon = document.getElementById('bucketSortCreatedIcon');
+        if (!nameIcon || !createdIcon) return;
+
+        nameIcon.className = 'bi bi-arrow-down-up ms-1';
+        createdIcon.className = 'bi bi-arrow-down-up ms-1';
+
+        const activeIcon = _bucketSort.key === 'created' ? createdIcon : nameIcon;
+        activeIcon.className = _bucketSort.dir === 'asc' ? 'bi bi-sort-down ms-1' : 'bi bi-sort-down-alt ms-1';
+    }
 
     function confirmDeleteBucket(name) {
         _bucketToDelete = name;
