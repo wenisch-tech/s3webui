@@ -66,7 +66,7 @@
     <div class="d-flex align-items-center justify-content-between mb-4">
         <div>
             <p class="s3-kicker mb-1">Object Storage</p>
-            <h1 class="h3 mb-0 fw-semibold">Buckets</h1>
+            <h1 class="h3 mb-0 fw-semibold" th:text="${s3BreadcrumbLabel}">S3</h1>
             <p class="text-muted small mb-0" th:text="${#lists.size(buckets)} + ' bucket(s)'">0 buckets</p>
         </div>
         <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createBucketModal">

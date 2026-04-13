@@ -65,7 +65,7 @@
     <!-- Breadcrumb -->
     <nav aria-label="breadcrumb" class="mb-3">
         <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a th:href="@{/}">Buckets</a></li>
+            <li class="breadcrumb-item"><a th:href="@{/}" th:text="${s3BreadcrumbLabel}">S3</a></li>
             <li class="breadcrumb-item" th:if="${#lists.isEmpty(breadcrumbs)}">
                 <span class="text-body" th:text="${bucket}">bucket</span>
             </li>
