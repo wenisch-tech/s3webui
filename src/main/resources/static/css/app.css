@@ -20,8 +20,8 @@
 }
 
 [data-bs-theme="light"] {
-    --s3-surface:      rgba(255, 255, 255, 0.9);
-    --s3-surface-soft: rgba(255, 255, 255, 0.78);
+    --s3-surface:      rgba(255, 255, 255, 0.96);
+    --s3-surface-soft: rgba(255, 255, 255, 0.9);
     --s3-border:       rgba(27, 43, 59, 0.16);
     --s3-border-soft:  rgba(27, 43, 59, 0.12);
     --s3-muted:        rgba(27, 43, 59, 0.72);
@@ -43,6 +43,15 @@ body {
     background:
         radial-gradient(1200px 400px at 10% -5%,  rgba(13, 202, 240, 0.09), transparent 55%),
         radial-gradient(800px  300px at 95%   0%,  rgba(25, 135, 84,  0.07), transparent 60%);
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+}
+
+/* ─── Soft gray background (light theme) ─────────────────────────────────── */
+[data-bs-theme="light"] body {
+    background:
+        radial-gradient(900px 320px at 10% -5%, rgba(255, 255, 255, 0.6), transparent 55%),
+        linear-gradient(180deg, #eef1f4 0%, #e6eaee 100%);
     background-attachment: fixed;
     background-repeat: no-repeat;
 }
@@ -71,14 +80,24 @@ body {
     backdrop-filter: blur(8px);
 }
 [data-bs-theme="light"] .s3-navbar {
-    background-color: rgba(13, 202, 240, 0.08) !important;
-    border-bottom: 1px solid rgba(13, 202, 240, 0.25);
+    background-color: rgba(20, 22, 26, 0.96) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.16);
 }
 .s3-navbar .navbar-brand {
     color: #0dcaf0;
     letter-spacing: -0.01em;
 }
 .s3-navbar .navbar-brand:hover { color: #31d2f3; }
+[data-bs-theme="light"] .s3-navbar .navbar-brand,
+[data-bs-theme="light"] .s3-navbar .nav-link,
+[data-bs-theme="light"] .s3-navbar .navbar-text,
+[data-bs-theme="light"] .s3-navbar .btn {
+    color: #ffffff !important;
+}
+[data-bs-theme="light"] .s3-navbar .nav-link.active,
+[data-bs-theme="light"] .s3-navbar .nav-link:hover {
+    color: #f3f4f6 !important;
+}
 
 .brand-logo {
     height: 1.25rem;
@@ -108,16 +127,46 @@ body {
     transition: transform .15s, box-shadow .15s, border-color .15s;
     cursor: pointer;
 }
+[data-bs-theme="light"] .bucket-card {
+    background: #ffffff;
+    border-color: rgba(0, 0, 0, 0.08);
+    box-shadow: 0 .4rem 1.1rem rgba(15, 23, 42, 0.08);
+}
 .bucket-card:hover {
     transform: translateY(-3px);
     border-color: rgba(13, 202, 240, 0.35);
     box-shadow: 0 .5rem 1.5rem rgba(13, 202, 240, 0.1) !important;
+}
+[data-bs-theme="light"] .bucket-card:hover {
+    border-color: rgba(0, 0, 0, 0.14);
+    box-shadow: 0 .6rem 1.6rem rgba(15, 23, 42, 0.14) !important;
 }
 .bucket-icon {
     width: 52px;
     height: 52px;
     background: rgba(13, 202, 240, 0.12);
     border-radius: .5rem;
+    transition: background-color .15s, box-shadow .15s;
+}
+[data-bs-theme="light"] .bucket-icon {
+    background: rgba(56, 87, 112, 0.12);
+}
+[data-bs-theme="dark"] .bucket-icon {
+    background: rgba(77, 121, 158, 0.2);
+}
+.bucket-card .text-cyan {
+    transition: color .15s;
+}
+.bucket-card:hover .text-cyan {
+    color: #0a9fbd !important;
+}
+[data-bs-theme="light"] .bucket-card:hover .bucket-icon {
+    background: rgba(10, 159, 189, 0.18);
+    box-shadow: inset 0 0 0 1px rgba(10, 159, 189, 0.25);
+}
+[data-bs-theme="dark"] .bucket-card:hover .bucket-icon {
+    background: rgba(13, 202, 240, 0.24);
+    box-shadow: inset 0 0 0 1px rgba(13, 202, 240, 0.32);
 }
 
 /* ─── Objects table card ─────────────────────────────────────────────────── */
@@ -189,7 +238,7 @@ body {
 
 /* ─── Utility ────────────────────────────────────────────────────────────── */
 .border-dashed { border-style: dashed !important; }
-.text-cyan { color: #0dcaf0 !important; }
+.text-cyan { color: #3f5f7a !important; }
 
 /* ─── Fixed app metadata badge (version + license) ─────────────────────── */
 .app-meta {

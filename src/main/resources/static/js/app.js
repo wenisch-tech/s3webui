@@ -6,13 +6,13 @@
 
 /** Apply saved theme preference as early as possible (call from <head>). */
 function initTheme() {
-    const saved = localStorage.getItem('s3webui-theme') || 'dark';
+    const saved = localStorage.getItem('s3webui-theme') || 'light';
     document.documentElement.setAttribute('data-bs-theme', saved);
     updateThemeIcon(saved);
 }
 
 function toggleTheme() {
-    const current = document.documentElement.getAttribute('data-bs-theme') || 'dark';
+    const current = document.documentElement.getAttribute('data-bs-theme') || 'light';
     const next = current === 'dark' ? 'light' : 'dark';
     document.documentElement.setAttribute('data-bs-theme', next);
     localStorage.setItem('s3webui-theme', next);
@@ -27,7 +27,7 @@ function updateThemeIcon(theme) {
 
 // Run icon update once DOM is ready (the attribute was already set in <head>).
 document.addEventListener('DOMContentLoaded', () => {
-    const current = document.documentElement.getAttribute('data-bs-theme') || 'dark';
+    const current = document.documentElement.getAttribute('data-bs-theme') || 'light';
     updateThemeIcon(current);
 });
 
