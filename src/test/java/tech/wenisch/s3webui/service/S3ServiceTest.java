@@ -6,7 +6,10 @@ import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.CompleteMultipartUploadRequest;
 import software.amazon.awssdk.services.s3.model.CompleteMultipartUploadResponse;
+import software.amazon.awssdk.services.s3.model.Bucket;
 import software.amazon.awssdk.services.s3.model.CompletedPart;
+import software.amazon.awssdk.services.s3.model.CreateBucketRequest;
+import software.amazon.awssdk.services.s3.model.ListBucketsResponse;
 import software.amazon.awssdk.services.s3.model.ListPartsRequest;
 import software.amazon.awssdk.services.s3.model.ListPartsResponse;
 import software.amazon.awssdk.services.s3.model.Part;
@@ -18,12 +21,32 @@ import tech.wenisch.s3webui.model.CompleteMultipartRequest;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class S3ServiceTest {
+
+    @Test
+    void createBucketThrowsDuplicateBucketExceptionWhenNameAlreadyExists() {
+        S3Client s3Client = mock(S3Client.class);
+        S3Presigner s3Presigner = mock(S3Presigner.class);
+        S3Service s3Service = new S3Service(s3Client, s3Presigner);
+
+        when(s3Client.listBuckets()).thenReturn(ListBucketsResponse.builder()
+                .buckets(Bucket.builder().name("test").build())
+                .build());
+
+        DuplicateBucketException exception = assertThrows(
+                DuplicateBucketException.class,
+                () -> s3Service.createBucket("test"));
+
+        assertEquals("Bucket 'test' already exists", exception.getMessage());
+        verify(s3Client, never()).createBucket(any(CreateBucketRequest.class));
+    }
 
     @Test
     void uploadPartPreservesQuotedEtag() {

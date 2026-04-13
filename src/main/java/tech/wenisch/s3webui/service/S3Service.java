@@ -40,6 +40,11 @@ public class S3Service {
     }
 
     public void createBucket(String name) {
+                boolean bucketAlreadyExists = listBuckets().stream()
+                                .anyMatch(bucket -> name.equals(bucket.getName()));
+                if (bucketAlreadyExists) {
+                        throw new DuplicateBucketException("Bucket '" + name + "' already exists");
+                }
         s3Client.createBucket(CreateBucketRequest.builder().bucket(name).build());
     }
 

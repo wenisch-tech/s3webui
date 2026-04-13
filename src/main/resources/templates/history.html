@@ -123,6 +123,10 @@
         EDIT: 'text-bg-warning'
     };
 
+    function isFailedEvent(event) {
+        return typeof event?.details === 'string' && event.details.trim().toLowerCase().startsWith('failed:');
+    }
+
     function escapeHtml(value) {
         return String(value || '')
             .replaceAll('&', '&amp;')
@@ -167,13 +171,17 @@
         }
 
         tbody.innerHTML = rows.map(e => {
-            const badgeClass = actionBadgeClass[e.action] || 'text-bg-secondary';
+            const failed = isFailedEvent(e);
+            const badgeClass = failed ? 'text-bg-danger' : (actionBadgeClass[e.action] || 'text-bg-secondary');
+            const badgeLabel = failed ? 'FAILED' : (e.action || '-');
             const keyPart = e.key ? '<span class="text-body-secondary small d-block mt-1">' + escapeHtml(e.key) + '</span>' : '';
-            const detailsPart = e.details ? '<span class="text-muted small">' + escapeHtml(e.details) + '</span>' : '-';
+            const detailsPart = e.details
+                ? '<span class="' + (failed ? 'text-danger-emphasis' : 'text-muted') + ' small">' + escapeHtml(e.details) + '</span>'
+                : '-';
             return '<tr>' +
                 '<td class="small text-muted">' + escapeHtml(formatDate(e.timestamp)) + '</td>' +
                 '<td><span class="badge rounded-pill bg-body-tertiary text-body border">' + escapeHtml(e.user || 'anonymous') + '</span></td>' +
-                '<td><span class="badge ' + badgeClass + '">' + escapeHtml(e.action || '-') + '</span></td>' +
+                '<td><span class="badge ' + badgeClass + '">' + escapeHtml(badgeLabel) + '</span></td>' +
                 '<td class="small">' + escapeHtml(e.resourceType || '-') + '</td>' +
                 '<td class="small">' + escapeHtml(e.bucket || '-') + '</td>' +
                 '<td>' + detailsPart + keyPart + '</td>' +

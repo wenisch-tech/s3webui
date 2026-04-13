@@ -18,10 +18,13 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 import java.net.URI;
 import java.security.cert.X509Certificate;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @Slf4j
 @Configuration
 public class S3Config {
+
+    private static final AtomicBoolean INSECURE_TLS_WARNING_LOGGED = new AtomicBoolean(false);
 
     @Value("${s3.insecure-skip-tls-verify:false}")
     private boolean s3InsecureSkipTlsVerify;
@@ -34,7 +37,9 @@ public class S3Config {
         UrlConnectionHttpClient.Builder httpClientBuilder = UrlConnectionHttpClient.builder();
         if (s3InsecureSkipTlsVerify) {
             httpClientBuilder.tlsTrustManagersProvider(this::insecureTrustManagers);
-            log.warn("S3_INSECURE_SKIP_TLS_VERIFY is enabled. TLS certificate verification is disabled for S3 HTTP client. Do not use this in production.");
+            if (INSECURE_TLS_WARNING_LOGGED.compareAndSet(false, true)) {
+                log.warn("S3_INSECURE_SKIP_TLS_VERIFY is enabled. TLS certificate verification is disabled for S3 HTTP client. Do not use this in production.");
+            }
         }
 
         var builder = S3Client.builder()

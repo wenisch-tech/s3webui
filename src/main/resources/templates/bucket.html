@@ -341,7 +341,14 @@
         if (!_deleteKey) return;
         fetch(`/api/buckets/${encodeURIComponent(BUCKET)}/objects?key=${encodeURIComponent(_deleteKey)}`,
             {method: 'DELETE'})
-            .then(r => { if (r.ok) location.reload(); else r.text().then(t => showToast(t, 'danger')); })
+            .then(async r => {
+                if (r.ok) {
+                    location.reload();
+                    return;
+                }
+                const msg = await getResponseErrorMessage(r, 'Failed to delete object');
+                showToast(msg, 'danger');
+            })
             .catch(e => showToast(e.message, 'danger'));
     }
 
@@ -362,7 +369,14 @@
         fetch(`/api/buckets/${encodeURIComponent(BUCKET)}/objects/rename` +
               `?oldKey=${encodeURIComponent(_renameOldKey)}&newKey=${encodeURIComponent(newKey)}`,
             {method: 'POST'})
-            .then(r => { if (r.ok) location.reload(); else r.text().then(t => showToast(t, 'danger')); })
+            .then(async r => {
+                if (r.ok) {
+                    location.reload();
+                    return;
+                }
+                const msg = await getResponseErrorMessage(r, 'Failed to rename object');
+                showToast(msg, 'danger');
+            })
             .catch(e => showToast(e.message, 'danger'));
     }
 
@@ -377,7 +391,14 @@
         fetch(`/api/buckets/${encodeURIComponent(BUCKET)}/objects/upload` +
               `?prefix=${encodeURIComponent(folderPrefix)}`,
             {method: 'POST', body: fd})
-            .then(r => { if (r.ok) location.reload(); else r.text().then(t => showToast(t, 'danger')); })
+            .then(async r => {
+                if (r.ok) {
+                    location.reload();
+                    return;
+                }
+                const msg = await getResponseErrorMessage(r, 'Failed to create folder');
+                showToast(msg, 'danger');
+            })
             .catch(e => showToast(e.message, 'danger'));
     }
 

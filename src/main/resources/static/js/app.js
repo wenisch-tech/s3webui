@@ -120,6 +120,28 @@ function showS3ConfigError(message) {
     errorEl.classList.remove('d-none');
 }
 
+/** Extract a useful error message from a failed fetch response. */
+async function getResponseErrorMessage(response, fallback = 'Request failed') {
+    if (!response) return fallback;
+
+    const text = await response.text();
+    if (!text) return fallback;
+
+    try {
+        const payload = JSON.parse(text);
+        if (payload && typeof payload.message === 'string' && payload.message.trim()) {
+            return payload.message;
+        }
+        if (payload && typeof payload.error === 'string' && payload.error.trim()) {
+            return payload.error;
+        }
+    } catch (ignored) {
+        // Body is not JSON, return as-is.
+    }
+
+    return text;
+}
+
 function protectSecretField() {
     const secretInput = document.getElementById('s3SecretKey');
     if (!secretInput || secretInput.dataset.copyProtected === 'true') {
@@ -142,6 +164,11 @@ function protectSecretField() {
 function showToast(message, type = 'info') {
     const container = document.getElementById('toastContainer');
     if (!container) return;
+    const safeMessage = String(message || '').replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
     const id = 'toast-' + Date.now();
     const icons = {
         success: 'bi-check-circle-fill',
@@ -154,7 +181,7 @@ function showToast(message, type = 'info') {
             <div class="d-flex">
                 <div class="toast-body d-flex align-items-center gap-2">
                     <i class="bi ${icons[type] || icons.info}"></i>
-                    ${message}
+                    ${safeMessage}
                 </div>
                 <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
             </div>

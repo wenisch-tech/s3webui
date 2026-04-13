@@ -234,7 +234,14 @@
     function doDeleteBucket() {
         if (!_bucketToDelete) return;
         fetch('/api/buckets/' + encodeURIComponent(_bucketToDelete), {method: 'DELETE'})
-            .then(r => { if (r.ok) location.reload(); else r.text().then(t => showToast(t, 'danger')); })
+            .then(async r => {
+                if (r.ok) {
+                    location.reload();
+                    return;
+                }
+                const msg = await getResponseErrorMessage(r, 'Failed to delete bucket');
+                showToast(msg, 'danger');
+            })
             .catch(e => showToast(e.message, 'danger'));
     }
 
@@ -242,7 +249,14 @@
         const name = document.getElementById('bucketName').value.trim();
         if (!name) return;
         fetch('/api/buckets?name=' + encodeURIComponent(name), {method: 'POST'})
-            .then(r => { if (r.ok) location.reload(); else r.text().then(t => showToast(t, 'danger')); })
+            .then(async r => {
+                if (r.ok) {
+                    location.reload();
+                    return;
+                }
+                const msg = await getResponseErrorMessage(r, 'Failed to create bucket');
+                showToast(msg, 'danger');
+            })
             .catch(e => showToast(e.message, 'danger'));
     }
 </script>
