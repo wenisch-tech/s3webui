@@ -1,5 +1,24 @@
 # Changelog
 
+## v0.4.0 - 2026-04-13
+
+## [0.4.0](https://github.com/wenisch-tech/s3webui/compare/v0.3.1...v0.4.0) (2026-04-13)
+
+
+### Features
+
+* Improved error handling and showing dedicated message for duplicated buckets ([672eb00](https://github.com/wenisch-tech/s3webui/commit/672eb00b29c79c6973926f4b0fa5b0b9d0f8211b))
+
+
+### Bug Fixes
+
+* minor updates to light colorscheme and setting light as default ([fc4b46f](https://github.com/wenisch-tech/s3webui/commit/fc4b46fc613a1222c13607539bff1c2332dc0812))
+
+
+
+Docker image: ghcr.io/wenisch-tech/s3webui:0.4.0
+
+
 ## v0.3.1 - 2026-04-11
 
 ### [0.3.1](https://github.com/wenisch-tech/s3webui/compare/v0.3.0...v0.3.1) (2026-04-11)
