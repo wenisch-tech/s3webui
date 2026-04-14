@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.5.1 - 2026-04-14
+
+### [0.5.1](https://github.com/wenisch-tech/s3webui/compare/v0.5.0...v0.5.1) (2026-04-14)
+
+
+### Bug Fixes
+
+* Update tomcat version to 10.1.53 ([fba423d](https://github.com/wenisch-tech/s3webui/commit/fba423df894a5f9c578a85f6c483798e017cf0f5))
+
+
+
+Docker image: ghcr.io/wenisch-tech/s3webui:0.5.1
+
+
 ## v0.5.0 - 2026-04-13
 
 ## [0.5.0](https://github.com/wenisch-tech/s3webui/compare/v0.4.0...v0.5.0) (2026-04-13)
