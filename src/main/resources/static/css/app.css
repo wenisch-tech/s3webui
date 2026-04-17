@@ -38,6 +38,20 @@ body {
     font-family: "Space Grotesk", "Segoe UI", system-ui, -apple-system, sans-serif;
 }
 
+.app-shell {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.app-main {
+    flex: 1 0 auto;
+}
+
+.app-shell > .landing-footer-meta {
+    margin-top: auto;
+}
+
 /* ─── Gradient background (dark theme) ───────────────────────────────────── */
 [data-bs-theme="dark"] body {
     background:
@@ -287,74 +301,66 @@ body {
 .border-dashed { border-style: dashed !important; }
 .text-cyan { color: #3f5f7a !important; }
 
-/* ─── Fixed app metadata badge (version + license) ─────────────────────── */
-.app-meta {
-    position: fixed;
-    right: 0.9rem;
-    bottom: 0.75rem;
-    z-index: 1080;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.45rem;
-    padding: 0.3rem 0.6rem;
-    border-radius: 999px;
-    border: 1px solid var(--s3-border-soft);
-    background: color-mix(in srgb, var(--s3-surface-soft) 92%, transparent);
-    backdrop-filter: blur(8px);
-    font-size: 0.76rem;
-    line-height: 1;
+/* ─── Kairos footer metadata ────────────────────────────────────────────── */
+.landing-footer-meta {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: end;
+    gap: 0.5rem;
 }
 
-.app-meta-link {
-    color: var(--s3-muted);
-    text-decoration: none;
-    font-weight: 600;
+.landing-credit {
+    grid-column: 3;
+    justify-self: end;
+    text-align: right;
+    white-space: nowrap;
+    font-size: 0.74rem;
+    color: rgba(170, 178, 188, 0.55);
 }
 
-.app-meta-link:hover {
-    color: var(--bs-link-color);
+.landing-credit a {
+    color: inherit;
+    text-decoration-color: rgba(170, 178, 188, 0.32);
 }
 
-.app-attribution {
-    position: fixed;
-    left: 50%;
-    bottom: 0.75rem;
-    transform: translateX(-50%);
-    z-index: 1075;
-    max-width: min(92vw, 920px);
+.landing-credit a:hover {
+    color: rgba(185, 193, 203, 0.68);
+    text-decoration-color: currentColor;
+}
+
+.landing-license-note {
+    grid-column: 2;
     text-align: center;
-    font-size: 0.5rem;
-    color: var(--s3-muted-subtle);
-    padding: 0.1rem 0.25rem;
-    line-height: 1.25;
+    font-size: 0.74rem;
+    color: rgba(170, 178, 188, 0.7);
 }
 
-.app-attribution-link {
-    color: var(--s3-muted-subtle);
-    text-underline-offset: 2px;
+.landing-license-note a {
+    color: rgba(194, 224, 255, 0.95);
+    text-decoration: none;
 }
 
-.app-attribution-link:hover {
-    color: var(--s3-muted);
+.landing-license-note a:hover {
+    text-decoration: underline;
 }
 
-.app-attribution-heart {
-    color: var(--s3-muted-subtle);
-    vertical-align: -0.05em;
-}
-
-@media (max-width: 576px) {
-    .app-meta {
-        right: 0.6rem;
-        bottom: 2.55rem;
-        font-size: 0.72rem;
-        padding: 0.28rem 0.52rem;
+@media (max-width: 768px) {
+    .landing-footer-meta {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.2rem;
     }
 
-    .app-attribution {
-        bottom: 0.55rem;
-        max-width: 95vw;
-        font-size: 0.5rem;
-        padding: 0.26rem 0.45rem;
+    .landing-credit {
+        grid-column: auto;
+        justify-self: auto;
+        text-align: center;
+    }
+
+    .landing-license-note {
+        margin-top: 0.75rem;
+        margin-bottom: 0.25rem !important;
     }
 }
+

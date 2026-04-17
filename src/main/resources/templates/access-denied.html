@@ -13,8 +13,9 @@
     <link rel="stylesheet" th:href="@{/webjars/bootstrap-icons/font/bootstrap-icons.css}"/>
     <link rel="stylesheet" th:href="@{/css/app.css}"/>
 </head>
-<body class="d-flex align-items-center justify-content-center min-vh-100">
+<body class="app-shell">
 
+<main class="app-main d-flex align-items-center justify-content-center">
 <div class="container text-center" style="max-width: 480px">
     <i class="bi bi-shield-x display-1 text-danger mb-3"></i>
     <h1 class="h3 fw-semibold">Access Denied</h1>
@@ -34,6 +35,7 @@
         </form>
     </div>
 </div>
+</main>
 
 <div th:replace="~{fragments/app-meta :: appMeta}"></div>
 <div th:replace="~{fragments/app-meta :: appAttribution}"></div>
