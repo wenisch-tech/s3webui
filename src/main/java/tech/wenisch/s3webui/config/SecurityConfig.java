@@ -1,7 +1,6 @@
 package tech.wenisch.s3webui.config;
 
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
@@ -30,6 +29,7 @@ import javax.net.ssl.X509TrustManager;
 import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -41,18 +41,15 @@ import java.util.Set;
 @ConditionalOnClass(name = "org.springframework.security.web.SecurityFilterChain")
 public class SecurityConfig {
 
-    @Value("${oidc.enabled:false}")
-    private boolean oidcEnabled;
+    private final OidcProperties oidcProperties;
 
-    @Value("${oidc.required-role:}")
-    private String requiredRole;
-
-    @Value("${oidc.insecure-skip-tls-verify:false}")
-    private boolean oidcInsecureSkipTlsVerify;
+    public SecurityConfig(OidcProperties oidcProperties) {
+        this.oidcProperties = oidcProperties;
+    }
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        if (!oidcEnabled) {
+        if (!oidcProperties.isEnabled()) {
             http.authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
                     .csrf(AbstractHttpConfigurer::disable);
             return http.build();
@@ -64,8 +61,8 @@ public class SecurityConfig {
                             "/webjars/**", "/css/**", "/js/**",
                             "/actuator/health", "/favicon.ico"
                     ).permitAll();
-                    if (requiredRole != null && !requiredRole.isBlank()) {
-                        auth.anyRequest().hasRole(requiredRole);
+                    if (oidcProperties.getRequiredRole() != null && !oidcProperties.getRequiredRole().isBlank()) {
+                        auth.anyRequest().hasRole(oidcProperties.getRequiredRole());
                     } else {
                         auth.anyRequest().authenticated();
                     }
@@ -91,25 +88,34 @@ public class SecurityConfig {
 
     @Bean
     @ConditionalOnProperty(name = "oidc.enabled", havingValue = "true")
-    public ClientRegistrationRepository clientRegistrationRepository(
-            @Value("${oidc.client-id}") String clientId,
-            @Value("${oidc.client-secret}") String clientSecret,
-            @Value("${oidc.issuer-uri}") String issuerUri) {
-
-        if (oidcInsecureSkipTlsVerify) {
+    public ClientRegistrationRepository clientRegistrationRepository() {
+        if (oidcProperties.isInsecureSkipTlsVerify()) {
             enableInsecureTlsForOidc();
         }
 
-        ClientRegistration registration = ClientRegistrations.fromIssuerLocation(issuerUri)
-                .registrationId("keycloak")
-                .clientId(clientId)
-                .clientSecret(clientSecret)
-                .scope("openid", "profile", "email")
-                .userNameAttributeName("preferred_username")
-                .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
-                .redirectUri("{baseUrl}/login/oauth2/code/{registrationId}")
-                .build();
-        return new InMemoryClientRegistrationRepository(registration);
+        List<OidcProperties.ResolvedProvider> providers = oidcProperties.getResolvedProviders();
+        if (providers.isEmpty()) {
+            throw new IllegalStateException("OIDC is enabled but no valid OIDC provider is configured.");
+        }
+
+        List<ClientRegistration> registrations = new ArrayList<>();
+        for (OidcProperties.ResolvedProvider provider : providers) {
+            var builder = ClientRegistrations.fromIssuerLocation(provider.issuerUri())
+                    .registrationId(provider.registrationId())
+                    .clientId(provider.clientId())
+                    .scope("openid", "profile", "email")
+                    .userNameAttributeName(provider.userNameAttribute())
+                    .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+                    .redirectUri("{baseUrl}/login/oauth2/code/{registrationId}");
+
+            if (provider.clientSecret() != null && !provider.clientSecret().isBlank()) {
+                builder.clientSecret(provider.clientSecret());
+            }
+
+            registrations.add(builder.build());
+        }
+
+        return new InMemoryClientRegistrationRepository(registrations);
     }
 
     private void enableInsecureTlsForOidc() {

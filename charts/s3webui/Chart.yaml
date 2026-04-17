@@ -17,7 +17,7 @@ maintainers:
     url: https://github.com/JFWenisch
 annotations:
   artifacthub.io/category: storage
-  artifacthub.io/license: GPL-3.0
+  artifacthub.io/license: AGPL-3.0
   artifacthub.io/prerelease: "false"
   artifacthub.io/images: |
     - name: s3webui
