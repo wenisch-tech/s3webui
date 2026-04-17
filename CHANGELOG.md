@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.5.2 - 2026-04-17
+
+### [0.5.2](https://github.com/wenisch-tech/s3webui/compare/v0.5.1...v0.5.2) (2026-04-17)
+
+
+### Documentation
+
+* Updated footer and license information ([b12ace3](https://github.com/wenisch-tech/s3webui/commit/b12ace3b32d043b0bdaf71cf0a03bbdd491ee0d1))
+
+
+
+Docker image: ghcr.io/wenisch-tech/s3webui:0.5.2
+
+
 ## v0.5.1 - 2026-04-14
 
 ### [0.5.1](https://github.com/wenisch-tech/s3webui/compare/v0.5.0...v0.5.1) (2026-04-14)
