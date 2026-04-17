@@ -1,10 +1,10 @@
 package tech.wenisch.s3webui.controller;
 
+import tech.wenisch.s3webui.config.OidcProperties;
 import tech.wenisch.s3webui.service.S3Service;
 import tech.wenisch.s3webui.service.S3ConnectionSettingsService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,9 +18,7 @@ public class UiController {
 
     private final S3Service s3Service;
     private final S3ConnectionSettingsService s3ConnectionSettingsService;
-
-    @Value("${oidc.enabled:false}")
-    private boolean oidcEnabled;
+    private final OidcProperties oidcProperties;
 
     @GetMapping("/")
     public String buckets(Model model) {
@@ -73,7 +71,7 @@ public class UiController {
     public String login(@RequestParam(required = false) String error,
                         @RequestParam(required = false) String logout,
                         Model model) {
-        if (!oidcEnabled) {
+        if (!oidcProperties.isEnabled()) {
             return "redirect:/";
         }
         model.addAttribute("loginError", error != null);

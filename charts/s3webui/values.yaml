@@ -61,16 +61,26 @@ env:
   S3_INSECURE_SKIP_TLS_VERIFY: "false"
   # OIDC / Keycloak (optional)
   OIDC_ENABLED: "false"
+  OIDC_PROVIDER_NAME: "Single Sign-On"
   OIDC_CLIENT_ID: ""
   OIDC_ISSUER_URI: ""
   OIDC_REQUIRED_ROLE: ""
   OIDC_INSECURE_SKIP_TLS_VERIFY: "false"
+  # Multi-provider example:
+  # OIDC_PROVIDERS_0_NAME: "Company SSO"
+  # OIDC_PROVIDERS_0_CLIENT_ID: "s3webui"
+  # OIDC_PROVIDERS_0_ISSUER_URI: "https://auth.example.com/realms/main"
+  # OIDC_PROVIDERS_1_NAME: "Partner Login"
+  # OIDC_PROVIDERS_1_CLIENT_ID: "s3webui-partner"
+  # OIDC_PROVIDERS_1_ISSUER_URI: "https://login.partner.example/realms/partner"
 
 # Sensitive values (stored in a Kubernetes secret)
 secrets: {}
   # S3_ACCESS_KEY: "your-access-key"
   # S3_SECRET_KEY: "your-secret-key"
   # OIDC_CLIENT_SECRET: "your-client-secret"
+  # OIDC_PROVIDERS_0_CLIENT_SECRET: "your-client-secret"
+  # OIDC_PROVIDERS_1_CLIENT_SECRET: "your-other-client-secret"
 
 livenessProbe:
   enabled: true

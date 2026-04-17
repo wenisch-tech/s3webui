@@ -28,6 +28,7 @@ s3:
 
 oidc:
   enabled: ${OIDC_ENABLED:false}
+  provider-name: ${OIDC_PROVIDER_NAME:Single Sign-On}
   client-id: ${OIDC_CLIENT_ID:}
   client-secret: ${OIDC_CLIENT_SECRET:}
   issuer-uri: ${OIDC_ISSUER_URI:}

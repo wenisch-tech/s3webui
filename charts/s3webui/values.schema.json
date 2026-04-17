@@ -20,6 +20,9 @@
                 "OIDC_ISSUER_URI": {
                     "type": "string"
                 },
+                "OIDC_PROVIDER_NAME": {
+                    "type": "string"
+                },
                 "OIDC_REQUIRED_ROLE": {
                     "type": "string"
                 },
