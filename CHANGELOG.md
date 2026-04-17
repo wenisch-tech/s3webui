@@ -1,5 +1,20 @@
 # Changelog
 
+## v0.6.0 - 2026-04-17
+
+## [0.6.0](https://github.com/wenisch-tech/s3webui/compare/v0.5.3...v0.6.0) (2026-04-17)
+
+
+### Features
+
+* added support for multiple OIDC provider and added Readme for chart ([d9dcd9b](https://github.com/wenisch-tech/s3webui/commit/d9dcd9bb133ead84f84b7ffb91df67d88e75cc22))
+* added support for multiple OIDC providers ([987f467](https://github.com/wenisch-tech/s3webui/commit/987f4673e93905bd3c377c49bab5bd4cb3ea579b))
+
+
+
+Docker image: ghcr.io/wenisch-tech/s3webui:0.6.0
+
+
 ## v0.5.3 - 2026-04-17
 
 ### [0.5.3](https://github.com/wenisch-tech/s3webui/compare/v0.5.2...v0.5.3) (2026-04-17)
