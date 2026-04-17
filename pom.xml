@@ -13,7 +13,7 @@
 
     <groupId>tech.wenisch</groupId>
     <artifactId>s3webui</artifactId>
-    <version>0.5.1</version>
+    <version>0.5.2</version>
     <packaging>jar</packaging>
     <name>s3webui</name>
     <description>Graphical web interface for S3 object storage</description>
