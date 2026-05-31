@@ -20,7 +20,7 @@
 
     <properties>
         <java.version>17</java.version>
-        <aws-sdk.version>2.29.51</aws-sdk.version>
+        <aws-sdk.version>2.45.1</aws-sdk.version>
         <spring-framework.version>6.2.17</spring-framework.version>
         <spring-security.version>6.5.9</spring-security.version>
         <tomcat.version>10.1.54</tomcat.version>
