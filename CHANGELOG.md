@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.6.3 - 2026-05-31
+
+### [0.6.3](https://github.com/wenisch-tech/s3webui/compare/v0.6.2...v0.6.3) (2026-05-31)
+
+
+### Bug Fixes
+
+* **deps:** update dependency org.springframework.boot:spring-boot-starter-parent to v3.5.14 ([91dc375](https://github.com/wenisch-tech/s3webui/commit/91dc3752ea3e787d52434316195746e79598d427))
+
+
+
+Docker image: ghcr.io/wenisch-tech/s3webui:0.6.3
+
+
 ## v0.6.1 - 2026-05-31
 
 ### [0.6.1](https://github.com/wenisch-tech/s3webui/compare/v0.6.0...v0.6.1) (2026-05-31)
