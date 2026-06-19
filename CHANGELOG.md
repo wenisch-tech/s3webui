@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.6.5 - 2026-06-19
+
+### [0.6.5](https://github.com/wenisch-tech/s3webui/compare/v0.6.4...v0.6.5) (2026-06-19)
+
+
+### Bug Fixes
+
+* **deps:** update aws-java-sdk-v2 monorepo to v2.46.14 ([4f66d4e](https://github.com/wenisch-tech/s3webui/commit/4f66d4e39aa22cc811d3102de4fc1186061d867a))
+
+
+
+Docker image: ghcr.io/wenisch-tech/s3webui:0.6.5
+
+
 ## v0.6.3 - 2026-05-31
 
 ### [0.6.3](https://github.com/wenisch-tech/s3webui/compare/v0.6.2...v0.6.3) (2026-05-31)
