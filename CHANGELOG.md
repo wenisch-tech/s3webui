@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.6.11 - 2026-06-21
+
+### [0.6.11](https://github.com/wenisch-tech/s3webui/compare/v0.6.10...v0.6.11) (2026-06-21)
+
+
+
+Docker image: ghcr.io/wenisch-tech/s3webui:0.6.11
+
+
 ## v0.6.7 - 2026-06-21
 
 ### [0.6.7](https://github.com/wenisch-tech/s3webui/compare/v0.6.6...v0.6.7) (2026-06-21)
