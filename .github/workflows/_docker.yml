@@ -55,7 +55,7 @@ jobs:
 
       - name: Build Docker image (local)
         id: docker_build
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: ./Dockerfile
@@ -161,7 +161,7 @@ jobs:
       - name: BuildKit push Docker tags to GHCR
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         id: docker_push
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: ./Dockerfile
