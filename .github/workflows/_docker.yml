@@ -124,7 +124,7 @@ jobs:
       - name: Add Trivy report to PR
         if: always() && github.event_name == 'pull_request'
         continue-on-error: true
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             const fs = require('fs');
