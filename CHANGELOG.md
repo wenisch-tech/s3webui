@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.6.20 - 2026-07-02
+
+### [0.6.20](https://github.com/wenisch-tech/s3webui/compare/v0.6.19...v0.6.20) (2026-07-02)
+
+
+### Bug Fixes
+
+* **deps:** update spring boot ([8a09727](https://github.com/wenisch-tech/s3webui/commit/8a097270e6408ffc2341e9cf21fe939cd524eb37))
+
+
+
+Docker image: ghcr.io/wenisch-tech/s3webui:0.6.20
+
+
 ## v0.6.19 - 2026-06-22
 
 ### [0.6.19](https://github.com/wenisch-tech/s3webui/compare/v0.6.18...v0.6.19) (2026-06-22)
