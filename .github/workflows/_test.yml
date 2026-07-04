@@ -70,7 +70,7 @@ jobs:
       - name: Add coverage summary to pull request
         if: always() && inputs.is_pull_request
         continue-on-error: true
-        uses: marocchino/sticky-pull-request-comment@v2
+        uses: marocchino/sticky-pull-request-comment@v3.0.5
         with:
           recreate: true
           path: code-coverage-results.md
