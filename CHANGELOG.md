@@ -1,5 +1,24 @@
 # Changelog
 
+## v0.6.25 - 2026-08-24
+
+### [0.6.25](https://github.com/wenisch-tech/s3webui/compare/v0.6.24...v0.6.25) (2026-08-24)
+
+
+### Bug Fixes
+
+* update dependencies ([596f11e](https://github.com/wenisch-tech/s3webui/commit/596f11eb91c943d27b28c939076cf9601df9fd7f))
+
+
+### Documentation
+
+* update renovate.json ([ef94a06](https://github.com/wenisch-tech/s3webui/commit/ef94a064887ebf20f90b4cf35bf4c313c6bcf89c))
+
+
+
+Docker image: ghcr.io/wenisch-tech/s3webui:0.6.25
+
+
 ## v0.6.24 - 2026-08-24
 
 ### [0.6.24](https://github.com/wenisch-tech/s3webui/compare/v0.6.23...v0.6.24) (2026-08-24)
