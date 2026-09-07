@@ -2,9 +2,9 @@
   "name": "s3webui-frontend",
   "private": true,
   "scripts": {
-    "build": "node ./node_modules/@tailwindcss/cli/dist/index.mjs -i src/main/frontend/s3webui.css -o target/classes/static/css/s3webui.css --minify && node ./node_modules/esbuild/bin/esbuild src/main/frontend/s3webui.js --bundle --minify --format=iife --outfile=target/classes/static/js/s3webui.js",
+    "build": "node ./node_modules/@tailwindcss/cli/dist/index.mjs -i src/main/frontend/s3webui.css -o target/classes/static/css/s3webui.css --minify && esbuild src/main/frontend/s3webui.js --bundle --minify --format=iife --outfile=target/classes/static/js/s3webui.js",
     "build:css": "node ./node_modules/@tailwindcss/cli/dist/index.mjs -i src/main/frontend/s3webui.css -o target/classes/static/css/s3webui.css --minify",
-    "build:js": "node ./node_modules/esbuild/bin/esbuild src/main/frontend/s3webui.js --bundle --minify --format=iife --outfile=target/classes/static/js/s3webui.js"
+    "build:js": "esbuild src/main/frontend/s3webui.js --bundle --minify --format=iife --outfile=target/classes/static/js/s3webui.js"
   },
   "dependencies": {
     "alpinejs": "3.14.9",
