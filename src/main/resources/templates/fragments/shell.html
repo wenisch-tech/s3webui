@@ -1,0 +1,40 @@
+<head th:fragment="head(title)">
+    <meta charset="UTF-8"/>
+    <script>(function(){try{document.documentElement.dataset.theme=localStorage.getItem('s3webui-theme')||'light';}catch(e){document.documentElement.dataset.theme='light';}})();</script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title th:text="${title} + ' · S3WEBUI'">S3WEBUI</title>
+    <link rel="icon" type="image/png" th:href="@{/img/logo.png}" href="/img/logo.png"/>
+    <link rel="stylesheet" th:href="@{/css/s3webui.css}"/>
+</head>
+
+<nav th:fragment="topbar(active)" class="app-topbar" x-data="shell">
+    <div class="topbar-inner">
+        <a class="brand" th:href="@{/}"><img th:src="@{/img/logo.png}" alt="S3WEBUI logo"/><span>S3WEBUI</span></a>
+        <div class="hidden items-center gap-1 sm:flex">
+            <a th:classappend="${active == 'buckets'} ? ' active'" class="nav-link" th:href="@{/}"><i data-lucide="archive"></i>Buckets</a>
+            <a th:classappend="${active == 'history'} ? ' active'" class="nav-link" th:href="@{/history}"><i data-lucide="history"></i>History</a>
+            <a th:if="${isAdmin}" th:classappend="${active == 'settings'} ? ' active'" class="nav-link" th:href="@{/admin}"><i data-lucide="settings"></i>Settings</a>
+        </div>
+        <div class="ml-auto flex items-center gap-2">
+            <button th:if="${activeCredentialName != null}" class="btn-secondary hidden md:inline-flex" type="button" onclick="openS3SessionDialog()" title="S3 key used in this session"><i data-lucide="key"></i><span th:text="${activeCredentialName}">S3 key</span><i data-lucide="chevron-down"></i></button>
+            <span sec:authorize="isAuthenticated()" class="hidden text-sm text-slate-500 lg:inline" sec:authentication="name">username</span>
+            <form th:action="@{/logout}" method="post"><button class="btn-secondary" type="submit"><i data-lucide="log-out"></i><span>Logout</span></button></form>
+            <button class="btn-icon" @click="toggleTheme()" :aria-label="theme === 'dark' ? 'Use light theme' : 'Use dark theme'"><i :data-lucide="theme === 'dark' ? 'sun' : 'moon'"></i></button>
+            <button class="btn-icon sm:hidden" @click="mobileOpen = !mobileOpen" aria-label="Toggle navigation"><i data-lucide="menu"></i></button>
+        </div>
+    </div>
+    <div class="border-t border-slate-700/15 px-4 py-2 sm:hidden" x-show="mobileOpen" x-cloak>
+        <div class="flex flex-wrap gap-1"><a th:classappend="${active == 'buckets'} ? ' active'" class="nav-link" th:href="@{/}"><i data-lucide="archive"></i>Buckets</a><a th:classappend="${active == 'history'} ? ' active'" class="nav-link" th:href="@{/history}"><i data-lucide="history"></i>History</a><a th:if="${isAdmin}" th:classappend="${active == 'settings'} ? ' active'" class="nav-link" th:href="@{/admin}"><i data-lucide="settings"></i>Settings</a><button th:if="${activeCredentialName != null}" class="nav-link" type="button" onclick="openS3SessionDialog()"><i data-lucide="key"></i><span th:text="${activeCredentialName}">S3 key</span></button></div>
+    </div>
+</nav>
+
+<div th:fragment="s3ConfigDialog" id="s3SessionModal" class="modal-backdrop hidden" aria-hidden="true" data-static="true" role="dialog" aria-modal="true" aria-labelledby="s3SessionTitle">
+    <div class="modal-card"><div class="modal-header"><div><p class="eyebrow">Storage session</p><h2 id="s3SessionTitle" class="font-semibold">Choose an S3 key</h2></div><button id="s3SessionClose" class="btn-icon hidden" type="button" onclick="closeDialog('s3SessionModal')" aria-label="Close"><i data-lucide="x"></i></button></div>
+    <div class="modal-body"><p class="mb-4 text-sm text-slate-500">Select a key granted to your account, or connect with your own credentials when allowed.</p><div id="s3SessionError" class="alert alert-error hidden mb-3"></div>
+        <div id="s3SessionKeys"><div id="s3SessionKeyList" class="grid gap-2"></div></div><div id="s3SessionNoKeys" class="empty-state hidden p-6"><i data-lucide="key" class="mx-auto"></i><p class="mt-2 text-sm">No stored S3 keys are available to this account.</p></div>
+        <div id="s3SessionOwn" class="mt-5 border-t pt-5"><h3 class="mb-3 text-sm font-semibold">Use your own credentials</h3><div class="grid gap-3 sm:grid-cols-2"><label><span class="field-label">Access key</span><input class="input" id="s3AccessKey" autocomplete="off"/></label><label><span class="field-label">Secret key</span><input class="input" id="s3SecretKey" type="password" autocomplete="off"/></label><label><span class="field-label">Endpoint URL</span><input class="input" id="s3EndpointUrl" type="url" placeholder="https://s3.example.com" autocomplete="off"/></label><label><span class="field-label">Region</span><input class="input" id="s3Region" placeholder="us-east-1" autocomplete="off"/></label></div><button class="btn-primary mt-4 w-full" type="button" onclick="useOwnCredentials()"><i data-lucide="log-out" class="rotate-180"></i>Connect with these credentials</button></div>
+    </div></div>
+</div>
+
+<footer th:fragment="footer" class="app-footer mx-auto w-full max-w-[1600px] px-4 pb-6 text-center text-xs text-slate-500 sm:px-6"><p><a class="hover:text-brand-600" href="https://github.com/wenisch-tech/s3webui" target="_blank" rel="noopener noreferrer">S3WEBUI</a> is open-source software made in Germany and licensed under the <a class="hover:text-brand-600" th:href="${licensePageUrl}" target="_blank" rel="noopener noreferrer">GNU AGPL v3</a>.</p><p class="mt-1"><a class="hover:text-brand-600" th:href="${releasePageUrl}" target="_blank" rel="noopener noreferrer" th:text="'Version ' + ${appVersion}">Version</a></p></footer>
+<div th:fragment="scripts"><div id="pageLoader" class="page-loader" aria-hidden="true" aria-live="polite"><div class="page-loader__card"><span class="page-loader__orbit" aria-hidden="true"></span><span>Loading workspace…</span></div></div><div class="toast-stack" id="toastContainer" aria-live="polite"></div><script th:src="@{/js/s3webui.js}"></script></div>

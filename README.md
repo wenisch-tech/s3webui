@@ -6,8 +6,9 @@
 [![Container](https://img.shields.io/badge/container-ghcr.io-blue?logo=github)](https://github.com/wenisch-tech/s3webui/pkgs/container/s3webui)
 [![Signed](https://img.shields.io/badge/signed-cosign-green?logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0id2hpdGUiIGQ9Ik0xMiAxTDMgNXY2YzAgNS41NSAzLjg0IDEwLjc0IDkgMTIgNS4xNi0xLjI2IDktNi40NSA5LTEyVjVsLTktNHoiLz48L3N2Zz4=)](https://github.com/wenisch-tech/Kairos/releases)
 
-![Buckets dark](docs/img/buckets-dark.png)
-A modern, clean graphical web interface for S3-compatible object storage, with optional OIDC Support, audit history and clientside multipart upload built with Spring Boot and Bootstrap 5.  
+![S3WEBUI product tour](docs/img/s3webui-tour.gif)
+
+A modern, clean graphical web interface for S3-compatible object storage, with local and optional OIDC authentication, audit history, administration, and client-side multipart upload. Built with Spring Boot, Tailwind CSS, Alpine.js, and Lucide.
 
 
 > [!IMPORTANT]
@@ -31,11 +32,9 @@ Users may also connect with credentials they type in themselves; administrators 
 under **Settings → General**. Grants are re-checked on every request, so revoking one takes effect
 immediately.
 
-## Screenshots
-Dark theme by default — switch to light with the toggle in the top-right corner.
-| Dark theme — Bucket browser | Upload modal with progress | Light theme |
-|---|---|---|
-| ![Bucket browser dark](docs/img/bucket-browser-dark.png)| ![Upload modal](docs/img/upload-modal-dark.png) | ![Buckets light](docs/img/buckets-light.png) |
+## Product tour
+
+The walkthrough above uses fictional demo data in the real application UI and cycles through card, list, and chart views, object browsing, file selection, audit history, S3 connection setup, and sign-in.
 
 ## Features
 
@@ -48,7 +47,7 @@ Dark theme by default — switch to light with the toggle in the top-right corne
 -  **Delete** — delete individual objects or entire buckets
 -  **Folder support** — create virtual folders (prefix-based)
 -  **Audit history** — per-session activity log (uploads, downloads, deletes, renames) with user and action filters
--  **Dark / Light theme** — toggle stored in `localStorage`, dark is the default
+-  **Light / Dark theme** — toggle stored in `localStorage`, light is the default
 -  **Administration panel** — manage named S3 keys, decide who may use each one, and manage local accounts
 -  **Per-user S3 sessions** — every signed-in user picks their own key; several users browse different storage at the same time
 -  **Encrypted secrets** — stored S3 secret keys are encrypted at rest with AES-256-GCM

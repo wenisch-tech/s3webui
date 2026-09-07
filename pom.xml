@@ -61,23 +61,6 @@
             <version>${aws-sdk.version}</version>
         </dependency>
 
-        <!-- WebJars -->
-        <dependency>
-            <groupId>org.webjars</groupId>
-            <artifactId>bootstrap</artifactId>
-            <version>5.3.8</version>
-        </dependency>
-        <dependency>
-            <groupId>org.webjars.npm</groupId>
-            <artifactId>bootstrap-icons</artifactId>
-            <version>1.13.1</version>
-        </dependency>
-        <dependency>
-            <groupId>org.webjars</groupId>
-            <artifactId>webjars-locator-lite</artifactId>
-            <version>1.1.4</version>
-        </dependency>
-
         <!-- Spring Security + OIDC -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -140,6 +123,31 @@
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>com.github.eirslett</groupId>
+                <artifactId>frontend-maven-plugin</artifactId>
+                <version>1.15.4</version>
+                <configuration>
+                    <nodeVersion>v22.22.0</nodeVersion>
+                    <npmVersion>10.9.4</npmVersion>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>install-node</id>
+                        <goals><goal>install-node-and-npm</goal></goals>
+                    </execution>
+                    <execution>
+                        <id>npm-ci</id>
+                        <goals><goal>npm</goal></goals>
+                        <configuration><arguments>ci</arguments></configuration>
+                    </execution>
+                    <execution>
+                        <id>frontend-build</id>
+                        <goals><goal>npm</goal></goals>
+                        <configuration><arguments>run build</arguments></configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
