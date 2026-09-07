@@ -16,6 +16,7 @@ public class OidcProperties {
     private boolean enabled;
     private String requiredRole = "";
     private boolean insecureSkipTlsVerify;
+    private boolean createUsers = true;
     private String providerName = "Single Sign-On";
     private String clientId = "";
     private String clientSecret = "";
@@ -44,6 +45,14 @@ public class OidcProperties {
 
     public void setInsecureSkipTlsVerify(boolean insecureSkipTlsVerify) {
         this.insecureSkipTlsVerify = insecureSkipTlsVerify;
+    }
+
+    public boolean isCreateUsers() {
+        return createUsers;
+    }
+
+    public void setCreateUsers(boolean createUsers) {
+        this.createUsers = createUsers;
     }
 
     public String getProviderName() {

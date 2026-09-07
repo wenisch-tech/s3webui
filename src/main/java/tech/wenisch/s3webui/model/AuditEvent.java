@@ -10,6 +10,7 @@ import java.time.Instant;
 public class AuditEvent {
     Instant timestamp;
     String user;
+    String credential;
     String action;
     String resourceType;
     String bucket;

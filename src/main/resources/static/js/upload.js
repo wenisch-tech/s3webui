@@ -221,6 +221,7 @@ function simpleUpload(file, bucket, key, onProgress) {
         xhr.addEventListener('error', () => reject(new Error('Network error')));
         xhr.open('POST', `/api/buckets/${encodeURIComponent(bucket)}/objects/upload` +
                          `?prefix=${encodeURIComponent(PREFIX || '')}`);
+        setCsrfHeader(xhr);
         xhr.send(formData);
     });
 }
@@ -229,7 +230,7 @@ function simpleUpload(file, bucket, key, onProgress) {
 
 async function multipartUpload(file, bucket, key, onProgress) {
     // 1. Initiate
-    const initRes = await fetch(
+    const initRes = await apiFetch(
         `/api/buckets/${encodeURIComponent(bucket)}/multipart/initiate` +
         `?key=${encodeURIComponent(key)}&contentType=${encodeURIComponent(file.type || 'application/octet-stream')}`,
         {method: 'POST'});
@@ -255,7 +256,7 @@ async function multipartUpload(file, bucket, key, onProgress) {
     }
 
     // 3. Complete
-    const completeRes = await fetch(
+    const completeRes = await apiFetch(
         `/api/buckets/${encodeURIComponent(bucket)}/multipart/complete` +
         `?key=${encodeURIComponent(key)}`,
         {
@@ -284,6 +285,7 @@ function uploadPart(bucket, key, uploadId, partNumber, blob, onProgress) {
         const url = `/api/buckets/${encodeURIComponent(bucket)}/multipart/part` +
             `?key=${encodeURIComponent(key)}&uploadId=${encodeURIComponent(uploadId)}&partNumber=${partNumber}`;
         xhr.open('PUT', url);
+        setCsrfHeader(xhr);
         xhr.setRequestHeader('Content-Type', 'application/octet-stream');
         xhr.send(blob);
     });
@@ -309,4 +311,12 @@ function formatDuration(seconds) {
 
 function escapeHtml(str) {
     return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+/** Attach the CSRF header to an XHR that targets our own API (see apiFetch in app.js). */
+function setCsrfHeader(xhr) {
+    const token = csrfToken();
+    if (token) {
+        xhr.setRequestHeader('X-XSRF-TOKEN', token);
+    }
 }

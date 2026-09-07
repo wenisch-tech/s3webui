@@ -1,12 +1,16 @@
 package tech.wenisch.s3webui.config;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.info.BuildProperties;
-import tech.wenisch.s3webui.service.S3ConnectionSettingsService;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import tech.wenisch.s3webui.model.S3CredentialView;
+import tech.wenisch.s3webui.service.S3ConnectionSettingsService;
 
+import java.util.List;
 import java.util.Optional;
 
 @ControllerAdvice
@@ -40,8 +44,26 @@ public class GlobalModelAttributes {
     }
 
     @ModelAttribute("oidcProviders")
-    public java.util.List<OidcProperties.LoginProviderView> oidcProviders() {
+    public List<OidcProperties.LoginProviderView> oidcProviders() {
         return oidcProperties.getLoginProviders();
+    }
+
+    @ModelAttribute("isAdmin")
+    public boolean isAdmin(Authentication authentication) {
+        return authentication != null && authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .anyMatch("ROLE_ADMIN"::equals);
+    }
+
+    /** The key the current session browses with, for the navbar switcher. */
+    @ModelAttribute("activeCredentialName")
+    public String activeCredentialName(Authentication authentication) {
+        return isSignedIn(authentication) ? s3ConnectionSettingsService.getActiveCredentialName() : null;
+    }
+
+    @ModelAttribute("availableCredentials")
+    public List<S3CredentialView> availableCredentials(Authentication authentication) {
+        return isSignedIn(authentication) ? s3ConnectionSettingsService.listAvailableCredentials() : List.of();
     }
 
     @ModelAttribute("appVersion")
@@ -62,11 +84,14 @@ public class GlobalModelAttributes {
     }
 
     @ModelAttribute("s3BreadcrumbLabel")
-    public String s3BreadcrumbLabel() {
-        String endpointUrl = s3ConnectionSettingsService.getStatus().endpointUrl();
-        if (endpointUrl == null || endpointUrl.isBlank()) {
-            return "S3";
-        }
-        return endpointUrl;
+    public String s3BreadcrumbLabel(Authentication authentication) {
+        String name = activeCredentialName(authentication);
+        return name == null || name.isBlank() ? "S3" : name;
+    }
+
+    private boolean isSignedIn(Authentication authentication) {
+        return authentication != null
+                && authentication.isAuthenticated()
+                && !"anonymousUser".equals(authentication.getName());
     }
 }

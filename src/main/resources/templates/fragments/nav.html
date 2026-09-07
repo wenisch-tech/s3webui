@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<body>
+
+<!-- Right hand side of the navbar: key switcher, admin link, user, logout, theme toggle. -->
+<div th:fragment="navActions" class="d-flex align-items-center gap-2 ms-auto">
+
+    <!-- Active S3 key + switcher -->
+    <div class="dropdown" sec:authorize="isAuthenticated()" th:if="${activeCredentialName != null}">
+        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false" title="S3 key used in this session">
+            <i class="bi bi-key me-1"></i>
+            <span class="d-none d-md-inline" th:text="${activeCredentialName}">Key</span>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end">
+            <li><h6 class="dropdown-header">Switch S3 key</h6></li>
+            <li th:each="credential : ${availableCredentials}">
+                <button class="dropdown-item d-flex align-items-center gap-2" type="button"
+                        th:attr="data-credential-id=${credential.id}"
+                        th:classappend="${credential.name == activeCredentialName} ? 'active' : ''"
+                        onclick="switchCredential(this.getAttribute('data-credential-id'))">
+                    <i class="bi" th:classappend="${credential.builtIn} ? 'bi-hdd-network' : 'bi-key'"></i>
+                    <span>
+                        <span th:text="${credential.name}">Key</span>
+                        <small class="d-block text-muted" th:text="${credential.endpointUrl}">endpoint</small>
+                    </span>
+                </button>
+            </li>
+            <li th:if="${#lists.isEmpty(availableCredentials)}">
+                <span class="dropdown-item-text text-muted small">No keys assigned to you</span>
+            </li>
+            <li><hr class="dropdown-divider"/></li>
+            <li>
+                <button class="dropdown-item" type="button" onclick="openS3SessionDialog()">
+                    <i class="bi bi-pencil-square me-2"></i>Choose another key…
+                </button>
+            </li>
+        </ul>
+    </div>
+
+    <!-- Settings (administrators only) -->
+    <a sec:authorize="hasRole('ADMIN')" class="btn btn-sm btn-outline-secondary"
+       th:href="@{/admin/settings}" title="Administration">
+        <i class="bi bi-gear me-1"></i><span class="d-none d-md-inline">Settings</span>
+    </a>
+
+    <!-- Signed-in user -->
+    <span sec:authorize="isAuthenticated()" class="text-muted small d-none d-md-inline">
+        <i class="bi bi-person-circle me-1"></i>
+        <span sec:authentication="name">username</span>
+    </span>
+
+    <!-- Logout -->
+    <form sec:authorize="isAuthenticated()" th:action="@{/logout}" method="post" class="d-inline">
+        <button type="submit" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-box-arrow-right me-1"></i><span class="d-none d-md-inline">Logout</span>
+        </button>
+    </form>
+
+    <!-- Theme toggle -->
+    <button class="btn btn-sm btn-outline-secondary" id="themeToggle"
+            onclick="toggleTheme()" title="Toggle light/dark theme">
+        <i class="bi bi-sun-fill" id="themeIcon"></i>
+    </button>
+</div>
+
+<!-- Blocking dialog that asks which S3 key this session should use. -->
+<div th:fragment="sessionModal" class="modal fade" id="s3SessionModal" tabindex="-1"
+     data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-key me-2"></i>Choose an S3 key</h5>
+                <button type="button" class="btn-close d-none" id="s3SessionClose"
+                        data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="s3SessionError" class="alert alert-danger d-none" role="alert"></div>
+
+                <div id="s3SessionKeys">
+                    <p class="text-muted small mb-3">Pick the storage you want to work with in this session.</p>
+                    <div class="list-group mb-3" id="s3SessionKeyList"></div>
+                </div>
+
+                <div id="s3SessionNoKeys" class="alert alert-warning d-none" role="alert">
+                    No S3 keys have been assigned to your account yet. Ask an administrator to grant you one.
+                </div>
+
+                <div id="s3SessionOwn" class="d-none">
+                    <hr/>
+                    <p class="text-muted small mb-3">Or connect with your own credentials.</p>
+                    <div class="mb-3">
+                        <label for="s3AccessKey" class="form-label">Access key</label>
+                        <input type="text" class="form-control" id="s3AccessKey" autocomplete="off"/>
+                    </div>
+                    <div class="mb-3">
+                        <label for="s3SecretKey" class="form-label">Secret key</label>
+                        <input type="password" class="form-control" id="s3SecretKey" autocomplete="off"/>
+                    </div>
+                    <div class="mb-3">
+                        <label for="s3EndpointUrl" class="form-label">Endpoint URL</label>
+                        <input type="url" class="form-control" id="s3EndpointUrl"
+                               placeholder="https://s3.example.com" autocomplete="off"/>
+                    </div>
+                    <div class="mb-3">
+                        <label for="s3Region" class="form-label">Region (optional)</label>
+                        <input type="text" class="form-control" id="s3Region" placeholder="us-east-1"
+                               autocomplete="off"/>
+                    </div>
+                    <button type="button" class="btn btn-outline-primary w-100" onclick="useOwnCredentials()">
+                        <i class="bi bi-box-arrow-in-right me-1"></i>Connect with these credentials
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

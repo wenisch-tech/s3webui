@@ -8,7 +8,16 @@
         "env": {
             "type": "object",
             "properties": {
+                "ADMIN_EMAIL": {
+                    "type": "string"
+                },
+                "APP_DATA_DIR": {
+                    "type": "string"
+                },
                 "OIDC_CLIENT_ID": {
+                    "type": "string"
+                },
+                "OIDC_CREATEUSERS": {
                     "type": "string"
                 },
                 "OIDC_ENABLED": {
@@ -39,6 +48,18 @@
                     "type": "string"
                 },
                 "S3_SECRET_KEY": {
+                    "type": "string"
+                },
+                "SPRING_DATASOURCE_DRIVER_CLASS_NAME": {
+                    "type": "string"
+                },
+                "SPRING_DATASOURCE_URL": {
+                    "type": "string"
+                },
+                "SPRING_DATASOURCE_USERNAME": {
+                    "type": "string"
+                },
+                "SPRING_JPA_DATABASE_PLATFORM": {
                     "type": "string"
                 }
             }
@@ -144,6 +165,32 @@
         },
         "nodeSelector": {
             "type": "object"
+        },
+        "persistence": {
+            "type": "object",
+            "properties": {
+                "accessModes": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "enabled": {
+                    "type": "boolean"
+                },
+                "existingClaim": {
+                    "type": "string"
+                },
+                "mountPath": {
+                    "type": "string"
+                },
+                "size": {
+                    "type": "string"
+                },
+                "storageClass": {
+                    "type": "string"
+                }
+            }
         },
         "podSecurityContext": {
             "type": "object",
@@ -258,6 +305,9 @@
                     "type": "string"
                 }
             }
+        },
+        "strategy": {
+            "type": "object"
         },
         "tolerations": {
             "type": "array"
