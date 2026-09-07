@@ -1,123 +1,165 @@
 package tech.wenisch.s3webui.service;
 
 import jakarta.servlet.http.HttpSession;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.ObjectProvider;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
+import tech.wenisch.s3webui.model.ResolvedCredential;
+import tech.wenisch.s3webui.model.S3CredentialView;
 
 import java.io.Serializable;
+import java.util.List;
 
+/**
+ * Holds the S3 key the current user picked for this browser session and turns it into the settings
+ * an S3 client is built from.
+ *
+ * <p>The selection lives in the {@link HttpSession}, so two users signed in at the same time browse
+ * two different S3 backends without interfering with each other. Only the <em>choice</em> is kept in
+ * the session - stored keys are re-read and re-authorised on every request.
+ */
 @Service
+@RequiredArgsConstructor
 public class S3ConnectionSettingsService {
 
-    private static final String SESSION_SETTINGS_KEY = "s3ConnectionSettings";
+    private static final String SESSION_SELECTION_KEY = "s3SessionSelection";
 
     private final ObjectProvider<HttpSession> sessionProvider;
+    private final S3CredentialAccessService credentialAccessService;
+    private final AppSettingsService appSettingsService;
 
-    @Value("${s3.access-key:}")
-    private String configuredAccessKey;
-
-    @Value("${s3.secret-key:}")
-    private String configuredSecretKey;
-
-    @Value("${s3.endpoint-url:}")
-    private String configuredEndpointUrl;
-
-    @Value("${s3.region:}")
-    private String configuredRegion;
-
-    public S3ConnectionSettingsService(ObjectProvider<HttpSession> sessionProvider) {
-        this.sessionProvider = sessionProvider;
+    /** The keys the signed-in user may choose from. */
+    public List<S3CredentialView> listAvailableCredentials() {
+        return credentialAccessService.listAccessible(currentAuthentication());
     }
 
-    public S3ConfigStatus getStatus() {
-        SessionSettings sessionSettings = getSessionSettings(false);
+    public boolean isUserSuppliedCredentialsAllowed() {
+        return appSettingsService.isUserSuppliedCredentialsAllowed();
+    }
 
-        String accessKeyValue = firstNonBlank(configuredAccessKey, valueFrom(sessionSettings, "accessKey"));
-        String secretKeyValue = firstNonBlank(configuredSecretKey, valueFrom(sessionSettings, "secretKey"));
-        String endpointUrlValue = firstNonBlank(configuredEndpointUrl, valueFrom(sessionSettings, "endpointUrl"));
-        boolean accessKeyMissing = isBlank(configuredAccessKey) && isBlank(valueFrom(sessionSettings, "accessKey"));
-        boolean secretKeyMissing = isBlank(configuredSecretKey) && isBlank(valueFrom(sessionSettings, "secretKey"));
-        boolean endpointUrlMissing = isBlank(configuredEndpointUrl) && isBlank(valueFrom(sessionSettings, "endpointUrl"));
+    /** Whether the user still has to pick a key before the UI can show anything. */
+    public boolean isSelectionRequired() {
+        Selection selection = getSelection();
+        if (selection == null) {
+            return true;
+        }
+        try {
+            resolve(selection);
+            return false;
+        } catch (RuntimeException e) {
+            return true;
+        }
+    }
 
-        String regionValue = firstNonBlank(
-                configuredRegion,
-                valueFrom(sessionSettings, "region"),
-                "us-east-1"
-        );
-        boolean accessKeyLocked = !isBlank(configuredAccessKey);
-        boolean secretKeyLocked = !isBlank(configuredSecretKey);
-        boolean endpointUrlLocked = !isBlank(configuredEndpointUrl);
-        boolean regionLocked = !isBlank(configuredRegion);
+    /** Name of the key in use, or null when nothing is selected. */
+    public String getActiveCredentialName() {
+        Selection selection = getSelection();
+        if (selection == null) {
+            return null;
+        }
+        try {
+            return resolve(selection).name();
+        } catch (RuntimeException e) {
+            return null;
+        }
+    }
 
-        return new S3ConfigStatus(
-                accessKeyMissing || secretKeyMissing || endpointUrlMissing,
-                accessKeyMissing,
-                secretKeyMissing,
-                endpointUrlMissing,
-            regionValue,
-            accessKeyValue,
-            secretKeyLocked ? "********" : secretKeyValue,
-            endpointUrlValue,
-            accessKeyLocked,
-            secretKeyLocked,
-            endpointUrlLocked,
-            regionLocked
-        );
+    /** Id of the key in use; null for own credentials or no selection. */
+    public String getActiveCredentialId() {
+        Selection selection = getSelection();
+        return selection == null ? null : selection.credentialId();
     }
 
     public EffectiveS3Settings getEffectiveSettingsOrThrow() {
-        SessionSettings sessionSettings = getSessionSettings(false);
-
-        String accessKey = firstNonBlank(configuredAccessKey, valueFrom(sessionSettings, "accessKey"));
-        String secretKey = firstNonBlank(configuredSecretKey, valueFrom(sessionSettings, "secretKey"));
-        String endpointUrl = firstNonBlank(configuredEndpointUrl, valueFrom(sessionSettings, "endpointUrl"));
-        String region = firstNonBlank(configuredRegion, valueFrom(sessionSettings, "region"), "us-east-1");
-
-        if (isBlank(accessKey) || isBlank(secretKey) || isBlank(endpointUrl)) {
-            throw new MissingS3ConfigurationException("S3 connection is not configured yet");
+        Selection selection = getSelection();
+        if (selection == null) {
+            throw new MissingS3ConfigurationException("No S3 key selected for this session yet");
         }
 
-        return new EffectiveS3Settings(accessKey, secretKey, endpointUrl, region);
+        ResolvedCredential resolved = resolve(selection);
+        return new EffectiveS3Settings(
+                resolved.accessKey(),
+                resolved.secretKey(),
+                resolved.endpointUrl(),
+                resolved.region(),
+                resolved.insecureSkipTlsVerify());
     }
 
-    public void saveSessionSettings(SubmittedS3Settings submittedSettings) {
-        String accessKey = firstNonBlank(configuredAccessKey, submittedSettings.accessKey());
-        String secretKey = firstNonBlank(configuredSecretKey, submittedSettings.secretKey());
-        String endpointUrl = firstNonBlank(configuredEndpointUrl, submittedSettings.endpointUrl());
+    /** Picks a stored key, or the built-in environment key, for this session. */
+    public void selectCredential(String credentialId) {
+        if (credentialId == null || credentialId.isBlank()) {
+            throw new MissingS3ConfigurationException("No S3 key given");
+        }
+        // Resolve first so an unauthorised choice never reaches the session.
+        credentialAccessService.resolve(currentAuthentication(), credentialId.trim());
+        store(new Selection(credentialId.trim(), null, null, null, null));
+    }
 
-        if (isBlank(accessKey) || isBlank(secretKey) || isBlank(endpointUrl)) {
+    /** Uses credentials the user typed in, when the administrator allows that. */
+    public void selectOwnCredentials(SubmittedS3Settings submitted) {
+        if (!appSettingsService.isUserSuppliedCredentialsAllowed()) {
+            throw new AccessDeniedException("Using your own S3 credentials has been disabled by an administrator");
+        }
+
+        String accessKey = trimToNull(submitted.accessKey());
+        String secretKey = trimToNull(submitted.secretKey());
+        String endpointUrl = trimToNull(submitted.endpointUrl());
+        String region = trimToNull(submitted.region());
+
+        if (accessKey == null || secretKey == null || endpointUrl == null) {
             throw new MissingS3ConfigurationException("Access key, secret key and endpoint URL are required");
         }
 
-        HttpSession session = resolveSession(true);
-        if (session == null) {
-            throw new MissingS3ConfigurationException("Unable to access HTTP session to store S3 settings");
-        }
-
-        session.setAttribute(
-                SESSION_SETTINGS_KEY,
-                new SessionSettings(
-                        trimToNull(submittedSettings.accessKey()),
-                        trimToNull(submittedSettings.secretKey()),
-                        trimToNull(submittedSettings.endpointUrl()),
-                        trimToNull(submittedSettings.region())
-                )
-        );
+        store(new Selection(null, accessKey, secretKey, endpointUrl, region == null ? "us-east-1" : region));
     }
 
-    private SessionSettings getSessionSettings(boolean createSession) {
-        HttpSession session = resolveSession(createSession);
+    public void clearSelection() {
+        HttpSession session = resolveSession(false);
+        if (session != null) {
+            session.removeAttribute(SESSION_SELECTION_KEY);
+        }
+    }
+
+    private ResolvedCredential resolve(Selection selection) {
+        if (selection.credentialId() != null) {
+            return credentialAccessService.resolve(currentAuthentication(), selection.credentialId());
+        }
+        if (!appSettingsService.isUserSuppliedCredentialsAllowed()) {
+            throw new AccessDeniedException("Using your own S3 credentials has been disabled by an administrator");
+        }
+        return new ResolvedCredential(
+                null,
+                "Own credentials",
+                selection.accessKey(),
+                selection.secretKey(),
+                selection.endpointUrl(),
+                selection.region(),
+                false);
+    }
+
+    private Selection getSelection() {
+        HttpSession session = resolveSession(false);
         if (session == null) {
             return null;
         }
-        Object raw = session.getAttribute(SESSION_SETTINGS_KEY);
-        if (raw instanceof SessionSettings settings) {
-            return settings;
+        return session.getAttribute(SESSION_SELECTION_KEY) instanceof Selection selection ? selection : null;
+    }
+
+    private void store(Selection selection) {
+        HttpSession session = resolveSession(true);
+        if (session == null) {
+            throw new MissingS3ConfigurationException("Unable to access the HTTP session to store the S3 selection");
         }
-        return null;
+        session.setAttribute(SESSION_SELECTION_KEY, selection);
+    }
+
+    private Authentication currentAuthentication() {
+        return SecurityContextHolder.getContext().getAuthentication();
     }
 
     private HttpSession resolveSession(boolean createSession) {
@@ -130,38 +172,10 @@ public class S3ConnectionSettingsService {
         if (requestAttributes instanceof ServletRequestAttributes servletAttributes) {
             return servletAttributes.getRequest().getSession(createSession);
         }
-
         return null;
     }
 
-    private String valueFrom(SessionSettings settings, String field) {
-        if (settings == null) {
-            return null;
-        }
-        return switch (field) {
-            case "accessKey" -> settings.accessKey();
-            case "secretKey" -> settings.secretKey();
-            case "endpointUrl" -> settings.endpointUrl();
-            case "region" -> settings.region();
-            default -> null;
-        };
-    }
-
-    private String firstNonBlank(String... candidates) {
-        for (String candidate : candidates) {
-            String trimmed = trimToNull(candidate);
-            if (trimmed != null) {
-                return trimmed;
-            }
-        }
-        return null;
-    }
-
-    private boolean isBlank(String value) {
-        return trimToNull(value) == null;
-    }
-
-    private String trimToNull(String value) {
+    private static String trimToNull(String value) {
         if (value == null) {
             return null;
         }
@@ -169,27 +183,23 @@ public class S3ConnectionSettingsService {
         return trimmed.isEmpty() ? null : trimmed;
     }
 
-    private record SessionSettings(String accessKey, String secretKey, String endpointUrl, String region)
-            implements Serializable {
-    }
-
-    public record S3ConfigStatus(
-            boolean required,
-            boolean accessKeyRequired,
-            boolean secretKeyRequired,
-            boolean endpointUrlRequired,
-            String region,
+    /** What the session remembers: either a key id, or credentials the user typed in. */
+    private record Selection(
+            String credentialId,
             String accessKey,
             String secretKey,
             String endpointUrl,
-            boolean accessKeyLocked,
-            boolean secretKeyLocked,
-            boolean endpointUrlLocked,
-            boolean regionLocked
-    ) {
+            String region
+    ) implements Serializable {
     }
 
-    public record EffectiveS3Settings(String accessKey, String secretKey, String endpointUrl, String region) {
+    public record EffectiveS3Settings(
+            String accessKey,
+            String secretKey,
+            String endpointUrl,
+            String region,
+            boolean insecureSkipTlsVerify
+    ) {
     }
 
     public record SubmittedS3Settings(String accessKey, String secretKey, String endpointUrl, String region) {

@@ -1,4 +1,10 @@
+# Keep this at 1 unless you point the application at PostgreSQL *and* enable sticky sessions:
+# the default H2 file database tolerates a single writer, and HTTP sessions are held in memory.
 replicaCount: 1
+
+# Recreate avoids two pods holding the H2 file at the same time during a rollout.
+strategy:
+  type: Recreate
 
 image:
   registry: ghcr.io
@@ -46,14 +52,35 @@ resources:
     cpu: 500m
     memory: 512Mi
 
+# Persistent volume for the H2 database and the generated encryption key.
+# Required unless you use PostgreSQL and supply APP_ENCRYPTION_KEY yourself.
+persistence:
+  enabled: false
+  mountPath: /app/data
+  size: 1Gi
+  accessModes:
+    - ReadWriteOnce
+  storageClass: ""
+  existingClaim: ""
+
 nodeSelector: {}
 
 tolerations: []
 
 affinity: {}
 
-# S3 connection configuration
+# Application configuration
 env:
+  # Database. Leave SPRING_DATASOURCE_URL empty to use the bundled H2 file database in APP_DATA_DIR.
+  # For PostgreSQL set, for example:
+  #   SPRING_DATASOURCE_URL: "jdbc:postgresql://postgres:5432/s3webui"
+  #   SPRING_DATASOURCE_DRIVER_CLASS_NAME: "org.postgresql.Driver"
+  #   SPRING_DATASOURCE_USERNAME: "s3webui"
+  #   SPRING_JPA_DATABASE_PLATFORM: "org.hibernate.dialect.PostgreSQLDialect"
+  APP_DATA_DIR: "/app/data"
+  # Default administrator, created on first start only. Change the password immediately.
+  ADMIN_EMAIL: "admin@s3webui.local"
+  # Built-in S3 key offered to every signed-in user (optional; keys are normally added in the UI)
   S3_ACCESS_KEY: ""
   S3_SECRET_KEY: ""
   S3_ENDPOINT_URL: ""
@@ -65,6 +92,8 @@ env:
   OIDC_CLIENT_ID: ""
   OIDC_ISSUER_URI: ""
   OIDC_REQUIRED_ROLE: ""
+  # Create a local record the first time an unknown SSO user signs in
+  OIDC_CREATEUSERS: "true"
   OIDC_INSECURE_SKIP_TLS_VERIFY: "false"
   # Multi-provider example:
   # OIDC_PROVIDERS_0_NAME: "Company SSO"
@@ -76,6 +105,11 @@ env:
 
 # Sensitive values (stored in a Kubernetes secret)
 secrets: {}
+  # ADMIN_PASSWORD: "change-me-on-first-login"
+  # Base64 encoded 32 byte AES key protecting the stored S3 secrets.
+  # Leave unset to have one generated into APP_DATA_DIR/encryption.key (needs persistence enabled).
+  # APP_ENCRYPTION_KEY: "base64-encoded-32-byte-key"
+  # SPRING_DATASOURCE_PASSWORD: "your-database-password"
   # S3_ACCESS_KEY: "your-access-key"
   # S3_SECRET_KEY: "your-secret-key"
   # OIDC_CLIENT_SECRET: "your-client-secret"

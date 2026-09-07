@@ -129,13 +129,50 @@ helm install s3webui ./s3webui -f values-prod.yaml
 
 ## Configuration
 
+### Database & Persistence Parameters
+
+The chart ships with an H2 file database in `/app/data`, which also holds the generated encryption
+key protecting the stored S3 secrets. **Enable persistence**, or both are lost on every restart.
+The H2 file tolerates a single writer, so keep `replicaCount: 1` — more replicas need PostgreSQL
+*and* sticky sessions, because HTTP sessions are held in memory.
+
+| Parameter | Description | Default |
+|---|---|---|
+| `persistence.enabled` | Claim a volume for `/app/data` | `false` |
+| `persistence.size` | Volume size | `1Gi` |
+| `persistence.storageClass` | Storage class, empty for the cluster default | `""` |
+| `persistence.existingClaim` | Use an existing PVC instead of creating one | `""` |
+| `persistence.mountPath` | Mount path, matches `env.APP_DATA_DIR` | `/app/data` |
+| `persistence.accessModes` | Access modes | `[ReadWriteOnce]` |
+| `strategy` | Deployment strategy; `Recreate` avoids two pods holding the H2 file | `{type: Recreate}` |
+| `env.APP_DATA_DIR` | Directory for the database and encryption key | `/app/data` |
+| `env.SPRING_DATASOURCE_URL` | JDBC URL, e.g. `jdbc:postgresql://postgres:5432/s3webui` | H2 file |
+| `env.SPRING_DATASOURCE_DRIVER_CLASS_NAME` | JDBC driver | `org.h2.Driver` |
+| `env.SPRING_DATASOURCE_USERNAME` | Database user | `sa` |
+| `env.SPRING_JPA_DATABASE_PLATFORM` | `org.hibernate.dialect.PostgreSQLDialect` for PostgreSQL | — |
+| `secrets.SPRING_DATASOURCE_PASSWORD` | Database password | — |
+
+### Administrator & Encryption Parameters
+
+| Parameter | Description | Default |
+|---|---|---|
+| `env.ADMIN_EMAIL` | Administrator created on first start | `admin@s3webui.local` |
+| `secrets.ADMIN_PASSWORD` | Its password — set this, the fallback is `admin` | `admin` |
+| `secrets.APP_ENCRYPTION_KEY` | Base64 encoded 32 byte AES key for stored S3 secrets | generated to disk |
+
+The administrator is created only while the user table is empty; changing the password later has no
+effect. Supply `APP_ENCRYPTION_KEY` (`openssl rand -base64 32`) to run without a persistent volume.
+
 ### S3 Storage Parameters
+
+These are optional. Set all three of access key, secret key and endpoint URL to publish a built-in
+key available to every signed-in user; all other keys are created in the administration panel.
 
 | Parameter | Description | Default | Required |
 |-----------|-------------|---------|----------|
-| `env.S3_ACCESS_KEY` | AWS/S3 access key | `""` | Yes |
-| `env.S3_SECRET_KEY` | AWS/S3 secret key | `""` | Yes |
-| `env.S3_ENDPOINT_URL` | S3 endpoint URL | `""` | Yes |
+| `env.S3_ACCESS_KEY` | AWS/S3 access key | `""` | No |
+| `env.S3_SECRET_KEY` | AWS/S3 secret key | `""` | No |
+| `env.S3_ENDPOINT_URL` | S3 endpoint URL | `""` | No |
 | `env.S3_REGION` | AWS region | `us-east-1` | No |
 | `env.S3_INSECURE_SKIP_TLS_VERIFY` | Skip TLS verification (not recommended for production) | `false` | No |
 
@@ -148,7 +185,11 @@ helm install s3webui ./s3webui -f values-prod.yaml
 | `env.OIDC_CLIENT_ID` | OIDC client ID (deprecated, use OIDC_PROVIDERS_*) | `""` | No |
 | `env.OIDC_ISSUER_URI` | OIDC issuer URI (deprecated, use OIDC_PROVIDERS_*) | `""` | No |
 | `env.OIDC_REQUIRED_ROLE` | Restrict access to users with this role | `""` | No |
+| `env.OIDC_CREATEUSERS` | Create a local record on first SSO sign-in | `true` | No |
 | `env.OIDC_INSECURE_SKIP_TLS_VERIFY` | Skip TLS verification for OIDC | `false` | No |
+
+Administrator status comes from the database, not from the token: promote users under
+**Settings → Users** in the application.
 
 ### Multi-Provider OIDC (Indexed Variables)
 

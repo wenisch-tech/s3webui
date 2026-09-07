@@ -20,6 +20,11 @@ LABEL org.opencontainers.image.title="S3 Web UI" \
 
 ENV JAVA_TOOL_OPTIONS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -XX:InitialRAMPercentage=20.0 -XX:+UseG1GC -Djava.security.egd=file:/dev/urandom"
 
+# H2 database and the generated encryption key live here. Mount a volume on it, or the stored S3
+# secrets are lost on every restart.
+ENV APP_DATA_DIR=/app/data
+VOLUME ["/app/data"]
+
 COPY target/s3webui-*.jar /app/app.jar
 
 EXPOSE 8080

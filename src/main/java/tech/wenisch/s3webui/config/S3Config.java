@@ -1,7 +1,6 @@
 package tech.wenisch.s3webui.config;
 
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.context.annotation.RequestScope;
@@ -26,19 +25,16 @@ public class S3Config {
 
     private static final AtomicBoolean INSECURE_TLS_WARNING_LOGGED = new AtomicBoolean(false);
 
-    @Value("${s3.insecure-skip-tls-verify:false}")
-    private boolean s3InsecureSkipTlsVerify;
-
     @Bean
     @RequestScope
     public S3Client s3Client(S3ConnectionSettingsService settingsService) {
         var settings = settingsService.getEffectiveSettingsOrThrow();
         var credentials = AwsBasicCredentials.create(settings.accessKey(), settings.secretKey());
         UrlConnectionHttpClient.Builder httpClientBuilder = UrlConnectionHttpClient.builder();
-        if (s3InsecureSkipTlsVerify) {
+        if (settings.insecureSkipTlsVerify()) {
             httpClientBuilder.tlsTrustManagersProvider(this::insecureTrustManagers);
             if (INSECURE_TLS_WARNING_LOGGED.compareAndSet(false, true)) {
-                log.warn("S3_INSECURE_SKIP_TLS_VERIFY is enabled. TLS certificate verification is disabled for S3 HTTP client. Do not use this in production.");
+                log.warn("TLS certificate verification is disabled for at least one S3 key. Do not use this in production.");
             }
         }
 

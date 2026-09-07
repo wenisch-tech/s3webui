@@ -29,23 +29,7 @@
                 <i class="bi bi-clock-history me-1"></i>History
             </a>
         </div>
-        <div class="d-flex align-items-center gap-2 ms-auto">
-            <span sec:authorize="isAuthenticated()" th:if="${oidcEnabled}"
-                  class="text-muted small d-none d-md-inline">
-                <i class="bi bi-person-circle me-1"></i>
-                <span sec:authentication="name">username</span>
-            </span>
-            <form sec:authorize="isAuthenticated()" th:if="${oidcEnabled}"
-                  th:action="@{/logout}" method="post" class="d-inline">
-                <button type="submit" class="btn btn-sm btn-outline-secondary">
-                    <i class="bi bi-box-arrow-right me-1"></i>Logout
-                </button>
-            </form>
-            <button class="btn btn-sm btn-outline-secondary" id="themeToggle"
-                    onclick="toggleTheme()" title="Toggle light/dark theme">
-                <i class="bi bi-sun-fill" id="themeIcon"></i>
-            </button>
-        </div>
+        <div th:replace="~{fragments/nav :: navActions}"></div>
     </div>
 </nav>
 
@@ -89,6 +73,7 @@
                 <tr>
                     <th style="width: 210px;">Time</th>
                     <th style="width: 170px;">User</th>
+                    <th style="width: 150px;">S3 key</th>
                     <th style="width: 130px;">Action</th>
                     <th style="width: 130px;">Type</th>
                     <th style="width: 170px;">Bucket</th>
@@ -97,13 +82,15 @@
                 </thead>
                 <tbody id="historyTableBody">
                 <tr>
-                    <td colspan="6" class="text-center py-4 text-muted">Loading history...</td>
+                    <td colspan="7" class="text-center py-4 text-muted">Loading history...</td>
                 </tr>
                 </tbody>
             </table>
         </div>
     </div>
 </div>
+
+<div th:replace="~{fragments/nav :: sessionModal}"></div>
 
 <div th:replace="~{fragments/app-meta :: appMeta}"></div>
 <div th:replace="~{fragments/app-meta :: appAttribution}"></div>
@@ -112,7 +99,7 @@
 <script th:src="@{/js/app.js}"></script>
 <script>
     document.addEventListener('DOMContentLoaded', () => {
-        ensureS3ConfigDialog();
+        ensureS3SessionDialog();
     });
 
     let allHistory = [];
@@ -166,7 +153,7 @@
         });
 
         if (rows.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted">No history entries found for the selected filters.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-muted">No history entries found for the selected filters.</td></tr>';
             return;
         }
 
@@ -181,6 +168,7 @@
             return '<tr>' +
                 '<td class="small text-muted">' + escapeHtml(formatDate(e.timestamp)) + '</td>' +
                 '<td><span class="badge rounded-pill bg-body-tertiary text-body border">' + escapeHtml(e.user || 'anonymous') + '</span></td>' +
+                '<td class="small text-muted">' + escapeHtml(e.credential || '-') + '</td>' +
                 '<td><span class="badge ' + badgeClass + '">' + escapeHtml(badgeLabel) + '</span></td>' +
                 '<td class="small">' + escapeHtml(e.resourceType || '-') + '</td>' +
                 '<td class="small">' + escapeHtml(e.bucket || '-') + '</td>' +
@@ -208,7 +196,7 @@
 
     async function loadHistory() {
         try {
-            const response = await fetch('/api/history');
+            const response = await apiFetch('/api/history');
             if (!response.ok) {
                 throw new Error('Failed to load history');
             }
@@ -219,7 +207,7 @@
             renderTable();
         } catch (error) {
             document.getElementById('historyTableBody').innerHTML =
-                '<tr><td colspan="6" class="text-center py-4 text-danger">Could not load history.</td></tr>';
+                '<tr><td colspan="7" class="text-center py-4 text-danger">Could not load history.</td></tr>';
             showToast(error.message || 'Could not load history', 'danger');
         }
     }

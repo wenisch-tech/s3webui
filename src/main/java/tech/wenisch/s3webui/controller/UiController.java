@@ -1,6 +1,5 @@
 package tech.wenisch.s3webui.controller;
 
-import tech.wenisch.s3webui.config.OidcProperties;
 import tech.wenisch.s3webui.service.S3Service;
 import tech.wenisch.s3webui.service.S3ConnectionSettingsService;
 import lombok.RequiredArgsConstructor;
@@ -18,11 +17,10 @@ public class UiController {
 
     private final S3Service s3Service;
     private final S3ConnectionSettingsService s3ConnectionSettingsService;
-    private final OidcProperties oidcProperties;
 
     @GetMapping("/")
     public String buckets(Model model) {
-        if (s3ConnectionSettingsService.getStatus().required()) {
+        if (s3ConnectionSettingsService.isSelectionRequired()) {
             model.addAttribute("buckets", java.util.List.of());
             model.addAttribute("error", null);
             return "buckets";
@@ -43,7 +41,7 @@ public class UiController {
     public String bucket(@PathVariable String bucket,
                          @RequestParam(required = false, defaultValue = "") String prefix,
                          Model model) {
-        if (s3ConnectionSettingsService.getStatus().required()) {
+        if (s3ConnectionSettingsService.isSelectionRequired()) {
             model.addAttribute("bucket", bucket);
             model.addAttribute("prefix", prefix);
             model.addAttribute("objects", java.util.List.of());
@@ -70,12 +68,11 @@ public class UiController {
     @GetMapping("/login")
     public String login(@RequestParam(required = false) String error,
                         @RequestParam(required = false) String logout,
+                        @RequestParam(required = false) String oidcError,
                         Model model) {
-        if (!oidcProperties.isEnabled()) {
-            return "redirect:/";
-        }
         model.addAttribute("loginError", error != null);
         model.addAttribute("loggedOut", logout != null);
+        model.addAttribute("oidcError", oidcError != null);
         return "login";
     }
 

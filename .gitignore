@@ -10,3 +10,8 @@ target/
 .classpath
 .project
 .vscode/launch.json
+
+# Local H2 database and generated encryption key
+/data/
+*.mv.db
+*.trace.db

@@ -1,16 +1,18 @@
 package tech.wenisch.s3webui.config;
 
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.ProviderManager;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.authority.mapping.GrantedAuthoritiesMapper;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.oauth2.client.registration.ClientRegistrations;
@@ -19,6 +21,9 @@ import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.oidc.user.OidcUserAuthority;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
+import org.springframework.security.web.authentication.SavedRequestAwareAuthenticationSuccessHandler;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import tech.wenisch.s3webui.service.UserService;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
@@ -30,6 +35,7 @@ import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -38,39 +44,45 @@ import java.util.Set;
 @Slf4j
 @Configuration
 @EnableWebSecurity
-@ConditionalOnClass(name = "org.springframework.security.web.SecurityFilterChain")
 public class SecurityConfig {
 
     private final OidcProperties oidcProperties;
+    private final UserService userService;
 
-    public SecurityConfig(OidcProperties oidcProperties) {
+    public SecurityConfig(OidcProperties oidcProperties, UserService userService) {
         this.oidcProperties = oidcProperties;
+        this.userService = userService;
+    }
+
+    @Bean
+    public AuthenticationManager authenticationManager(PasswordEncoder passwordEncoder) {
+        DaoAuthenticationProvider provider = new DaoAuthenticationProvider(userService);
+        provider.setPasswordEncoder(passwordEncoder);
+        return new ProviderManager(provider);
     }
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        if (!oidcProperties.isEnabled()) {
-            http.authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
-                    .csrf(AbstractHttpConfigurer::disable);
-            return http.build();
-        }
-
         http.authorizeHttpRequests(auth -> {
                     auth.requestMatchers(
                             "/login", "/error",
-                            "/webjars/**", "/css/**", "/js/**",
+                            "/webjars/**", "/css/**", "/js/**", "/img/**",
                             "/actuator/health", "/favicon.ico"
                     ).permitAll();
+                    auth.requestMatchers("/admin/**", "/api/admin/**").hasRole("ADMIN");
                     if (oidcProperties.getRequiredRole() != null && !oidcProperties.getRequiredRole().isBlank()) {
-                        auth.anyRequest().hasRole(oidcProperties.getRequiredRole());
+                        auth.anyRequest().hasAnyRole(oidcProperties.getRequiredRole(), "ADMIN");
                     } else {
                         auth.anyRequest().authenticated();
                     }
                 })
-                .oauth2Login(oauth2 -> oauth2
+                .formLogin(form -> form
                         .loginPage("/login")
-                        .defaultSuccessUrl("/", true)
-                        .userInfoEndpoint(ui -> ui.userAuthoritiesMapper(keycloakAuthoritiesMapper()))
+                        .loginProcessingUrl("/login")
+                        .usernameParameter("email")
+                        .passwordParameter("password")
+                        .failureUrl("/login?error=true")
+                        .successHandler(formLoginSuccessHandler())
                 )
                 .logout(logout -> logout
                         .logoutSuccessUrl("/login?logout=true")
@@ -79,11 +91,39 @@ public class SecurityConfig {
                 )
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint(new LoginUrlAuthenticationEntryPoint("/login"))
-                        .accessDeniedPage("/access-denied")
+                        .accessDeniedHandler(new ApiAwareAccessDeniedHandler("/access-denied"))
                 )
-                .csrf(csrf -> csrf.ignoringRequestMatchers("/api/**"));
+                .csrf(csrf -> csrf
+                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                        .csrfTokenRequestHandler(new SpaCsrfTokenRequestHandler())
+                );
+
+        if (oidcProperties.isEnabled() && !oidcProperties.getResolvedProviders().isEmpty()) {
+            http.oauth2Login(oauth2 -> oauth2
+                    .loginPage("/login")
+                    .successHandler(new OidcLoginSuccessHandler(userService, oidcProperties.isCreateUsers()))
+                    .failureUrl("/login?error=true")
+                    .userInfoEndpoint(ui -> ui.userAuthoritiesMapper(oidcAuthoritiesMapper()))
+            );
+        }
 
         return http.build();
+    }
+
+    private SavedRequestAwareAuthenticationSuccessHandler formLoginSuccessHandler() {
+        SavedRequestAwareAuthenticationSuccessHandler handler =
+                new SavedRequestAwareAuthenticationSuccessHandler() {
+                    @Override
+                    public void onAuthenticationSuccess(jakarta.servlet.http.HttpServletRequest request,
+                                                        jakarta.servlet.http.HttpServletResponse response,
+                                                        org.springframework.security.core.Authentication auth)
+                            throws java.io.IOException, jakarta.servlet.ServletException {
+                        userService.updateLastLogin(auth.getName());
+                        super.onAuthenticationSuccess(request, response, auth);
+                    }
+                };
+        handler.setDefaultTargetUrl("/");
+        return handler;
     }
 
     @Bean
@@ -153,14 +193,18 @@ public class SecurityConfig {
         }
     }
 
-    private GrantedAuthoritiesMapper keycloakAuthoritiesMapper() {
+    /**
+     * Turns provider claims into authorities credential grants can target: realm and client roles
+     * become {@code ROLE_x}, group memberships become {@code GROUP_x}.
+     */
+    private GrantedAuthoritiesMapper oidcAuthoritiesMapper() {
         return authorities -> {
             Set<GrantedAuthority> mapped = new HashSet<>(authorities);
             authorities.forEach(authority -> {
                 if (authority instanceof OidcUserAuthority oidcAuth) {
-                    extractRealmRoles(oidcAuth.getIdToken().getClaims(), mapped);
+                    extractClaims(oidcAuth.getIdToken().getClaims(), mapped);
                     if (oidcAuth.getUserInfo() != null) {
-                        extractRealmRoles(oidcAuth.getUserInfo().getClaims(), mapped);
+                        extractClaims(oidcAuth.getUserInfo().getClaims(), mapped);
                     }
                 }
             });
@@ -168,17 +212,43 @@ public class SecurityConfig {
         };
     }
 
-    @SuppressWarnings("unchecked")
+    private void extractClaims(Map<String, Object> claims, Set<GrantedAuthority> authorities) {
+        extractRealmRoles(claims, authorities);
+        extractClientRoles(claims, authorities);
+        extractGroups(claims, authorities);
+    }
+
     private void extractRealmRoles(Map<String, Object> claims, Set<GrantedAuthority> authorities) {
-        Object realmAccess = claims.get("realm_access");
-        if (realmAccess instanceof Map<?, ?> ra) {
-            Object roles = ra.get("roles");
-            if (roles instanceof List<?> roleList) {
-                roleList.stream()
-                        .filter(String.class::isInstance)
-                        .map(r -> new SimpleGrantedAuthority("ROLE_" + r))
-                        .forEach(authorities::add);
+        if (claims.get("realm_access") instanceof Map<?, ?> realmAccess) {
+            addAll(realmAccess.get("roles"), "ROLE_", authorities);
+        }
+    }
+
+    private void extractClientRoles(Map<String, Object> claims, Set<GrantedAuthority> authorities) {
+        if (claims.get("resource_access") instanceof Map<?, ?> resourceAccess) {
+            for (Object client : resourceAccess.values()) {
+                if (client instanceof Map<?, ?> clientMap) {
+                    addAll(clientMap.get("roles"), "ROLE_", authorities);
+                }
             }
         }
+    }
+
+    private void extractGroups(Map<String, Object> claims, Set<GrantedAuthority> authorities) {
+        addAll(claims.get("groups"), "GROUP_", authorities);
+    }
+
+    private void addAll(Object rawValues, String prefix, Set<GrantedAuthority> authorities) {
+        if (!(rawValues instanceof Collection<?> values)) {
+            return;
+        }
+        values.stream()
+                .filter(String.class::isInstance)
+                .map(String.class::cast)
+                .filter(value -> !value.isBlank())
+                // Keycloak reports group paths as "/team/sub"; grants are written without the slash.
+                .map(value -> value.startsWith("/") ? value.substring(1) : value)
+                .map(value -> new SimpleGrantedAuthority(prefix + value))
+                .forEach(authorities::add);
     }
 }
