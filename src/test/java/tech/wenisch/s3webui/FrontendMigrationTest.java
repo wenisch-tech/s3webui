@@ -34,4 +34,15 @@ class FrontendMigrationTest {
         "deleteObjectModal", "folderNameError").doesNotContain("prompt(");
     assertThat(frontend).contains("data-theme", "openDialog", "closeDialog", "showToast");
   }
+
+  @Test
+  void administrationUsesTheRealSettingsRouteAndRefreshesDynamicIcons() throws IOException {
+    String shell = Files.readString(Path.of("src/main/resources/templates/fragments/shell.html"));
+    String settings = Files.readString(Path.of("src/main/resources/templates/admin/settings.html"));
+
+    assertThat(shell)
+        .contains("@{/admin/settings}")
+        .doesNotContain("@{/admin}");
+    assertThat(settings).contains("renderCredentials", "renderUsers", "refreshIcons();");
+  }
 }

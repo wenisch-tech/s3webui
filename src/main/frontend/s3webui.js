@@ -12,7 +12,7 @@ const icons = { Archive, ArrowDownUp, Box, CheckCircle2, ChevronDown, Clock3, Cl
 
 const preferredTheme = (() => { try { return localStorage.getItem('s3webui-theme') || 'light'; } catch { return 'light'; } })();
 function applyTheme(theme) {
-  document.documentElement.dataset.theme = theme;
+  document.documentElement.setAttribute('data-theme', theme);
   document.dispatchEvent(new CustomEvent('s3webui:themechange', { detail: { theme } }));
 }
 applyTheme(preferredTheme);
