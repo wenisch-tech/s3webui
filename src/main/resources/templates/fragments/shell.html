@@ -13,7 +13,7 @@
         <div class="hidden items-center gap-1 sm:flex">
             <a th:classappend="${active == 'buckets'} ? ' active'" class="nav-link" th:href="@{/}"><i data-lucide="archive"></i>Buckets</a>
             <a th:classappend="${active == 'history'} ? ' active'" class="nav-link" th:href="@{/history}"><i data-lucide="history"></i>History</a>
-            <a th:if="${isAdmin}" th:classappend="${active == 'settings'} ? ' active'" class="nav-link" th:href="@{/admin}"><i data-lucide="settings"></i>Settings</a>
+            <a th:if="${isAdmin}" th:classappend="${active == 'settings'} ? ' active'" class="nav-link" th:href="@{/admin/settings}"><i data-lucide="settings"></i>Settings</a>
         </div>
         <div class="ml-auto flex items-center gap-2">
             <button th:if="${activeCredentialName != null}" class="btn-secondary hidden md:inline-flex" type="button" onclick="openS3SessionDialog()" title="S3 key used in this session"><i data-lucide="key"></i><span th:text="${activeCredentialName}">S3 key</span><i data-lucide="chevron-down"></i></button>
@@ -24,7 +24,7 @@
         </div>
     </div>
     <div class="border-t border-slate-700/15 px-4 py-2 sm:hidden" x-show="mobileOpen" x-cloak>
-        <div class="flex flex-wrap gap-1"><a th:classappend="${active == 'buckets'} ? ' active'" class="nav-link" th:href="@{/}"><i data-lucide="archive"></i>Buckets</a><a th:classappend="${active == 'history'} ? ' active'" class="nav-link" th:href="@{/history}"><i data-lucide="history"></i>History</a><a th:if="${isAdmin}" th:classappend="${active == 'settings'} ? ' active'" class="nav-link" th:href="@{/admin}"><i data-lucide="settings"></i>Settings</a><button th:if="${activeCredentialName != null}" class="nav-link" type="button" onclick="openS3SessionDialog()"><i data-lucide="key"></i><span th:text="${activeCredentialName}">S3 key</span></button></div>
+        <div class="flex flex-wrap gap-1"><a th:classappend="${active == 'buckets'} ? ' active'" class="nav-link" th:href="@{/}"><i data-lucide="archive"></i>Buckets</a><a th:classappend="${active == 'history'} ? ' active'" class="nav-link" th:href="@{/history}"><i data-lucide="history"></i>History</a><a th:if="${isAdmin}" th:classappend="${active == 'settings'} ? ' active'" class="nav-link" th:href="@{/admin/settings}"><i data-lucide="settings"></i>Settings</a><button th:if="${activeCredentialName != null}" class="nav-link" type="button" onclick="openS3SessionDialog()"><i data-lucide="key"></i><span th:text="${activeCredentialName}">S3 key</span></button></div>
     </div>
 </nav>
 
