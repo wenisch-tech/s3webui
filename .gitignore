@@ -1,4 +1,6 @@
 target/
+node/
+node_modules/
 *.class
 *.jar
 *.war
@@ -9,7 +11,7 @@ target/
 .settings/
 .classpath
 .project
-.vscode/launch.json
+.vscode/
 
 # Local H2 database and generated encryption key
 /data/

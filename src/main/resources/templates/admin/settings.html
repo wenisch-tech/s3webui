@@ -1,78 +1,53 @@
 <!DOCTYPE html>
 <html lang="en"
-      data-bs-theme="light"
+
       xmlns:th="http://www.thymeleaf.org"
       xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
-<head>
-    <meta charset="UTF-8"/>
-    <script>(function(){var t=localStorage.getItem('s3webui-theme')||'light';document.documentElement.setAttribute('data-bs-theme',t);})();</script>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>S3WEBUI · Settings</title>
-    <link rel="icon" type="image/png" th:href="@{/img/logo.png}" href="/img/logo.png"/>
-    <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}"/>
-    <link rel="stylesheet" th:href="@{/webjars/bootstrap-icons/font/bootstrap-icons.css}"/>
-    <link rel="stylesheet" th:href="@{/css/app.css}"/>
-</head>
+<head th:replace="~{fragments/shell :: head('Settings')}"></head>
 <body class="app-shell">
 
-<nav class="navbar navbar-expand-lg s3-navbar">
-    <div class="container-fluid px-4">
-        <a class="navbar-brand d-flex align-items-center gap-2 fw-bold" th:href="@{/}">
-            <img th:src="@{/img/logo.png}" src="/img/logo.png" alt="S3WEBUI logo" class="brand-logo"/>
-            S3WEBUI
-        </a>
-        <div class="d-flex align-items-center gap-2 ms-3 me-auto">
-            <a class="btn btn-sm btn-outline-secondary" th:href="@{/}">
-                <i class="bi bi-bucket me-1"></i>Buckets
-            </a>
-            <a class="btn btn-sm btn-outline-secondary" th:href="@{/history}">
-                <i class="bi bi-clock-history me-1"></i>History
-            </a>
-        </div>
-        <div th:replace="~{fragments/nav :: navActions}"></div>
-    </div>
-</nav>
+<nav th:replace="~{fragments/shell :: topbar('settings')}"></nav>
 
-<div class="container-fluid px-4 py-4">
+<main class="page">
 
     <div class="mb-4">
-        <p class="s3-kicker mb-1">Administration</p>
-        <h1 class="h3 mb-0 fw-semibold">Settings</h1>
-        <p class="text-muted small mb-0">Manage S3 keys, who may use them, and local accounts.</p>
+        <p class="eyebrow">Administration</p>
+        <h1 class="page-title">Settings</h1>
+        <p class="page-copy">Manage S3 keys, who may use them, and local accounts.</p>
     </div>
 
-    <ul class="nav nav-tabs mb-4" role="tablist">
-        <li class="nav-item" role="presentation">
-            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-keys" type="button">
-                <i class="bi bi-key me-1"></i>S3 keys
+    <ul class="mb-4 flex gap-2" role="tablist">
+        <li class="" role="presentation">
+            <button class="btn-secondary" onclick="switchAdminTab('keys')" type="button">
+                <i data-lucide="key"></i>S3 keys
             </button>
         </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-users" type="button">
-                <i class="bi bi-people me-1"></i>Users
+        <li class="" role="presentation">
+            <button class="btn-secondary" onclick="switchAdminTab('users')" type="button">
+                <i data-lucide="users"></i>Users
             </button>
         </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-general" type="button">
-                <i class="bi bi-sliders me-1"></i>General
+        <li class="" role="presentation">
+            <button class="btn-secondary" onclick="switchAdminTab('general')" type="button">
+                <i data-lucide="settings"></i>General
             </button>
         </li>
     </ul>
 
-    <div class="tab-content">
+    <div class="panel p-4">
 
         <!-- ── S3 keys ─────────────────────────────────────────────────── -->
-        <div class="tab-pane fade show active" id="tab-keys">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <p class="text-muted small mb-0">
+        <div class="admin-tab" id="tab-keys">
+            <div class="mb-3 flex flex-wrap items-center justify-between gap-3">
+                <p class="page-copy">
                     Each key is an S3 connection. Grants decide who may pick it after signing in.
                 </p>
-                <button class="btn btn-primary" onclick="openCredentialModal(null)">
-                    <i class="bi bi-plus-lg me-1"></i>New key
+                <button class="btn-primary" onclick="openCredentialModal(null)">
+                    <i data-lucide="plus"></i>New key
                 </button>
             </div>
-            <div class="table-responsive">
-                <table class="table align-middle">
+            <div class="table-wrap">
+                <table class="data-table">
                     <thead>
                     <tr>
                         <th>Name</th>
@@ -81,7 +56,7 @@
                         <th>Access key</th>
                         <th>Available to</th>
                         <th>Status</th>
-                        <th class="text-end">Actions</th>
+                        <th class="text-right">Actions</th>
                     </tr>
                     </thead>
                     <tbody id="credentialTableBody"></tbody>
@@ -90,18 +65,18 @@
         </div>
 
         <!-- ── Users ───────────────────────────────────────────────────── -->
-        <div class="tab-pane fade" id="tab-users">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <p class="text-muted small mb-0">
+        <div class="admin-tab hidden" id="tab-users">
+            <div class="mb-3 flex flex-wrap items-center justify-between gap-3">
+                <p class="page-copy">
                     Local accounts sign in with e-mail and password. Accounts from single sign-on appear
                     here once their owner has signed in for the first time.
                 </p>
-                <button class="btn btn-primary" onclick="openUserModal()">
-                    <i class="bi bi-person-plus me-1"></i>New user
+                <button class="btn-primary" onclick="openUserModal()">
+                    <i data-lucide="users"></i>New user
                 </button>
             </div>
-            <div class="table-responsive">
-                <table class="table align-middle">
+            <div class="table-wrap">
+                <table class="data-table">
                     <thead>
                     <tr>
                         <th>E-mail</th>
@@ -109,7 +84,7 @@
                         <th>Role</th>
                         <th>Status</th>
                         <th>Last login</th>
-                        <th class="text-end">Actions</th>
+                        <th class="text-right">Actions</th>
                     </tr>
                     </thead>
                     <tbody id="userTableBody"></tbody>
@@ -118,142 +93,140 @@
         </div>
 
         <!-- ── General ─────────────────────────────────────────────────── -->
-        <div class="tab-pane fade" id="tab-general">
-            <div class="form-check form-switch mb-2">
+        <div class="admin-tab hidden" id="tab-general">
+            <div class="mb-2 flex items-center gap-2">
                 <input class="form-check-input" type="checkbox" id="allowOwnCredentials"
                        onchange="saveGeneralSettings()"/>
-                <label class="form-check-label" for="allowOwnCredentials">
+                <label class="text-sm" for="allowOwnCredentials">
                     Let users connect with their own S3 credentials
                 </label>
             </div>
-            <p class="text-muted small">
+            <p class="text-sm text-slate-500">
                 When switched off, users can only pick a key you have granted them. Sessions already
                 running on their own credentials lose access at their next request.
             </p>
         </div>
     </div>
-</div>
+</main>
 
 <!-- ── S3 key modal ───────────────────────────────────────────────────── -->
-<div class="modal fade" id="credentialModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
+<div class="modal-backdrop hidden" aria-hidden="true" role="dialog" aria-modal="true" id="credentialModal" tabindex="-1">
+    <div class="modal-card max-w-3xl">
+        <div class="">
             <div class="modal-header">
-                <h5 class="modal-title" id="credentialModalTitle">
-                    <i class="bi bi-key me-2"></i>New S3 key
+                <h5 class="font-semibold" id="credentialModalTitle">
+                    <i data-lucide="key"></i>New S3 key
                 </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-icon" onclick="closeDialog(this.closest('.modal-backdrop').id)" aria-label="Close"><i data-lucide="x"></i></button>
             </div>
             <div class="modal-body">
-                <div id="credentialError" class="alert alert-danger d-none" role="alert"></div>
+                <div id="credentialError" class="alert alert-error hidden" role="alert"></div>
                 <input type="hidden" id="credentialId"/>
 
-                <div class="row g-3">
-                    <div class="col-md-6">
-                        <label for="credentialName" class="form-label">Name</label>
-                        <input type="text" class="form-control" id="credentialName"
+                <div class="grid gap-3 sm:grid-cols-2">
+                    <div class="">
+                        <label for="credentialName" class="field-label">Name</label>
+                        <input type="text" class="input" id="credentialName"
                                placeholder="Team archive" autocomplete="off"/>
                     </div>
-                    <div class="col-md-6">
-                        <label for="credentialRegion" class="form-label">Region</label>
-                        <input type="text" class="form-control" id="credentialRegion"
+                    <div class="">
+                        <label for="credentialRegion" class="field-label">Region</label>
+                        <input type="text" class="input" id="credentialRegion"
                                placeholder="us-east-1" autocomplete="off"/>
                     </div>
-                    <div class="col-12">
-                        <label for="credentialEndpoint" class="form-label">Endpoint URL</label>
-                        <input type="url" class="form-control" id="credentialEndpoint"
+                    <div class="sm:col-span-2">
+                        <label for="credentialEndpoint" class="field-label">Endpoint URL</label>
+                        <input type="url" class="input" id="credentialEndpoint"
                                placeholder="https://s3.example.com" autocomplete="off"/>
                     </div>
-                    <div class="col-md-6">
-                        <label for="credentialAccessKey" class="form-label">Access key</label>
-                        <input type="text" class="form-control" id="credentialAccessKey" autocomplete="off"/>
+                    <div class="">
+                        <label for="credentialAccessKey" class="field-label">Access key</label>
+                        <input type="text" class="input" id="credentialAccessKey" autocomplete="off"/>
                     </div>
-                    <div class="col-md-6">
-                        <label for="credentialSecretKey" class="form-label">Secret key</label>
-                        <input type="password" class="form-control" id="credentialSecretKey"
+                    <div class="">
+                        <label for="credentialSecretKey" class="field-label">Secret key</label>
+                        <input type="password" class="input" id="credentialSecretKey"
                                autocomplete="new-password"/>
-                        <div class="form-text" id="credentialSecretHint">Stored encrypted.</div>
+                        <div class="field-help" id="credentialSecretHint">Stored encrypted.</div>
                     </div>
                 </div>
 
-                <div class="form-check form-switch mt-3">
+                <div class="mt-4 flex items-center gap-2">
                     <input class="form-check-input" type="checkbox" id="credentialEnabled" checked/>
-                    <label class="form-check-label" for="credentialEnabled">Enabled</label>
+                    <label class="text-sm" for="credentialEnabled">Enabled</label>
                 </div>
-                <div class="form-check form-switch">
+                <div class="mt-2 flex items-center gap-2">
                     <input class="form-check-input" type="checkbox" id="credentialInsecureTls"/>
-                    <label class="form-check-label" for="credentialInsecureTls">
+                    <label class="text-sm" for="credentialInsecureTls">
                         Skip TLS certificate verification (not for production)
                     </label>
                 </div>
 
                 <hr class="my-4"/>
 
-                <div class="d-flex justify-content-between align-items-center mb-2">
+                <div class="mb-2 flex flex-wrap items-center justify-between gap-3">
                     <div>
                         <h6 class="mb-0">Who may use this key</h6>
                         <small class="text-muted">
                             Roles and groups come from the claims your identity provider sends.
                         </small>
                     </div>
-                    <button class="btn btn-sm btn-outline-primary" type="button" onclick="addGrantRow()">
-                        <i class="bi bi-plus-lg me-1"></i>Add
+                    <button class="btn-secondary" type="button" onclick="addGrantRow()">
+                        <i data-lucide="plus"></i>Add
                     </button>
                 </div>
                 <div id="grantRows"></div>
-                <p class="text-muted small mb-0" id="grantEmptyHint">
+                <p class="page-copy" id="grantEmptyHint">
                     Without a grant only administrators can use this key.
                 </p>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="saveCredential()">Save</button>
+                <button type="button" class="btn-secondary" onclick="closeDialog(this.closest('.modal-backdrop').id)">Cancel</button>
+                <button type="button" class="btn-primary" onclick="saveCredential()">Save</button>
             </div>
         </div>
     </div>
 </div>
 
 <!-- ── New user modal ─────────────────────────────────────────────────── -->
-<div class="modal fade" id="userModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
+<div class="modal-backdrop hidden" aria-hidden="true" role="dialog" aria-modal="true" id="userModal" tabindex="-1">
+    <div class="modal-card">
+        <div class="">
             <div class="modal-header">
-                <h5 class="modal-title"><i class="bi bi-person-plus me-2"></i>New user</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <h5 class="font-semibold"><i data-lucide="users"></i>New user</h5>
+                <button type="button" class="btn-icon" onclick="closeDialog(this.closest('.modal-backdrop').id)" aria-label="Close"><i data-lucide="x"></i></button>
             </div>
             <div class="modal-body">
-                <div id="userError" class="alert alert-danger d-none" role="alert"></div>
+                <div id="userError" class="alert alert-error hidden" role="alert"></div>
                 <div class="mb-3">
-                    <label for="userEmail" class="form-label">E-mail</label>
-                    <input type="email" class="form-control" id="userEmail" autocomplete="off"/>
+                    <label for="userEmail" class="field-label">E-mail</label>
+                    <input type="email" class="input" id="userEmail" autocomplete="off"/>
                 </div>
                 <div class="mb-3">
-                    <label for="userPassword" class="form-label">Password</label>
-                    <input type="password" class="form-control" id="userPassword" autocomplete="new-password"/>
+                    <label for="userPassword" class="field-label">Password</label>
+                    <input type="password" class="input" id="userPassword" autocomplete="new-password"/>
                 </div>
                 <div class="mb-0">
-                    <label for="userRole" class="form-label">Role</label>
-                    <select class="form-select" id="userRole">
+                    <label for="userRole" class="field-label">Role</label>
+                    <select class="input" id="userRole">
                         <option th:each="role : ${userRoles}" th:value="${role}" th:text="${role}">USER</option>
                     </select>
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="createUser()">Create</button>
+                <button type="button" class="btn-secondary" onclick="closeDialog(this.closest('.modal-backdrop').id)">Cancel</button>
+                <button type="button" class="btn-primary" onclick="createUser()">Create</button>
             </div>
         </div>
     </div>
 </div>
 
-<div class="toast-container position-fixed bottom-0 end-0 p-3" id="toastContainer"></div>
+<div th:replace="~{fragments/shell :: s3ConfigDialog}"></div>
+<div th:replace="~{fragments/shell :: footer}"></div>
 
-<div th:replace="~{fragments/nav :: sessionModal}"></div>
-<div th:replace="~{fragments/app-meta :: appMeta}"></div>
-<div th:replace="~{fragments/app-meta :: appAttribution}"></div>
 
-<script th:src="@{/webjars/bootstrap/js/bootstrap.bundle.min.js}"></script>
-<script th:src="@{/js/app.js}"></script>
+
+<div th:replace="~{fragments/shell :: scripts}"></div>
 <script th:inline="javascript">
     const GRANT_TYPES = /*[[${grantTypes}]]*/ [];
     const USER_ROLES = /*[[${userRoles}]]*/ [];
@@ -268,6 +241,11 @@
     let _credentials = [];
     let _credentialModal;
     let _userModal;
+
+    function switchAdminTab(name) {
+        document.querySelectorAll('.admin-tab')
+            .forEach(tab => tab.classList.toggle('hidden', tab.id !== 'tab-' + name));
+    }
 
     document.addEventListener('DOMContentLoaded', () => {
         loadCredentials();
@@ -292,7 +270,7 @@
         body.innerHTML = '';
 
         if (_credentials.length === 0) {
-            body.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-4">' +
+            body.innerHTML = '<tr><td colspan="7" class="py-6 text-center text-slate-500">' +
                 'No S3 keys yet. Add one to hand storage out to your users.</td></tr>';
             return;
         }
@@ -300,22 +278,22 @@
         _credentials.forEach(credential => {
             const row = document.createElement('tr');
             row.innerHTML = `
-                <td class="fw-semibold">${escapeHtml(credential.name)}</td>
-                <td class="text-muted small">${escapeHtml(credential.endpointUrl)}</td>
-                <td class="text-muted small">${escapeHtml(credential.region)}</td>
-                <td class="text-muted small font-monospace">${escapeHtml(credential.accessKey)}</td>
+                <td class="font-semibold">${escapeHtml(credential.name)}</td>
+                <td class="text-sm text-slate-500">${escapeHtml(credential.endpointUrl)}</td>
+                <td class="text-sm text-slate-500">${escapeHtml(credential.region)}</td>
+                <td class="font-mono text-xs text-slate-500">${escapeHtml(credential.accessKey)}</td>
                 <td>${describeGrants(credential.grants)}</td>
                 <td>${credential.enabled
-                    ? '<span class="badge text-bg-success">Enabled</span>'
-                    : '<span class="badge text-bg-secondary">Disabled</span>'}</td>
-                <td class="text-end text-nowrap">
-                    <button class="btn btn-sm btn-outline-secondary" data-id="${credential.id}"
+                    ? '<span class="badge-good">Enabled</span>'
+                    : '<span class="badge">Disabled</span>'}</td>
+                <td class="whitespace-nowrap text-right">
+                    <button class="btn-icon" data-id="${credential.id}"
                             onclick="openCredentialModal(Number(this.getAttribute('data-id')))">
-                        <i class="bi bi-pencil"></i>
+                        <i data-lucide="pencil"></i>
                     </button>
-                    <button class="btn btn-sm btn-outline-danger ms-1" data-id="${credential.id}"
+                    <button class="btn-icon text-bad-500" data-id="${credential.id}"
                             onclick="deleteCredential(Number(this.getAttribute('data-id')))">
-                        <i class="bi bi-trash3"></i>
+                        <i data-lucide="trash-2"></i>
                     </button>
                 </td>`;
             body.appendChild(row);
@@ -324,13 +302,13 @@
 
     function describeGrants(grants) {
         if (!grants || grants.length === 0) {
-            return '<span class="text-muted small">Administrators only</span>';
+            return '<span class="text-sm text-slate-500">Administrators only</span>';
         }
         return grants.map(grant => {
             const label = grant.grantType === 'ALL_AUTHENTICATED'
                 ? 'Everyone signed in'
                 : `${grant.grantType.toLowerCase()}: ${escapeHtml(grant.grantValue)}`;
-            return `<span class="badge text-bg-light border me-1">${label}</span>`;
+            return `<span class="badge mr-1">${label}</span>`;
         }).join('');
     }
 
@@ -338,8 +316,8 @@
         const credential = id == null ? null : _credentials.find(item => item.id === id);
 
         document.getElementById('credentialModalTitle').innerHTML = credential
-            ? '<i class="bi bi-key me-2"></i>Edit S3 key'
-            : '<i class="bi bi-key me-2"></i>New S3 key';
+            ? '<i data-lucide="key"></i>Edit S3 key'
+            : '<i data-lucide="key"></i>New S3 key';
         document.getElementById('credentialId').value = credential ? credential.id : '';
         document.getElementById('credentialName').value = credential ? credential.name : '';
         document.getElementById('credentialEndpoint').value = credential ? credential.endpointUrl : '';
@@ -359,7 +337,7 @@
         hideError('credentialError');
 
         if (!_credentialModal) {
-            _credentialModal = new bootstrap.Modal(document.getElementById('credentialModal'));
+            _credentialModal = {show:()=>openDialog('credentialModal'),hide:()=>closeDialog('credentialModal')};
         }
         _credentialModal.show();
     }
@@ -375,18 +353,18 @@
             .join('');
 
         row.innerHTML = `
-            <div class="col-md-5">
-                <select class="form-select grant-type" onchange="onGrantTypeChanged(this)">${options}</select>
+            <div class="">
+                <select class="input grant-type" onchange="onGrantTypeChanged(this)">${options}</select>
             </div>
-            <div class="col-md-6">
-                <input type="text" class="form-control grant-value"
+            <div class="">
+                <input type="text" class="input grant-value"
                        placeholder="user@example.com, role or group name"
                        value="${escapeHtml(grantValue || '')}"/>
             </div>
-            <div class="col-md-1 text-end">
-                <button class="btn btn-sm btn-outline-danger" type="button"
+            <div class="text-right">
+                <button class="btn-icon text-bad-500" type="button"
                         onclick="this.closest('.grant-row').remove(); updateGrantHint();">
-                    <i class="bi bi-x-lg"></i>
+                    <i data-lucide="x"></i>
                 </button>
             </div>`;
         container.appendChild(row);
@@ -405,7 +383,7 @@
 
     function updateGrantHint() {
         const empty = document.querySelectorAll('#grantRows .grant-row').length === 0;
-        document.getElementById('grantEmptyHint').classList.toggle('d-none', !empty);
+        document.getElementById('grantEmptyHint').classList.toggle('hidden', !empty);
     }
 
     function collectGrants() {
@@ -479,31 +457,31 @@
 
             const row = document.createElement('tr');
             row.innerHTML = `
-                <td class="fw-semibold">${escapeHtml(user.email)}</td>
-                <td><span class="badge text-bg-light border">${user.provider}</span></td>
+                <td class="font-semibold">${escapeHtml(user.email)}</td>
+                <td><span class="badge">${user.provider}</span></td>
                 <td>
-                    <select class="form-select form-select-sm" data-id="${user.id}"
+                    <select class="input" data-id="${user.id}"
                             onchange="updateUser(Number(this.getAttribute('data-id')), {role: this.value})">
                         ${roleOptions}
                     </select>
                 </td>
                 <td>
-                    <div class="form-check form-switch mb-0">
+                    <div class="flex items-center gap-2">
                         <input class="form-check-input" type="checkbox" data-id="${user.id}"
                                ${user.enabled ? 'checked' : ''}
                                onchange="updateUser(Number(this.getAttribute('data-id')), {enabled: this.checked})"/>
                     </div>
                 </td>
-                <td class="text-muted small">${user.lastLoginAt ? escapeHtml(user.lastLoginAt.replace('T', ' ').substring(0, 16)) : '—'}</td>
-                <td class="text-end text-nowrap">
-                    <button class="btn btn-sm btn-outline-secondary" data-id="${user.id}"
+                <td class="text-sm text-slate-500">${user.lastLoginAt ? escapeHtml(user.lastLoginAt.replace('T', ' ').substring(0, 16)) : '—'}</td>
+                <td class="whitespace-nowrap text-right">
+                    <button class="btn-icon" data-id="${user.id}"
                             ${user.provider === 'LOCAL' ? '' : 'disabled title="Password is managed by the identity provider"'}
                             onclick="resetPassword(Number(this.getAttribute('data-id')))">
-                        <i class="bi bi-key"></i>
+                        <i data-lucide="key"></i>
                     </button>
-                    <button class="btn btn-sm btn-outline-danger ms-1" data-id="${user.id}"
+                    <button class="btn-icon text-bad-500" data-id="${user.id}"
                             onclick="deleteUser(Number(this.getAttribute('data-id')))">
-                        <i class="bi bi-trash3"></i>
+                        <i data-lucide="trash-2"></i>
                     </button>
                 </td>`;
             body.appendChild(row);
@@ -517,7 +495,7 @@
         hideError('userError');
 
         if (!_userModal) {
-            _userModal = new bootstrap.Modal(document.getElementById('userModal'));
+            _userModal = {show:()=>openDialog('userModal'),hide:()=>closeDialog('userModal')};
         }
         _userModal.show();
     }
@@ -625,13 +603,13 @@
     function showError(elementId, message) {
         const element = document.getElementById(elementId);
         element.textContent = message;
-        element.classList.remove('d-none');
+        element.classList.remove('hidden');
     }
 
     function hideError(elementId) {
         const element = document.getElementById(elementId);
         element.textContent = '';
-        element.classList.add('d-none');
+        element.classList.add('hidden');
     }
 </script>
 </body>
