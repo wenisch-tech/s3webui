@@ -20,6 +20,9 @@ class FrontendMigrationTest {
     }
     assertThat(Files.readString(Path.of("pom.xml")))
         .doesNotContain("bootstrap-icons", "webjars-locator-lite");
+    assertThat(Files.readString(Path.of("package.json")))
+        .contains("esbuild src/main/frontend/s3webui.js")
+        .doesNotContain("node ./node_modules/esbuild/bin/esbuild");
   }
 
   @Test
