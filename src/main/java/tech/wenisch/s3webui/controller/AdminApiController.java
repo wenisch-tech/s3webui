@@ -107,7 +107,7 @@ public class AdminApiController {
 
     @PutMapping("/settings")
     public SettingsResponse updateSettings(@RequestBody SettingsResponse request) {
-        appSettingsService.setUserSuppliedCredentialsAllowed(request.allowUserSuppliedCredentials());
+        appSettingsService.setUserSuppliedCredentialsAllowed(Boolean.TRUE.equals(request.allowUserSuppliedCredentials()));
         return getSettings();
     }
 
@@ -147,14 +147,18 @@ public class AdminApiController {
 
     // ── Payloads ─────────────────────────────────────────────────────────────
 
-    /** The secret key is never returned; a blank one on update keeps the stored value. */
+    /**
+     * The secret key is never returned; a blank one on update keeps the stored value. Boolean fields
+     * are boxed rather than primitive so a caller who omits one gets a sensible default instead of a
+     * 500 - Jackson fails to bind {@code null} into a primitive when a JSON property is absent.
+     */
     public record CredentialRequest(
             String name,
             String endpointUrl,
             String region,
             String accessKey,
             String secretKey,
-            boolean insecureSkipTlsVerify,
+            Boolean insecureSkipTlsVerify,
             Boolean enabled,
             List<GrantRequest> grants
     ) {
@@ -166,7 +170,7 @@ public class AdminApiController {
                     .toList();
             return new S3CredentialService.CredentialForm(
                     name, endpointUrl, region, accessKey, secretKey,
-                    insecureSkipTlsVerify, enabled == null || enabled, grantForms);
+                    Boolean.TRUE.equals(insecureSkipTlsVerify), enabled == null || enabled, grantForms);
         }
     }
 
@@ -214,6 +218,6 @@ public class AdminApiController {
     ) {
     }
 
-    public record SettingsResponse(boolean allowUserSuppliedCredentials) {
+    public record SettingsResponse(Boolean allowUserSuppliedCredentials) {
     }
 }

@@ -1,34 +1,52 @@
 package tech.wenisch.s3webui.controller;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.context.WebApplicationContext;
 import tech.wenisch.s3webui.repository.S3CredentialRepository;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+/**
+ * MockMvc is built manually with {@code springSecurity()} rather than via {@code @AutoConfigureMockMvc},
+ * because Spring Boot 4's modularized {@code spring-boot-webmvc-test} module dropped the
+ * {@code MockMvcSecurityConfiguration} glue that used to wire the security filter chain into MockMvc
+ * automatically - without it, {@code @WithMockUser} is silently ignored and every request 302s to
+ * {@code /login} as if signed out.
+ */
 @SpringBootTest(properties = {
         "spring.datasource.url=jdbc:h2:mem:admin-api-test;DB_CLOSE_DELAY=-1",
         "spring.flyway.enabled=false",
         "app.encryption-key=AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8="
 })
-@AutoConfigureMockMvc
 class AdminApiControllerTest {
 
     @Autowired
-    private MockMvc mockMvc;
+    private WebApplicationContext webApplicationContext;
 
     @Autowired
     private S3CredentialRepository credentialRepository;
+
+    private MockMvc mockMvc;
+
+    @BeforeEach
+    void setUpMockMvc() {
+        mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext)
+                .apply(springSecurity())
+                .build();
+    }
 
     @Test
     @WithMockUser(username = "admin@s3webui.local", roles = "ADMIN")
@@ -65,6 +83,27 @@ class AdminApiControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"name\": \"\", \"endpointUrl\": \"https://s3.example.com\"}"))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @WithMockUser(username = "admin@s3webui.local", roles = "ADMIN")
+    void aKeyRequestOmittingBooleanFieldsStillCreatesTheKey() throws Exception {
+        // Jackson 3 fails to bind a missing JSON property into a primitive record component, so
+        // CredentialRequest boxes insecureSkipTlsVerify/enabled - this guards that omitting them
+        // from the request (as a minimal API caller would) does not 500.
+        mockMvc.perform(post("/api/admin/credentials")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "name": "Minimal",
+                                  "endpointUrl": "https://s3.example.com",
+                                  "accessKey": "AKIA",
+                                  "secretKey": "top-secret"
+                                }"""))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.insecureSkipTlsVerify").value(false))
+                .andExpect(jsonPath("$.enabled").value(true));
     }
 
     @Test
