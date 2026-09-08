@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.0.3 - 2026-09-08
+
+### [1.0.3](https://github.com/wenisch-tech/s3webui/compare/v1.0.2...v1.0.3) (2026-09-08)
+
+
+### Bug Fixes
+
+* restore OIDC login and stop it failing silently ([f8be383](https://github.com/wenisch-tech/s3webui/commit/f8be38338d3f2b26a6303b72d4ff6ea4bac2170b))
+
+
+
+Docker image: ghcr.io/wenisch-tech/s3webui:1.0.3
+
+
 ## v1.0.2 - 2026-09-08
 
 ### [1.0.2](https://github.com/wenisch-tech/s3webui/compare/v1.0.1...v1.0.2) (2026-09-08)
