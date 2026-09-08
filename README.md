@@ -140,6 +140,25 @@ and the `groups` claim are still read from the token, because credential grants 
 
 If `OIDC_REQUIRED_ROLE` is set, users without that realm role receive an **Access Denied** page.
 
+#### Running behind a reverse proxy or ingress
+
+`SERVER_FORWARD_HEADERS_STRATEGY` defaults to `framework`, so `X-Forwarded-*` headers from a
+TLS-terminating proxy are honored automatically — the redirect URI sent to the identity provider uses
+the public `https://` origin rather than the plain `http://` one the proxy actually connects to the
+pod with. This is a no-op when there is no proxy in front, so it's safe to leave on for local testing.
+
+The OIDC flow stores a short-lived pending authorization request in the session between the redirect
+to the identity provider and the callback. If that request lands on a different replica, or the
+session cookie doesn't round-trip on the callback, the sign-in fails with `authorization_request_not_found`
+in the log; two things are worth checking if SSO login redirects you back to a generic error:
+
+- Keep `replicaCount: 1` unless sessions are shared (see the database/persistence section above) —
+  the callback has to land on the same instance that issued the redirect.
+- Behind TLS, set `SERVER_SERVLET_SESSION_COOKIE_SAME_SITE=None` and `SERVER_SERVLET_SESSION_COOKIE_SECURE=true`
+  (both are standard Spring Boot properties, no code change needed) if the session cookie isn't making
+  it back on the callback. Don't set `SECURE=true` without TLS in front — browsers refuse to send
+  `Secure` cookies over plain HTTP, which would break sign-in entirely.
+
 #### Multiple OIDC providers
 
 To configure multiple providers, use indexed environment variables:

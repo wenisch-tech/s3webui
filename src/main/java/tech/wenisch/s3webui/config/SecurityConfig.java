@@ -1,9 +1,15 @@
 package tech.wenisch.s3webui.config;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.hc.client5.http.impl.classic.HttpClients;
+import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder;
+import org.apache.hc.client5.http.ssl.NoopHostnameVerifier;
+import org.apache.hc.client5.http.ssl.SSLConnectionSocketFactory;
+import org.apache.hc.client5.http.ssl.SSLConnectionSocketFactoryBuilder;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -13,6 +19,9 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.authority.mapping.GrantedAuthoritiesMapper;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.client.endpoint.OAuth2AccessTokenResponseClient;
+import org.springframework.security.oauth2.client.endpoint.OAuth2AuthorizationCodeGrantRequest;
+import org.springframework.security.oauth2.client.endpoint.RestClientAuthorizationCodeTokenResponseClient;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.oauth2.client.registration.ClientRegistrations;
@@ -23,6 +32,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
 import org.springframework.security.web.authentication.SavedRequestAwareAuthenticationSuccessHandler;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.web.client.RestClient;
 import tech.wenisch.s3webui.service.UserService;
 
 import javax.net.ssl.HostnameVerifier;
@@ -99,12 +109,22 @@ public class SecurityConfig {
                 );
 
         if (oidcProperties.isEnabled() && !oidcProperties.getResolvedProviders().isEmpty()) {
-            http.oauth2Login(oauth2 -> oauth2
-                    .loginPage("/login")
-                    .successHandler(new OidcLoginSuccessHandler(userService, oidcProperties.isCreateUsers()))
-                    .failureUrl("/login?error=true")
-                    .userInfoEndpoint(ui -> ui.userAuthoritiesMapper(oidcAuthoritiesMapper()))
-            );
+            http.oauth2Login(oauth2 -> {
+                oauth2.loginPage("/login")
+                        .successHandler(new OidcLoginSuccessHandler(userService, oidcProperties.isCreateUsers()))
+                        // The plain failureUrl(...) shortcut redirects silently on a technical failure
+                        // (state mismatch, TLS/network error talking to the provider) - nothing is ever
+                        // logged, which is exactly what made this class of problem invisible before.
+                        .failureHandler((request, response, exception) -> {
+                            log.warn("OIDC login failed: {}", exception.getMessage(), exception);
+                            response.sendRedirect(request.getContextPath() + "/login?error=true");
+                        })
+                        .userInfoEndpoint(ui -> ui.userAuthoritiesMapper(oidcAuthoritiesMapper()));
+
+                if (oidcProperties.isInsecureSkipTlsVerify()) {
+                    oauth2.tokenEndpoint(token -> token.accessTokenResponseClient(insecureTokenResponseClient()));
+                }
+            });
         }
 
         return http.build();
@@ -158,25 +178,15 @@ public class SecurityConfig {
         return new InMemoryClientRegistrationRepository(registrations);
     }
 
+    /**
+     * Covers the OIDC discovery call ({@link ClientRegistrations#fromIssuerLocation}) and JWKS
+     * signature verification (Nimbus's {@code RestOperations}-backed fetcher) - both still go through
+     * the JDK's {@link HttpsURLConnection} and respect this global default. The actual token exchange
+     * does not; see {@link #insecureTokenResponseClient()}.
+     */
     private void enableInsecureTlsForOidc() {
         try {
-            TrustManager[] trustAllCerts = new TrustManager[]{new X509TrustManager() {
-                @Override
-                public void checkClientTrusted(X509Certificate[] chain, String authType) {
-                }
-
-                @Override
-                public void checkServerTrusted(X509Certificate[] chain, String authType) {
-                }
-
-                @Override
-                public X509Certificate[] getAcceptedIssuers() {
-                    return new X509Certificate[0];
-                }
-            }};
-
-            SSLContext sslContext = SSLContext.getInstance("TLS");
-            sslContext.init(null, trustAllCerts, new SecureRandom());
+            SSLContext sslContext = insecureSslContext();
             HttpsURLConnection.setDefaultSSLSocketFactory(sslContext.getSocketFactory());
 
             HostnameVerifier insecureHostnameVerifier = new HostnameVerifier() {
@@ -191,6 +201,68 @@ public class SecurityConfig {
         } catch (GeneralSecurityException e) {
             throw new IllegalStateException("Failed to enable insecure OIDC TLS mode", e);
         }
+    }
+
+    /**
+     * A token-exchange client that trusts any certificate, for use when {@code OIDC_INSECURE_SKIP_TLS_VERIFY}
+     * is set.
+     *
+     * <p>{@code oauth2Login()}'s default authorization-code token client
+     * ({@link RestClientAuthorizationCodeTokenResponseClient}) is built on Apache HttpClient5, which has
+     * been a transitive dependency of {@code spring-boot-starter-oauth2-client} since Spring Boot 4.
+     * HttpClient5 manages its own {@link SSLContext} and never consults the JDK-wide default installed by
+     * {@link #enableInsecureTlsForOidc()} - so that flag silently stopped covering the one HTTPS call that
+     * happens right after the identity provider redirects back (POST to its token endpoint), which is
+     * exactly the request that used to work before that upgrade. This wires the same trust-all context
+     * into that specific client instead of relying on the JDK-wide default.
+     */
+    private OAuth2AccessTokenResponseClient<OAuth2AuthorizationCodeGrantRequest> insecureTokenResponseClient() {
+        var tokenResponseClient = new RestClientAuthorizationCodeTokenResponseClient();
+        tokenResponseClient.setRestClient(insecureRestClient());
+        return tokenResponseClient;
+    }
+
+    /**
+     * The HttpClient5-backed, trust-all {@link RestClient} used for the token exchange. Package-private
+     * (rather than private) so {@code SecurityConfigInsecureTlsTest} can exercise the actual HTTP
+     * plumbing against a real self-signed endpoint, rather than trusting that it compiles.
+     */
+    RestClient insecureRestClient() {
+        try {
+            SSLConnectionSocketFactory socketFactory = SSLConnectionSocketFactoryBuilder.create()
+                    .setSslContext(insecureSslContext())
+                    .setHostnameVerifier(NoopHostnameVerifier.INSTANCE)
+                    .build();
+            var connectionManager = PoolingHttpClientConnectionManagerBuilder.create()
+                    .setSSLSocketFactory(socketFactory)
+                    .build();
+            var httpClient = HttpClients.custom().setConnectionManager(connectionManager).build();
+            var requestFactory = new HttpComponentsClientHttpRequestFactory(httpClient);
+            return RestClient.builder().requestFactory(requestFactory).build();
+        } catch (GeneralSecurityException e) {
+            throw new IllegalStateException("Failed to build an insecure OIDC token response client", e);
+        }
+    }
+
+    private SSLContext insecureSslContext() throws GeneralSecurityException {
+        TrustManager[] trustAllCerts = new TrustManager[]{new X509TrustManager() {
+            @Override
+            public void checkClientTrusted(X509Certificate[] chain, String authType) {
+            }
+
+            @Override
+            public void checkServerTrusted(X509Certificate[] chain, String authType) {
+            }
+
+            @Override
+            public X509Certificate[] getAcceptedIssuers() {
+                return new X509Certificate[0];
+            }
+        }};
+
+        SSLContext sslContext = SSLContext.getInstance("TLS");
+        sslContext.init(null, trustAllCerts, new SecureRandom());
+        return sslContext;
     }
 
     /**

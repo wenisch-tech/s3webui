@@ -22,6 +22,10 @@ spring:
 
 server:
   port: 8080
+  # Honor X-Forwarded-* headers from a TLS-terminating reverse proxy or ingress, so redirect URIs
+  # built for the OIDC flow (and any other absolute link) use the public https:// origin rather than
+  # the plain-http one the proxy actually connects to this pod with. A no-op when there is no proxy.
+  forward-headers-strategy: ${SERVER_FORWARD_HEADERS_STRATEGY:framework}
 
 management:
   endpoints:

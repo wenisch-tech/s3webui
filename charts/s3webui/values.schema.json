@@ -49,6 +49,15 @@
                 },
                 "S3_SECRET_KEY": {
                     "type": "string"
+                },
+                "SERVER_FORWARD_HEADERS_STRATEGY": {
+                    "type": "string"
+                },
+                "SERVER_SERVLET_SESSION_COOKIE_SAME_SITE": {
+                    "type": "string"
+                },
+                "SERVER_SERVLET_SESSION_COOKIE_SECURE": {
+                    "type": "string"
                 }
             }
         },

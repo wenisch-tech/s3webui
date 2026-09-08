@@ -187,9 +187,20 @@ key available to every signed-in user; all other keys are created in the adminis
 | `env.OIDC_REQUIRED_ROLE` | Restrict access to users with this role | `""` | No |
 | `env.OIDC_CREATEUSERS` | Create a local record on first SSO sign-in | `true` | No |
 | `env.OIDC_INSECURE_SKIP_TLS_VERIFY` | Skip TLS verification for OIDC | `false` | No |
+| `env.SERVER_FORWARD_HEADERS_STRATEGY` | Honor `X-Forwarded-*` from the ingress | `framework` | No |
+| `env.SERVER_SERVLET_SESSION_COOKIE_SAME_SITE` | Session cookie `SameSite` (see below) | unset | No |
+| `env.SERVER_SERVLET_SESSION_COOKIE_SECURE` | Session cookie `Secure` (see below) | unset | No |
 
 Administrator status comes from the database, not from the token: promote users under
 **Settings → Users** in the application.
+
+If SSO login redirects back to a generic error page and the pod log shows
+`authorization_request_not_found`, the session cookie carrying the pending OIDC state isn't making it
+back on the callback. Set `SERVER_SERVLET_SESSION_COOKIE_SAME_SITE=None` and
+`SERVER_SERVLET_SESSION_COOKIE_SECURE=true` — only with TLS terminated in front, since browsers drop
+`Secure` cookies sent over plain HTTP, which would break sign-in entirely. Also keep `replicaCount: 1`
+unless sessions are shared (PostgreSQL alone does not share them — see the database parameters above);
+the callback has to land on the same instance that issued the redirect.
 
 ### Multi-Provider OIDC (Indexed Variables)
 

@@ -71,6 +71,9 @@ affinity: {}
 
 # Application configuration
 env:
+  # Honor X-Forwarded-* headers from the ingress so redirect URIs built for the OIDC flow use the
+  # public https:// origin. Safe to leave on even without a proxy in front.
+  SERVER_FORWARD_HEADERS_STRATEGY: "framework"
   # Database. Leave SPRING_DATASOURCE_URL empty to use the bundled H2 file database in APP_DATA_DIR.
   # For PostgreSQL set, for example:
   #   SPRING_DATASOURCE_URL: "jdbc:postgresql://postgres:5432/s3webui"
@@ -95,6 +98,12 @@ env:
   # Create a local record the first time an unknown SSO user signs in
   OIDC_CREATEUSERS: "true"
   OIDC_INSECURE_SKIP_TLS_VERIFY: "false"
+  # If SSO login redirects back with a generic error and the log shows
+  # "authorization_request_not_found", the session cookie isn't round-tripping through the ingress.
+  # Uncomment these (requires ingress.tls / TLS termination in front - Secure cookies are dropped by
+  # browsers over plain HTTP, which would break sign-in entirely):
+  # SERVER_SERVLET_SESSION_COOKIE_SAME_SITE: "None"
+  # SERVER_SERVLET_SESSION_COOKIE_SECURE: "true"
   # Multi-provider example:
   # OIDC_PROVIDERS_0_NAME: "Company SSO"
   # OIDC_PROVIDERS_0_CLIENT_ID: "s3webui"
