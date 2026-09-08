@@ -10,6 +10,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
+import org.springframework.http.converter.FormHttpMessageConverter;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -22,11 +23,13 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.client.endpoint.OAuth2AccessTokenResponseClient;
 import org.springframework.security.oauth2.client.endpoint.OAuth2AuthorizationCodeGrantRequest;
 import org.springframework.security.oauth2.client.endpoint.RestClientAuthorizationCodeTokenResponseClient;
+import org.springframework.security.oauth2.client.http.OAuth2ErrorResponseErrorHandler;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.oauth2.client.registration.ClientRegistrations;
 import org.springframework.security.oauth2.client.registration.InMemoryClientRegistrationRepository;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
+import org.springframework.security.oauth2.core.http.converter.OAuth2AccessTokenResponseHttpMessageConverter;
 import org.springframework.security.oauth2.core.oidc.user.OidcUserAuthority;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
@@ -226,6 +229,17 @@ public class SecurityConfig {
      * The HttpClient5-backed, trust-all {@link RestClient} used for the token exchange. Package-private
      * (rather than private) so {@code SecurityConfigInsecureTlsTest} can exercise the actual HTTP
      * plumbing against a real self-signed endpoint, rather than trusting that it compiles.
+     *
+     * <p>{@link RestClientAuthorizationCodeTokenResponseClient}'s own no-arg constructor builds a
+     * {@code RestClient} with two converters registered - {@link FormHttpMessageConverter} to write the
+     * token request, and {@link OAuth2AccessTokenResponseHttpMessageConverter} to parse the response -
+     * plus {@link OAuth2ErrorResponseErrorHandler} as the default status handler.
+     * {@code setRestClient(RestClient)} does not merge with that default, it replaces it outright: a
+     * plain {@code RestClient.builder().build()} falls back to a generic JSON converter that does not
+     * know the OAuth2 token response shape and builds an {@code OAuth2AccessTokenResponse} with a null
+     * {@code additionalParameters} map, which fails with "additionalParameters cannot be null" on every
+     * login. This replicates that same default configuration and only swaps in the trust-all request
+     * factory.
      */
     RestClient insecureRestClient() {
         try {
@@ -238,7 +252,15 @@ public class SecurityConfig {
                     .build();
             var httpClient = HttpClients.custom().setConnectionManager(connectionManager).build();
             var requestFactory = new HttpComponentsClientHttpRequestFactory(httpClient);
-            return RestClient.builder().requestFactory(requestFactory).build();
+
+            return RestClient.builder()
+                    .requestFactory(requestFactory)
+                    .configureMessageConverters(converters -> {
+                        converters.addCustomConverter(new FormHttpMessageConverter());
+                        converters.addCustomConverter(new OAuth2AccessTokenResponseHttpMessageConverter());
+                    })
+                    .defaultStatusHandler(new OAuth2ErrorResponseErrorHandler())
+                    .build();
         } catch (GeneralSecurityException e) {
             throw new IllegalStateException("Failed to build an insecure OIDC token response client", e);
         }
