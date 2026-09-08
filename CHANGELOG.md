@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.0.2 - 2026-09-08
+
+### [1.0.2](https://github.com/wenisch-tech/s3webui/compare/v1.0.1...v1.0.2) (2026-09-08)
+
+
+### Build Systems
+
+* pin Tomcat to 11.0.25, fixing CVEs Boot 4.1.1's BOM hasn't caught up to ([a8c8587](https://github.com/wenisch-tech/s3webui/commit/a8c8587b93ce91867931d3c9abbc69d59e7dad2a))
+
+
+
+Docker image: ghcr.io/wenisch-tech/s3webui:1.0.2
+
+
 ## v1.0.1 - 2026-09-08
 
 ### [1.0.1](https://github.com/wenisch-tech/s3webui/compare/v1.0.0...v1.0.1) (2026-09-08)
