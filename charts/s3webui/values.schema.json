@@ -49,18 +49,6 @@
                 },
                 "S3_SECRET_KEY": {
                     "type": "string"
-                },
-                "SPRING_DATASOURCE_DRIVER_CLASS_NAME": {
-                    "type": "string"
-                },
-                "SPRING_DATASOURCE_URL": {
-                    "type": "string"
-                },
-                "SPRING_DATASOURCE_USERNAME": {
-                    "type": "string"
-                },
-                "SPRING_JPA_DATABASE_PLATFORM": {
-                    "type": "string"
                 }
             }
         },
@@ -307,7 +295,12 @@
             }
         },
         "strategy": {
-            "type": "object"
+            "type": "object",
+            "properties": {
+                "type": {
+                    "type": "string"
+                }
+            }
         },
         "tolerations": {
             "type": "array"

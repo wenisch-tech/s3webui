@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.0.1 - 2026-09-08
+
+### [1.0.1](https://github.com/wenisch-tech/s3webui/compare/v1.0.0...v1.0.1) (2026-09-08)
+
+
+### Build Systems
+
+* upgrade to Spring Boot 4.1.1 / Spring Framework 7.0.8 ([52bdac1](https://github.com/wenisch-tech/s3webui/commit/52bdac121be9ef44c4900386fc5f7f623855df8c))
+
+
+
+Docker image: ghcr.io/wenisch-tech/s3webui:1.0.1
+
+
 ## v0.6.26 - 2026-09-01
 
 ### [0.6.26](https://github.com/wenisch-tech/s3webui/compare/v0.6.25...v0.6.26) (2026-09-01)

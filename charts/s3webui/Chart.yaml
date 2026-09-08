@@ -2,8 +2,8 @@ apiVersion: v2
 name: s3webui
 description: A graphical web interface for S3 object storage
 type: application
-version: 0.6.26
-appVersion: "0.6.26"
+version: 1.0.1
+appVersion: "1.0.1"
 keywords:
   - s3
   - object-storage
