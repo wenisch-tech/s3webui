@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.0.5 - 2026-09-09
+
+### [1.0.5](https://github.com/wenisch-tech/s3webui/compare/v1.0.4...v1.0.5) (2026-09-09)
+
+
+### Bug Fixes
+
+* skip-TLS flag missing from the own-credentials sign-in dialog ([172b6c2](https://github.com/wenisch-tech/s3webui/commit/172b6c2ae70c4fc8e8cc255becbf9ac980ae4822))
+
+
+
+Docker image: ghcr.io/wenisch-tech/s3webui:1.0.5
+
+
 ## v1.0.3 - 2026-09-08
 
 ### [1.0.3](https://github.com/wenisch-tech/s3webui/compare/v1.0.2...v1.0.3) (2026-09-08)
