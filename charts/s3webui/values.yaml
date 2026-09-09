@@ -125,12 +125,27 @@ secrets: {}
   # OIDC_PROVIDERS_0_CLIENT_SECRET: "your-client-secret"
   # OIDC_PROVIDERS_1_CLIENT_SECRET: "your-other-client-secret"
 
+# A slow-starting instance (H2/Flyway/Hibernate init under the CPU limit below) fails liveness before
+# it ever finishes booting, restarting the pod in an endless loop. startupProbe gives it a generous,
+# dedicated budget - kubelet holds off running liveness/readiness at all until this one succeeds - so
+# their own budgets below can stay tight for steady-state without also gating the cold start.
+startupProbe:
+  enabled: true
+  httpGet:
+    path: /actuator/health/readiness
+    port: 8080
+  periodSeconds: 5
+  timeoutSeconds: 3
+  failureThreshold: 30
+
+# Liveness and readiness intentionally use different health groups, not the combined /actuator/health:
+# a transient dependency hiccup (e.g. the database pool briefly exhausted under load) should pull the
+# pod out of service via readiness, not kill and restart it via liveness - the process itself is fine.
 livenessProbe:
   enabled: true
   httpGet:
-    path: /actuator/health
+    path: /actuator/health/liveness
     port: 8080
-  initialDelaySeconds: 30
   periodSeconds: 10
   timeoutSeconds: 5
   failureThreshold: 3
@@ -138,9 +153,8 @@ livenessProbe:
 readinessProbe:
   enabled: true
   httpGet:
-    path: /actuator/health
+    path: /actuator/health/readiness
     port: 8080
-  initialDelaySeconds: 10
   periodSeconds: 5
   timeoutSeconds: 3
   failureThreshold: 3

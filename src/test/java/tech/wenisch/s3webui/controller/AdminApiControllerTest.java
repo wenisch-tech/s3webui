@@ -134,6 +134,15 @@ class AdminApiControllerTest {
     }
 
     @Test
+    void kubernetesCanReachEveryHealthCheckWithoutSigningIn() throws Exception {
+        // Liveness and readiness must stay reachable by an unauthenticated kubelet, or every probe
+        // 302s to /login and Kubernetes kills the pod believing it is unhealthy.
+        mockMvc.perform(get("/actuator/health")).andExpect(status().isOk());
+        mockMvc.perform(get("/actuator/health/liveness")).andExpect(status().isOk());
+        mockMvc.perform(get("/actuator/health/readiness")).andExpect(status().isOk());
+    }
+
+    @Test
     @WithMockUser(username = "admin@s3webui.local", roles = "ADMIN")
     void theDefaultAdministratorIsSeededOnFirstStart() throws Exception {
         mockMvc.perform(get("/api/admin/users"))

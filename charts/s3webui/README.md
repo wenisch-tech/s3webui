@@ -265,14 +265,24 @@ Each provider will display its own button on the login page. Increment the index
 
 ### Health Check Parameters
 
+Liveness and readiness deliberately hit different health groups, not the combined `/actuator/health`:
+a transient dependency hiccup (the database pool briefly exhausted under load, say) should pull the
+pod out of service via readiness, not kill and restart it via liveness — the process itself is fine.
+`startupProbe` gives a slow cold start (Flyway/Hibernate init under the CPU limit above) a generous,
+dedicated budget of its own — kubelet holds off running liveness and readiness at all until it
+succeeds — so their own budgets below stay tight for steady-state without also gating the cold start.
+If pods keep restarting during startup, raise `startupProbe.failureThreshold` before touching anything
+else.
+
 | Parameter | Description | Default |
 |-----------|-------------|---------|
+| `startupProbe.enabled` | Enable the startup probe | `true` |
+| `startupProbe.periodSeconds` | Probe period | `5` |
+| `startupProbe.failureThreshold` | Failure threshold (× period = startup budget, here 150s) | `30` |
 | `livenessProbe.enabled` | Enable liveness probe | `true` |
-| `livenessProbe.initialDelaySeconds` | Initial delay | `30` |
 | `livenessProbe.periodSeconds` | Probe period | `10` |
 | `livenessProbe.failureThreshold` | Failure threshold | `3` |
 | `readinessProbe.enabled` | Enable readiness probe | `true` |
-| `readinessProbe.initialDelaySeconds` | Initial delay | `10` |
 | `readinessProbe.periodSeconds` | Probe period | `5` |
 | `readinessProbe.failureThreshold` | Failure threshold | `3` |
 

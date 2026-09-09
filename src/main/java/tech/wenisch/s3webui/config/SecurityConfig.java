@@ -80,7 +80,11 @@ public class SecurityConfig {
                     auth.requestMatchers(
                             "/login", "/error",
                             "/webjars/**", "/css/**", "/js/**", "/img/**",
-                            "/actuator/health", "/favicon.ico"
+                            // The bare path covers the aggregate health check; /** covers the
+                            // liveness/readiness groups Kubernetes probes should use instead (a
+                            // dependency hiccup then only pulls the pod out of rotation via readiness
+                            // rather than killing it via liveness) - both 401'd otherwise.
+                            "/actuator/health", "/actuator/health/**", "/favicon.ico"
                     ).permitAll();
                     auth.requestMatchers("/admin/**", "/api/admin/**").hasRole("ADMIN");
                     if (oidcProperties.getRequiredRole() != null && !oidcProperties.getRequiredRole().isBlank()) {
