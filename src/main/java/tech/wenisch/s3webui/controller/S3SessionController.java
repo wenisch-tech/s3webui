@@ -43,17 +43,21 @@ public class S3SessionController {
                             request.accessKey(),
                             request.secretKey(),
                             request.endpointUrl(),
-                            request.region()));
+                            request.region(),
+                            Boolean.TRUE.equals(request.insecureSkipTlsVerify())));
         }
         return ResponseEntity.ok().build();
     }
 
+    // insecureSkipTlsVerify is boxed rather than primitive so a caller who omits it gets a sensible
+    // default instead of a 500 - Jackson fails to bind null into a primitive record component.
     public record SelectionRequest(
             String credentialId,
             String accessKey,
             String secretKey,
             String endpointUrl,
-            String region
+            String region,
+            Boolean insecureSkipTlsVerify
     ) {
     }
 

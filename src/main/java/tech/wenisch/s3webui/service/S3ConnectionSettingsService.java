@@ -97,7 +97,7 @@ public class S3ConnectionSettingsService {
         }
         // Resolve first so an unauthorised choice never reaches the session.
         credentialAccessService.resolve(currentAuthentication(), credentialId.trim());
-        store(new Selection(credentialId.trim(), null, null, null, null));
+        store(new Selection(credentialId.trim(), null, null, null, null, false));
     }
 
     /** Uses credentials the user typed in, when the administrator allows that. */
@@ -115,7 +115,8 @@ public class S3ConnectionSettingsService {
             throw new MissingS3ConfigurationException("Access key, secret key and endpoint URL are required");
         }
 
-        store(new Selection(null, accessKey, secretKey, endpointUrl, region == null ? "us-east-1" : region));
+        store(new Selection(null, accessKey, secretKey, endpointUrl, region == null ? "us-east-1" : region,
+                submitted.insecureSkipTlsVerify()));
     }
 
     public void clearSelection() {
@@ -139,7 +140,7 @@ public class S3ConnectionSettingsService {
                 selection.secretKey(),
                 selection.endpointUrl(),
                 selection.region(),
-                false);
+                selection.insecureSkipTlsVerify());
     }
 
     private Selection getSelection() {
@@ -189,7 +190,8 @@ public class S3ConnectionSettingsService {
             String accessKey,
             String secretKey,
             String endpointUrl,
-            String region
+            String region,
+            boolean insecureSkipTlsVerify
     ) implements Serializable {
     }
 
@@ -202,6 +204,12 @@ public class S3ConnectionSettingsService {
     ) {
     }
 
-    public record SubmittedS3Settings(String accessKey, String secretKey, String endpointUrl, String region) {
+    public record SubmittedS3Settings(
+            String accessKey,
+            String secretKey,
+            String endpointUrl,
+            String region,
+            boolean insecureSkipTlsVerify
+    ) {
     }
 }

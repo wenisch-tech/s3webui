@@ -99,7 +99,7 @@ class S3ConnectionSettingsServiceTest {
     @Test
     void ownCredentialsAreUsedWhenTheyAreAllowed() {
         service.selectOwnCredentials(new S3ConnectionSettingsService.SubmittedS3Settings(
-                "own-access", "own-secret", "https://minio.local", null));
+                "own-access", "own-secret", "https://minio.local", null, true));
 
         var settings = service.getEffectiveSettingsOrThrow();
 
@@ -109,19 +109,35 @@ class S3ConnectionSettingsServiceTest {
     }
 
     @Test
+    void ownCredentialsCarryTheInsecureSkipTlsVerifyFlagThrough() {
+        service.selectOwnCredentials(new S3ConnectionSettingsService.SubmittedS3Settings(
+                "own-access", "own-secret", "https://minio.local", null, true));
+
+        assertThat(service.getEffectiveSettingsOrThrow().insecureSkipTlsVerify()).isTrue();
+    }
+
+    @Test
+    void ownCredentialsDefaultInsecureSkipTlsVerifyToFalse() {
+        service.selectOwnCredentials(new S3ConnectionSettingsService.SubmittedS3Settings(
+                "own-access", "own-secret", "https://minio.local", null, false));
+
+        assertThat(service.getEffectiveSettingsOrThrow().insecureSkipTlsVerify()).isFalse();
+    }
+
+    @Test
     void ownCredentialsAreRejectedWhenTheAdministratorDisabledThem() {
         when(appSettingsService.isUserSuppliedCredentialsAllowed()).thenReturn(false);
 
         assertThatThrownBy(() -> service.selectOwnCredentials(
                 new S3ConnectionSettingsService.SubmittedS3Settings(
-                        "own-access", "own-secret", "https://minio.local", null)))
+                        "own-access", "own-secret", "https://minio.local", null, false)))
                 .isInstanceOf(AccessDeniedException.class);
     }
 
     @Test
     void disablingOwnCredentialsCutsOffSessionsAlreadyUsingThem() {
         service.selectOwnCredentials(new S3ConnectionSettingsService.SubmittedS3Settings(
-                "own-access", "own-secret", "https://minio.local", null));
+                "own-access", "own-secret", "https://minio.local", null, false));
 
         when(appSettingsService.isUserSuppliedCredentialsAllowed()).thenReturn(false);
 
@@ -131,7 +147,7 @@ class S3ConnectionSettingsServiceTest {
     @Test
     void incompleteOwnCredentialsAreRejected() {
         assertThatThrownBy(() -> service.selectOwnCredentials(
-                new S3ConnectionSettingsService.SubmittedS3Settings("own-access", null, "https://minio.local", null)))
+                new S3ConnectionSettingsService.SubmittedS3Settings("own-access", null, "https://minio.local", null, false)))
                 .isInstanceOf(MissingS3ConfigurationException.class);
     }
 
