@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.0.6 - 2026-09-09
+
+### [1.0.6](https://github.com/wenisch-tech/s3webui/compare/v1.0.5...v1.0.6) (2026-09-09)
+
+
+### Bug Fixes
+
+* Kubernetes health probes falsely marking the pod unhealthy ([475922a](https://github.com/wenisch-tech/s3webui/commit/475922a224ad242c7bbbfcdd65c893f94e53764a))
+
+
+
+Docker image: ghcr.io/wenisch-tech/s3webui:1.0.6
+
+
 ## v1.0.5 - 2026-09-09
 
 ### [1.0.5](https://github.com/wenisch-tech/s3webui/compare/v1.0.4...v1.0.5) (2026-09-09)
