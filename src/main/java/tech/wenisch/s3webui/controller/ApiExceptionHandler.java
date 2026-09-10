@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import tech.wenisch.s3webui.service.DuplicateBucketException;
 import tech.wenisch.s3webui.service.MissingS3ConfigurationException;
 import tech.wenisch.s3webui.service.SecretDecryptionException;
+import software.amazon.awssdk.awscore.exception.AwsServiceException;
 import software.amazon.awssdk.services.s3.model.S3Exception;
 
 import java.util.Map;
@@ -39,8 +40,24 @@ public class ApiExceptionHandler {
         return ResponseEntity.status(409).body(Map.of("message", resolveMessage(exception)));
     }
 
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<Map<String, String>> handleIllegalState(IllegalStateException exception) {
+        return ResponseEntity.status(409).body(Map.of("message", resolveMessage(exception)));
+    }
+
     @ExceptionHandler(S3Exception.class)
     public ResponseEntity<String> handleS3Exception(S3Exception exception) {
+        int status = exception.statusCode() > 0 ? exception.statusCode() : 500;
+        return ResponseEntity.status(status).body(resolveMessage(exception));
+    }
+
+    /**
+     * Catches the non-S3 AWS services - IAM in particular, whose exceptions do not extend
+     * {@code S3Exception} and would otherwise degrade to a flat 500. The more specific
+     * {@code S3Exception} handler above still wins for S3.
+     */
+    @ExceptionHandler(AwsServiceException.class)
+    public ResponseEntity<String> handleAwsServiceException(AwsServiceException exception) {
         int status = exception.statusCode() > 0 ? exception.statusCode() : 500;
         return ResponseEntity.status(status).body(resolveMessage(exception));
     }
@@ -51,12 +68,12 @@ public class ApiExceptionHandler {
     }
 
     private String resolveMessage(Throwable throwable) {
-        if (throwable instanceof S3Exception s3ex && s3ex.awsErrorDetails() != null) {
-            if ("NotImplemented".equals(s3ex.awsErrorDetails().errorCode())) {
+        if (throwable instanceof AwsServiceException awsEx && awsEx.awsErrorDetails() != null) {
+            if ("NotImplemented".equals(awsEx.awsErrorDetails().errorCode())) {
                 return "This S3 provider does not support this operation. Some S3-compatible servers "
                         + "(for example older MinIO releases) do not implement the bucket policy or CORS APIs.";
             }
-            String errorMessage = s3ex.awsErrorDetails().errorMessage();
+            String errorMessage = awsEx.awsErrorDetails().errorMessage();
             if (errorMessage != null && !errorMessage.isBlank()) {
                 return errorMessage;
             }

@@ -89,6 +89,8 @@ env:
   S3_ENDPOINT_URL: ""
   S3_REGION: "us-east-1"
   S3_INSECURE_SKIP_TLS_VERIFY: "false"
+  # IAM management for the storage backend (optional; needs a provider that exposes an IAM API)
+  IAM_ENABLED: "false"
   # OIDC / Keycloak (optional)
   OIDC_ENABLED: "false"
   OIDC_PROVIDER_NAME: "Single Sign-On"

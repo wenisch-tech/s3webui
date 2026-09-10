@@ -2,14 +2,14 @@ import Alpine from 'alpinejs';
 import './upload.js';
 import { createJsonEditor } from './editor.js';
 import { createIcons, Archive, ArrowDownUp, Box, CheckCircle2, ChevronDown, Clock3,
-  CloudUpload, Download, File, Folder, FolderOpen, FolderPlus, Globe, History, Info, LayoutGrid, LogOut,
-  Key, Menu, Moon, MoreHorizontal, Network, Pencil, PieChart, Plus, ScrollText, Settings, ShieldAlert, Sun,
-  Table2, Trash2, Upload, UserCircle, Users, X } from 'lucide';
+  CloudUpload, Copy, Download, File, Folder, FolderOpen, FolderPlus, Globe, History, Info, LayoutGrid, LogOut,
+  Key, KeyRound, Link2, Menu, Moon, MoreHorizontal, Network, Pencil, PieChart, Plus, ScrollText, Settings,
+  ShieldAlert, ShieldCheck, Sun, Table2, Trash2, Unlink2, Upload, UserCircle, UserPlus, Users, X } from 'lucide';
 
-const icons = { Archive, ArrowDownUp, Box, CheckCircle2, ChevronDown, Clock3, CloudUpload,
-  Download, File, Folder, FolderOpen, FolderPlus, Globe, History, Info, Key, LayoutGrid, LogOut, Menu, Moon,
-  MoreHorizontal, Network, Pencil, PieChart, Plus, ScrollText, Settings, ShieldAlert, Sun, Table2, Trash2,
-  Upload, UserCircle, Users, X };
+const icons = { Archive, ArrowDownUp, Box, CheckCircle2, ChevronDown, Clock3, CloudUpload, Copy,
+  Download, File, Folder, FolderOpen, FolderPlus, Globe, History, Info, Key, KeyRound, Link2, LayoutGrid, LogOut,
+  Menu, Moon, MoreHorizontal, Network, Pencil, PieChart, Plus, ScrollText, Settings, ShieldAlert, ShieldCheck,
+  Sun, Table2, Trash2, Unlink2, Upload, UserCircle, UserPlus, Users, X };
 
 window.createJsonEditor = createJsonEditor;
 
@@ -61,6 +61,13 @@ document.addEventListener('click', event => {
   if (event.target.closest('a,button')) return;
   if (event.target.closest('.bucket-card[data-bucket-url]')) window.showPageLoading();
 });
+
+// Shared helpers for the JSON-document dialogs (bucket policy, CORS, IAM policies).
+window.cfgError = (id, msg) => { const el = document.getElementById(id); el.textContent = msg; el.classList.remove('hidden'); };
+window.cfgClearError = id => { const el = document.getElementById(id); el.textContent = ''; el.classList.add('hidden'); };
+window.cfgResetRemove = id => { const b = document.getElementById(id); if (!b) return; b.dataset.confirm = ''; b.innerHTML = '<i data-lucide="trash-2"></i>Remove'; window.refreshIcons(); };
+window.cfgEnsureEditor = (hostId, instance) => instance || createJsonEditor(document.getElementById(hostId));
+window.cfgPretty = s => { try { return JSON.stringify(JSON.parse(s), null, 2); } catch { return s; } };
 
 window.openDialog = id => { const dialog = document.getElementById(id); if (!dialog) return; dialog.classList.remove('hidden'); dialog.setAttribute('aria-hidden', 'false'); dialog.querySelector('[data-autofocus]')?.focus(); };
 window.closeDialog = id => { const dialog = document.getElementById(id); if (!dialog) return; dialog.classList.add('hidden'); dialog.setAttribute('aria-hidden', 'true'); dialog.dispatchEvent(new CustomEvent('s3webui:dialogclosed')); };

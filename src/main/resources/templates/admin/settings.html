@@ -18,18 +18,23 @@
 
     <ul class="mb-4 flex gap-2" role="tablist">
         <li class="" role="presentation">
-            <button class="btn-secondary" onclick="switchAdminTab('keys')" type="button">
+            <button class="tab active" id="adminTabBtn-keys" onclick="switchAdminTab('keys')" type="button">
                 <i data-lucide="key"></i>S3 keys
             </button>
         </li>
         <li class="" role="presentation">
-            <button class="btn-secondary" onclick="switchAdminTab('users')" type="button">
+            <button class="tab" id="adminTabBtn-users" onclick="switchAdminTab('users')" type="button">
                 <i data-lucide="users"></i>Users
             </button>
         </li>
         <li class="" role="presentation">
-            <button class="btn-secondary" onclick="switchAdminTab('general')" type="button">
+            <button class="tab" id="adminTabBtn-general" onclick="switchAdminTab('general')" type="button">
                 <i data-lucide="settings"></i>General
+            </button>
+        </li>
+        <li class="" role="presentation" th:if="${iamEnabled}">
+            <button class="tab" id="adminTabBtn-iam" onclick="switchAdminTab('iam')" type="button">
+                <i data-lucide="shield-check"></i>IAM
             </button>
         </li>
     </ul>
@@ -106,6 +111,13 @@
                 running on their own credentials lose access at their next request.
             </p>
         </div>
+
+        <!-- ── IAM ───────────────────────────────────────────── -->
+        <th:block th:if="${iamEnabled}">
+            <div class="admin-tab hidden" id="tab-iam">
+                <div th:replace="~{admin/fragments/iam :: panel}"></div>
+            </div>
+        </th:block>
     </div>
 </main>
 
@@ -227,6 +239,7 @@
 
 
 <div th:replace="~{fragments/shell :: scripts}"></div>
+<th:block th:if="${iamEnabled}"><div th:replace="~{admin/fragments/iam :: script}"></div></th:block>
 <script th:inline="javascript">
     const GRANT_TYPES = /*[[${grantTypes}]]*/ [];
     const USER_ROLES = /*[[${userRoles}]]*/ [];
@@ -245,6 +258,8 @@
     function switchAdminTab(name) {
         document.querySelectorAll('.admin-tab')
             .forEach(tab => tab.classList.toggle('hidden', tab.id !== 'tab-' + name));
+        document.querySelectorAll('[id^="adminTabBtn-"]')
+            .forEach(button => button.classList.toggle('active', button.id === 'adminTabBtn-' + name));
     }
 
     document.addEventListener('DOMContentLoaded', () => {

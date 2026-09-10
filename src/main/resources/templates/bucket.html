@@ -12,11 +12,6 @@ document.addEventListener('DOMContentLoaded',()=>ensureS3ConfigDialog());let del
 let policyEditor=null,corsEditor=null;
 const POLICY_TEMPLATE='{\n  "Version": "2012-10-17",\n  "Statement": []\n}';
 const CORS_TEMPLATE='{\n  "CORSRules": [\n    {\n      "AllowedHeaders": ["*"],\n      "AllowedMethods": ["GET", "HEAD"],\n      "AllowedOrigins": ["*"],\n      "ExposeHeaders": [],\n      "MaxAgeSeconds": 3000\n    }\n  ]\n}';
-function cfgError(id,msg){const el=document.getElementById(id);el.textContent=msg;el.classList.remove('hidden')}
-function cfgClearError(id){const el=document.getElementById(id);el.textContent='';el.classList.add('hidden')}
-function cfgResetRemove(id){const b=document.getElementById(id);b.dataset.confirm='';b.innerHTML='<i data-lucide="trash-2"></i>Remove';refreshIcons()}
-function cfgEnsureEditor(hostId,instance){return instance||createJsonEditor(document.getElementById(hostId))}
-function cfgPretty(s){try{return JSON.stringify(JSON.parse(s),null,2)}catch{return s}}
 function cfgUrl(suffix){return `/api/buckets/${encodeURIComponent(BUCKET)}/${suffix}`}
 function openBucketPolicyDialog(){cfgClearError('bucketPolicyError');cfgResetRemove('bucketPolicyRemove');apiFetch(cfgUrl('policy')).then(async r=>{if(!r.ok){showToast(await getResponseErrorMessage(r,'Failed to load bucket policy'),'danger');return}const data=await r.json();const has=data.policy!=null;policyEditor=cfgEnsureEditor('bucketPolicyEditor',policyEditor);policyEditor.setValue(has?cfgPretty(data.policy):POLICY_TEMPLATE);document.getElementById('bucketPolicyRemove').classList.toggle('hidden',!has);openDialog('bucketPolicyModal')}).catch(e=>showToast(e.message,'danger'))}
 function saveBucketPolicy(){const v=policyEditor.getValue();try{JSON.parse(v)}catch(e){cfgError('bucketPolicyError','Not valid JSON: '+e.message);return}cfgClearError('bucketPolicyError');apiFetch(cfgUrl('policy'),{method:'PUT',headers:{'Content-Type':'application/json'},body:v}).then(async r=>{if(r.ok){closeDialog('bucketPolicyModal');showToast('Bucket policy saved','success')}else cfgError('bucketPolicyError',await getResponseErrorMessage(r,'Failed to save bucket policy'))}).catch(e=>cfgError('bucketPolicyError',e.message))}

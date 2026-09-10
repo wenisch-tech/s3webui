@@ -50,6 +50,9 @@ s3:
   region: ${S3_REGION:}
   insecure-skip-tls-verify: ${S3_INSECURE_SKIP_TLS_VERIFY:false}
 
+iam:
+  enabled: ${IAM_ENABLED:false}
+
 oidc:
   enabled: ${OIDC_ENABLED:false}
   provider-name: ${OIDC_PROVIDER_NAME:Single Sign-On}

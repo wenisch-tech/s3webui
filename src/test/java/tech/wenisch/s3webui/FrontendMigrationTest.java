@@ -37,8 +37,21 @@ class FrontendMigrationTest {
         "deleteObjectModal", "folderNameError",
         "bucketPolicyModal", "bucketCorsModal", "json-editor").doesNotContain("prompt(");
     assertThat(frontend).contains("data-theme", "openDialog", "closeDialog", "showToast",
-        "createJsonEditor");
+        "createJsonEditor", "hidePageLoading");
     assertThat(Files.readString(Path.of("package.json"))).contains("@codemirror/lang-json");
+  }
+
+  @Test
+  void theIamSectionLivesInItsOwnFragmentAndIsWiredIntoSettings() throws IOException {
+    String settings = Files.readString(Path.of("src/main/resources/templates/admin/settings.html"));
+    String iam = Files.readString(Path.of("src/main/resources/templates/admin/fragments/iam.html"));
+
+    assertThat(settings).contains("tab-iam", "adminTabBtn-iam", "admin/fragments/iam :: panel",
+        "admin/fragments/iam :: script");
+    assertThat(iam)
+        .contains("iamUserModal", "iamGroupModal", "iamPolicyModal", "iamAttachModal",
+            "iamMembersModal", "iamKeysModal", "json-editor", "refreshIcons();")
+        .doesNotContain("prompt(", "confirm(");
   }
 
   @Test

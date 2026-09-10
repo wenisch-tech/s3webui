@@ -123,6 +123,8 @@ class AdminApiControllerTest {
     void ordinaryUsersAreRefused() throws Exception {
         mockMvc.perform(get("/api/admin/credentials")).andExpect(status().isForbidden());
         mockMvc.perform(get("/api/admin/users")).andExpect(status().isForbidden());
+        mockMvc.perform(get("/api/admin/iam/capabilities")).andExpect(status().isForbidden());
+        mockMvc.perform(get("/api/admin/iam/users")).andExpect(status().isForbidden());
         mockMvc.perform(get("/admin/settings")).andExpect(status().isForbidden());
         mockMvc.perform(get("/api/s3/session")).andExpect(status().isOk());
     }

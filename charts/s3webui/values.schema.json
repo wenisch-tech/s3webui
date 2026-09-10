@@ -14,6 +14,9 @@
                 "APP_DATA_DIR": {
                     "type": "string"
                 },
+                "IAM_ENABLED": {
+                    "type": "string"
+                },
                 "OIDC_CLIENT_ID": {
                     "type": "string"
                 },

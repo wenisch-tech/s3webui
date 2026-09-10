@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!-- ══ Panel ═══════════════════════════════════════════════════════════ -->
+<div th:fragment="panel">
+
+    <div id="iamUnavailable" class="alert alert-warn mb-3 hidden"></div>
+
+    <div id="iamBody" class="hidden">
+        <ul class="mb-4 flex gap-2" role="tablist">
+            <li role="presentation">
+                <button class="tab active" id="iamTabBtn-users" onclick="switchIamTab('users')" type="button">
+                    <i data-lucide="user-circle"></i>Users
+                </button>
+            </li>
+            <li role="presentation">
+                <button class="tab" id="iamTabBtn-groups" onclick="switchIamTab('groups')" type="button">
+                    <i data-lucide="users"></i>Groups
+                </button>
+            </li>
+            <li role="presentation">
+                <button class="tab" id="iamTabBtn-policies" onclick="switchIamTab('policies')" type="button">
+                    <i data-lucide="shield-check"></i>Policies
+                </button>
+            </li>
+        </ul>
+
+        <!-- ── IAM users ───────────────────────────────────────────────── -->
+        <div class="iam-tab" id="iam-users">
+            <div class="mb-3 flex flex-wrap items-center justify-between gap-3">
+                <p class="page-copy">
+                    Identities on the storage backend. Creating one also mints its first access key
+                    and files it under <strong>S3 keys</strong>, ready to be granted to an account.
+                </p>
+                <button class="btn-primary" onclick="openIamUserModal()">
+                    <i data-lucide="user-plus"></i>New IAM user
+                </button>
+            </div>
+            <div class="table-wrap">
+                <table class="data-table">
+                    <thead>
+                    <tr>
+                        <th>User</th>
+                        <th>ARN</th>
+                        <th>Created</th>
+                        <th class="text-right">Actions</th>
+                    </tr>
+                    </thead>
+                    <tbody id="iamUserTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ── IAM groups ──────────────────────────────────────────────── -->
+        <div class="iam-tab hidden" id="iam-groups">
+            <div class="mb-3 flex flex-wrap items-center justify-between gap-3">
+                <p class="page-copy">Groups collect users so a policy can be attached once.</p>
+                <button class="btn-primary" onclick="openIamGroupModal()">
+                    <i data-lucide="plus"></i>New group
+                </button>
+            </div>
+            <div class="table-wrap">
+                <table class="data-table">
+                    <thead>
+                    <tr>
+                        <th>Group</th>
+                        <th>ARN</th>
+                        <th class="text-right">Actions</th>
+                    </tr>
+                    </thead>
+                    <tbody id="iamGroupTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ── IAM policies ────────────────────────────────────────────── -->
+        <div class="iam-tab hidden" id="iam-policies">
+            <div class="mb-3 flex flex-wrap items-center justify-between gap-3">
+                <p class="page-copy">
+                    Standalone policy documents. Provider-managed policies can be attached but not
+                    edited.
+                </p>
+                <button class="btn-primary" onclick="openIamPolicyModal(null)">
+                    <i data-lucide="plus"></i>New policy
+                </button>
+            </div>
+            <div class="table-wrap">
+                <table class="data-table">
+                    <thead>
+                    <tr>
+                        <th>Policy</th>
+                        <th>Identifier</th>
+                        <th class="text-right">Actions</th>
+                    </tr>
+                    </thead>
+                    <tbody id="iamPolicyTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Create IAM user ─────────────────────────────────────────────── -->
+    <div id="iamUserModal" class="modal-backdrop hidden" aria-hidden="true" role="dialog" aria-modal="true">
+        <div class="modal-card max-w-xl">
+            <div class="modal-header">
+                <h2 class="font-semibold"><i data-lucide="user-plus"></i>New IAM user</h2>
+                <button class="btn-icon" type="button" onclick="closeDialog('iamUserModal')"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body">
+                <div id="iamUserError" class="alert alert-error mb-3 hidden"></div>
+                <label class="field-label" for="iamUserName">User name</label>
+                <input class="input" id="iamUserName" data-autofocus type="text" autocomplete="off"/>
+                <div class="field-help mt-2">
+                    An access key is created with the user and stored as an S3 key with no grants.
+                    The secret is written straight to the encrypted store and is never shown here.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" onclick="closeDialog('iamUserModal')">Cancel</button>
+                <button type="button" class="btn-primary" onclick="createIamUser()"><i data-lucide="check-circle-2"></i>Create</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Create group ────────────────────────────────────────────────── -->
+    <div id="iamGroupModal" class="modal-backdrop hidden" aria-hidden="true" role="dialog" aria-modal="true">
+        <div class="modal-card max-w-xl">
+            <div class="modal-header">
+                <h2 class="font-semibold"><i data-lucide="users"></i>New group</h2>
+                <button class="btn-icon" type="button" onclick="closeDialog('iamGroupModal')"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body">
+                <div id="iamGroupError" class="alert alert-error mb-3 hidden"></div>
+                <label class="field-label" for="iamGroupName">Group name</label>
+                <input class="input" id="iamGroupName" data-autofocus type="text" autocomplete="off"/>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" onclick="closeDialog('iamGroupModal')">Cancel</button>
+                <button type="button" class="btn-primary" onclick="createIamGroup()"><i data-lucide="check-circle-2"></i>Create</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Policy document ─────────────────────────────────────────────── -->
+    <div id="iamPolicyModal" class="modal-backdrop hidden" aria-hidden="true" role="dialog" aria-modal="true">
+        <div class="modal-card max-w-3xl">
+            <div class="modal-header">
+                <h2 class="font-semibold" id="iamPolicyTitle"><i data-lucide="shield-check"></i>Policy</h2>
+                <button class="btn-icon" type="button" onclick="closeDialog('iamPolicyModal')"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body">
+                <div id="iamPolicyError" class="alert alert-error mb-3 hidden"></div>
+                <div id="iamPolicyNameField">
+                    <label class="field-label" for="iamPolicyName">Policy name</label>
+                    <input class="input mb-3" id="iamPolicyName" type="text" autocomplete="off"/>
+                </div>
+                <p class="field-help mb-2">An IAM-style JSON policy document.</p>
+                <div id="iamPolicyEditor" class="json-editor"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" onclick="closeDialog('iamPolicyModal')">Cancel</button>
+                <button type="button" class="btn-danger hidden" id="iamPolicyRemove" onclick="removeIamPolicy(this)"><i data-lucide="trash-2"></i>Remove</button>
+                <button type="button" class="btn-primary" onclick="saveIamPolicy()"><i data-lucide="check-circle-2"></i>Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Attached policies ───────────────────────────────────────────── -->
+    <div id="iamAttachModal" class="modal-backdrop hidden" aria-hidden="true" role="dialog" aria-modal="true">
+        <div class="modal-card max-w-2xl">
+            <div class="modal-header">
+                <h2 class="font-semibold" id="iamAttachTitle"><i data-lucide="link-2"></i>Attached policies</h2>
+                <button class="btn-icon" type="button" onclick="closeDialog('iamAttachModal')"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body">
+                <div id="iamAttachError" class="alert alert-error mb-3 hidden"></div>
+                <div id="iamAttachList" class="mb-3"></div>
+                <label class="field-label" for="iamAttachSelect">Attach a policy</label>
+                <div class="flex gap-2">
+                    <select class="input" id="iamAttachSelect"></select>
+                    <button type="button" class="btn-secondary whitespace-nowrap" onclick="attachIamPolicy()"><i data-lucide="link-2"></i>Attach</button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" onclick="closeDialog('iamAttachModal')">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Group members ───────────────────────────────────────────────── -->
+    <div id="iamMembersModal" class="modal-backdrop hidden" aria-hidden="true" role="dialog" aria-modal="true">
+        <div class="modal-card max-w-2xl">
+            <div class="modal-header">
+                <h2 class="font-semibold" id="iamMembersTitle"><i data-lucide="users"></i>Group members</h2>
+                <button class="btn-icon" type="button" onclick="closeDialog('iamMembersModal')"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body">
+                <div id="iamMembersError" class="alert alert-error mb-3 hidden"></div>
+                <div id="iamMembersList" class="mb-3"></div>
+                <label class="field-label" for="iamMemberSelect">Add a user</label>
+                <div class="flex gap-2">
+                    <select class="input" id="iamMemberSelect"></select>
+                    <button type="button" class="btn-secondary whitespace-nowrap" onclick="addIamMember()"><i data-lucide="plus"></i>Add</button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" onclick="closeDialog('iamMembersModal')">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Access keys ─────────────────────────────────────────────────── -->
+    <div id="iamKeysModal" class="modal-backdrop hidden" aria-hidden="true" role="dialog" aria-modal="true">
+        <div class="modal-card max-w-2xl">
+            <div class="modal-header">
+                <h2 class="font-semibold" id="iamKeysTitle"><i data-lucide="key-round"></i>Access keys</h2>
+                <button class="btn-icon" type="button" onclick="closeDialog('iamKeysModal')"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body">
+                <div id="iamKeysError" class="alert alert-error mb-3 hidden"></div>
+                <div id="iamKeysNotice" class="alert alert-success mb-3 hidden"></div>
+                <div id="iamKeysList"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" onclick="closeDialog('iamKeysModal')">Close</button>
+                <button type="button" class="btn-primary" onclick="createIamKey()"><i data-lucide="key-round"></i>New access key</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══ Script ══════════════════════════════════════════════════════════ -->
+<div th:fragment="script">
+    <script>
+        const IAM_BASE = '/api/admin/iam';
+        const IAM_POLICY_TEMPLATE = '{\n  "Version": "2012-10-17",\n  "Statement": [\n    {\n      "Effect": "Allow",\n      "Action": ["s3:GetObject"],\n      "Resource": ["arn:aws:s3:::example-bucket/*"]\n    }\n  ]\n}';
+
+        let _iamPolicyEditor = null;
+        let _iamPolicies = [];
+        let _iamUsers = [];
+        let _iamEditingPolicyId = null;
+        let _iamAttachTarget = null;   // {kind: 'users'|'groups', name}
+        let _iamMembersGroup = null;
+        let _iamKeysUser = null;
+
+        function iamEscape(value) {
+            return String(value ?? '').replace(/[&<>"']/g, ch =>
+                ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[ch]));
+        }
+
+        function iamDate(value) {
+            if (!value) return '';
+            const parsed = new Date(value);
+            return Number.isNaN(parsed.getTime()) ? '' : parsed.toLocaleString();
+        }
+
+        function iamEmptyRow(columns, message) {
+            return `<tr><td colspan="${columns}" class="text-center text-sm text-slate-500">${iamEscape(message)}</td></tr>`;
+        }
+
+        function switchIamTab(name) {
+            document.querySelectorAll('.iam-tab')
+                .forEach(tab => tab.classList.toggle('hidden', tab.id !== 'iam-' + name));
+            ['users', 'groups', 'policies'].forEach(key => {
+                const button = document.getElementById('iamTabBtn-' + key);
+                if (button) button.classList.toggle('active', key === name);
+            });
+            if (name === 'groups') loadIamGroups();
+            if (name === 'policies') loadIamPolicies();
+        }
+
+        async function initIam() {
+            if (!document.getElementById('iamBody')) return;
+            let capabilities;
+            try {
+                const response = await apiFetch(`${IAM_BASE}/capabilities`);
+                if (!response.ok) throw new Error(await getResponseErrorMessage(response, 'IAM is unavailable'));
+                capabilities = await response.json();
+            } catch (error) {
+                capabilities = {available: false, reason: error.message};
+            }
+            if (!capabilities.available) {
+                // Keep the tab reachable - the banner inside it is the only place that says why.
+                const banner = document.getElementById('iamUnavailable');
+                banner.textContent = capabilities.reason || 'IAM management is not available for this S3 key.';
+                banner.classList.remove('hidden');
+                return;
+            }
+            document.getElementById('iamUnavailable').classList.add('hidden');
+            document.getElementById('iamBody').classList.remove('hidden');
+            loadIamUsers();
+            loadIamPolicies();
+        }
+
+        // ── Users ────────────────────────────────────────────────────────
+
+        async function loadIamUsers() {
+            const body = document.getElementById('iamUserTableBody');
+            const response = await apiFetch(`${IAM_BASE}/users`);
+            if (!response.ok) {
+                body.innerHTML = iamEmptyRow(4, await getResponseErrorMessage(response, 'Failed to load IAM users'));
+                return;
+            }
+            _iamUsers = await response.json();
+            if (!_iamUsers.length) {
+                body.innerHTML = iamEmptyRow(4, 'No IAM users yet.');
+                return;
+            }
+            body.innerHTML = '';
+            _iamUsers.forEach(user => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="font-semibold">${iamEscape(user.userName)}</td>
+                    <td class="font-mono text-xs text-slate-500">${iamEscape(user.arn)}</td>
+                    <td class="text-sm text-slate-500">${iamEscape(iamDate(user.createdAt))}</td>
+                    <td class="whitespace-nowrap text-right">
+                        <button class="btn-icon" title="Attached policies" data-name="${iamEscape(user.userName)}" onclick="openIamAttachModal('users', this.getAttribute('data-name'))"><i data-lucide="shield-check"></i></button>
+                        <button class="btn-icon" title="Access keys" data-name="${iamEscape(user.userName)}" onclick="openIamKeysModal(this.getAttribute('data-name'))"><i data-lucide="key-round"></i></button>
+                        <button class="btn-icon text-bad-500" title="Delete user" data-name="${iamEscape(user.userName)}" onclick="deleteIamUser(this)"><i data-lucide="trash-2"></i></button>
+                    </td>`;
+                body.appendChild(row);
+            });
+            refreshIcons();
+        }
+
+        function openIamUserModal() {
+            cfgClearError('iamUserError');
+            document.getElementById('iamUserName').value = '';
+            openDialog('iamUserModal');
+            refreshIcons();
+        }
+
+        async function createIamUser() {
+            const name = document.getElementById('iamUserName').value.trim();
+            if (!name) return cfgError('iamUserError', 'User name is required');
+            cfgClearError('iamUserError');
+            const response = await apiFetch(`${IAM_BASE}/users`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({name})
+            });
+            if (!response.ok) return cfgError('iamUserError', await getResponseErrorMessage(response, 'Failed to create the IAM user'));
+            const stored = await response.json();
+            closeDialog('iamUserModal');
+            showToast(`IAM user ${name} created; access key stored as "${stored.credentialName}"`, 'success');
+            loadIamUsers();
+        }
+
+        async function deleteIamUser(button) {
+            const name = button.getAttribute('data-name');
+            if (button.dataset.confirm !== '1') {
+                button.dataset.confirm = '1';
+                button.title = 'Click again to confirm';
+                button.innerHTML = '<i data-lucide="check-circle-2"></i>';
+                refreshIcons();
+                return;
+            }
+            const response = await apiFetch(`${IAM_BASE}/users/${encodeURIComponent(name)}`, {method: 'DELETE'});
+            if (!response.ok) {
+                showToast(await getResponseErrorMessage(response, 'Failed to delete the IAM user'), 'danger');
+                return;
+            }
+            showToast(`IAM user ${name} deleted`, 'success');
+            loadIamUsers();
+        }
+
+        // ── Groups ───────────────────────────────────────────────────────
+
+        async function loadIamGroups() {
+            const body = document.getElementById('iamGroupTableBody');
+            const response = await apiFetch(`${IAM_BASE}/groups`);
+            if (!response.ok) {
+                body.innerHTML = iamEmptyRow(3, await getResponseErrorMessage(response, 'Failed to load groups'));
+                return;
+            }
+            const groups = await response.json();
+            if (!groups.length) {
+                body.innerHTML = iamEmptyRow(3, 'No groups yet.');
+                return;
+            }
+            body.innerHTML = '';
+            groups.forEach(group => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="font-semibold">${iamEscape(group.groupName)}</td>
+                    <td class="font-mono text-xs text-slate-500">${iamEscape(group.arn)}</td>
+                    <td class="whitespace-nowrap text-right">
+                        <button class="btn-icon" title="Members" data-name="${iamEscape(group.groupName)}" onclick="openIamMembersModal(this.getAttribute('data-name'))"><i data-lucide="users"></i></button>
+                        <button class="btn-icon" title="Attached policies" data-name="${iamEscape(group.groupName)}" onclick="openIamAttachModal('groups', this.getAttribute('data-name'))"><i data-lucide="shield-check"></i></button>
+                        <button class="btn-icon text-bad-500" title="Delete group" data-name="${iamEscape(group.groupName)}" onclick="deleteIamGroup(this)"><i data-lucide="trash-2"></i></button>
+                    </td>`;
+                body.appendChild(row);
+            });
+            refreshIcons();
+        }
+
+        function openIamGroupModal() {
+            cfgClearError('iamGroupError');
+            document.getElementById('iamGroupName').value = '';
+            openDialog('iamGroupModal');
+            refreshIcons();
+        }
+
+        async function createIamGroup() {
+            const name = document.getElementById('iamGroupName').value.trim();
+            if (!name) return cfgError('iamGroupError', 'Group name is required');
+            cfgClearError('iamGroupError');
+            const response = await apiFetch(`${IAM_BASE}/groups`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({name})
+            });
+            if (!response.ok) return cfgError('iamGroupError', await getResponseErrorMessage(response, 'Failed to create the group'));
+            closeDialog('iamGroupModal');
+            showToast(`Group ${name} created`, 'success');
+            loadIamGroups();
+        }
+
+        async function deleteIamGroup(button) {
+            const name = button.getAttribute('data-name');
+            if (button.dataset.confirm !== '1') {
+                button.dataset.confirm = '1';
+                button.title = 'Click again to confirm';
+                button.innerHTML = '<i data-lucide="check-circle-2"></i>';
+                refreshIcons();
+                return;
+            }
+            const response = await apiFetch(`${IAM_BASE}/groups/${encodeURIComponent(name)}`, {method: 'DELETE'});
+            if (!response.ok) {
+                showToast(await getResponseErrorMessage(response, 'Failed to delete the group'), 'danger');
+                return;
+            }
+            showToast(`Group ${name} deleted`, 'success');
+            loadIamGroups();
+        }
+
+        async function openIamMembersModal(groupName) {
+            _iamMembersGroup = groupName;
+            cfgClearError('iamMembersError');
+            document.getElementById('iamMembersTitle').innerHTML = `<i data-lucide="users"></i>Members of ${iamEscape(groupName)}`;
+            await renderIamMembers();
+            openDialog('iamMembersModal');
+            refreshIcons();
+        }
+
+        async function renderIamMembers() {
+            const list = document.getElementById('iamMembersList');
+            const response = await apiFetch(`${IAM_BASE}/groups/${encodeURIComponent(_iamMembersGroup)}/members`);
+            if (!response.ok) {
+                cfgError('iamMembersError', await getResponseErrorMessage(response, 'Failed to load members'));
+                return;
+            }
+            const members = await response.json();
+            list.innerHTML = members.length
+                ? members.map(name => `<div class="flex items-center justify-between border-b border-slate-700/10 py-1">
+                        <span class="font-mono text-sm">${iamEscape(name)}</span>
+                        <button type="button" class="btn-icon text-bad-500" data-name="${iamEscape(name)}" onclick="removeIamMember(this.getAttribute('data-name'))"><i data-lucide="x"></i></button>
+                    </div>`).join('')
+                : '<p class="field-help">No members yet.</p>';
+
+            const select = document.getElementById('iamMemberSelect');
+            const candidates = _iamUsers.map(user => user.userName).filter(name => !members.includes(name));
+            select.innerHTML = candidates.length
+                ? candidates.map(name => `<option value="${iamEscape(name)}">${iamEscape(name)}</option>`).join('')
+                : '<option value="">No other users</option>';
+            refreshIcons();
+        }
+
+        async function addIamMember() {
+            const userName = document.getElementById('iamMemberSelect').value;
+            if (!userName) return;
+            const response = await apiFetch(
+                `${IAM_BASE}/groups/${encodeURIComponent(_iamMembersGroup)}/members/${encodeURIComponent(userName)}`,
+                {method: 'PUT'});
+            if (!response.ok) return cfgError('iamMembersError', await getResponseErrorMessage(response, 'Failed to add the member'));
+            cfgClearError('iamMembersError');
+            renderIamMembers();
+        }
+
+        async function removeIamMember(userName) {
+            const response = await apiFetch(
+                `${IAM_BASE}/groups/${encodeURIComponent(_iamMembersGroup)}/members/${encodeURIComponent(userName)}`,
+                {method: 'DELETE'});
+            if (!response.ok) return cfgError('iamMembersError', await getResponseErrorMessage(response, 'Failed to remove the member'));
+            cfgClearError('iamMembersError');
+            renderIamMembers();
+        }
+
+        // ── Policies ─────────────────────────────────────────────────────
+
+        async function loadIamPolicies() {
+            const body = document.getElementById('iamPolicyTableBody');
+            const response = await apiFetch(`${IAM_BASE}/policies`);
+            if (!response.ok) {
+                body.innerHTML = iamEmptyRow(3, await getResponseErrorMessage(response, 'Failed to load policies'));
+                return;
+            }
+            _iamPolicies = await response.json();
+            if (!_iamPolicies.length) {
+                body.innerHTML = iamEmptyRow(3, 'No policies yet.');
+                return;
+            }
+            body.innerHTML = '';
+            _iamPolicies.forEach(policy => {
+                const row = document.createElement('tr');
+                const managed = policy.editable ? '' : '<span class="badge ml-2">provider-managed</span>';
+                row.innerHTML = `
+                    <td class="font-semibold">${iamEscape(policy.name)}${managed}</td>
+                    <td class="font-mono text-xs text-slate-500">${iamEscape(policy.id)}</td>
+                    <td class="whitespace-nowrap text-right">
+                        <button class="btn-icon" title="View or edit" data-id="${iamEscape(policy.id)}" onclick="openIamPolicyModal(this.getAttribute('data-id'))"><i data-lucide="pencil"></i></button>
+                    </td>`;
+                body.appendChild(row);
+            });
+            refreshIcons();
+        }
+
+        async function openIamPolicyModal(policyId) {
+            cfgClearError('iamPolicyError');
+            cfgResetRemove('iamPolicyRemove');
+            _iamEditingPolicyId = policyId;
+            _iamPolicyEditor = cfgEnsureEditor('iamPolicyEditor', _iamPolicyEditor);
+
+            const policy = policyId ? _iamPolicies.find(candidate => candidate.id === policyId) : null;
+            const editable = !policy || policy.editable;
+            document.getElementById('iamPolicyNameField').classList.toggle('hidden', Boolean(policyId));
+            document.getElementById('iamPolicyName').value = '';
+            document.getElementById('iamPolicyTitle').innerHTML = policyId
+                ? `<i data-lucide="shield-check"></i>${iamEscape(policy ? policy.name : policyId)}`
+                : '<i data-lucide="shield-check"></i>New policy';
+            document.getElementById('iamPolicyRemove').classList.toggle('hidden', !policyId || !editable);
+
+            if (policyId) {
+                const response = await apiFetch(`${IAM_BASE}/policy?id=${encodeURIComponent(policyId)}`);
+                if (!response.ok) {
+                    showToast(await getResponseErrorMessage(response, 'Failed to load the policy'), 'danger');
+                    return;
+                }
+                const data = await response.json();
+                _iamPolicyEditor.setValue(cfgPretty(data.document));
+            } else {
+                _iamPolicyEditor.setValue(IAM_POLICY_TEMPLATE);
+            }
+            openDialog('iamPolicyModal');
+            refreshIcons();
+        }
+
+        async function saveIamPolicy() {
+            const document_ = _iamPolicyEditor.getValue();
+            try {
+                JSON.parse(document_);
+            } catch (error) {
+                return cfgError('iamPolicyError', 'Not valid JSON: ' + error.message);
+            }
+            cfgClearError('iamPolicyError');
+
+            let response;
+            if (_iamEditingPolicyId) {
+                response = await apiFetch(`${IAM_BASE}/policy?id=${encodeURIComponent(_iamEditingPolicyId)}`, {
+                    method: 'PUT',
+                    headers: {'Content-Type': 'application/json'},
+                    body: document_
+                });
+            } else {
+                const name = document.getElementById('iamPolicyName').value.trim();
+                if (!name) return cfgError('iamPolicyError', 'Policy name is required');
+                response = await apiFetch(`${IAM_BASE}/policies`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({name, document: document_})
+                });
+            }
+            if (!response.ok) return cfgError('iamPolicyError', await getResponseErrorMessage(response, 'Failed to save the policy'));
+            closeDialog('iamPolicyModal');
+            showToast('Policy saved', 'success');
+            loadIamPolicies();
+        }
+
+        async function removeIamPolicy(button) {
+            if (button.dataset.confirm !== '1') {
+                button.dataset.confirm = '1';
+                button.textContent = 'Confirm remove';
+                return;
+            }
+            const response = await apiFetch(`${IAM_BASE}/policy?id=${encodeURIComponent(_iamEditingPolicyId)}`, {method: 'DELETE'});
+            if (!response.ok) return cfgError('iamPolicyError', await getResponseErrorMessage(response, 'Failed to delete the policy'));
+            closeDialog('iamPolicyModal');
+            showToast('Policy deleted', 'success');
+            loadIamPolicies();
+        }
+
+        // ── Attached policies ────────────────────────────────────────────
+
+        async function openIamAttachModal(kind, name) {
+            _iamAttachTarget = {kind, name};
+            cfgClearError('iamAttachError');
+            document.getElementById('iamAttachTitle').innerHTML = `<i data-lucide="link-2"></i>Policies for ${iamEscape(name)}`;
+            if (!_iamPolicies.length) await loadIamPolicies();
+            await renderIamAttachments();
+            openDialog('iamAttachModal');
+            refreshIcons();
+        }
+
+        async function renderIamAttachments() {
+            const {kind, name} = _iamAttachTarget;
+            const list = document.getElementById('iamAttachList');
+            const response = await apiFetch(`${IAM_BASE}/${kind}/${encodeURIComponent(name)}/policies`);
+            if (!response.ok) {
+                cfgError('iamAttachError', await getResponseErrorMessage(response, 'Failed to load attached policies'));
+                return;
+            }
+            const attached = await response.json();
+            list.innerHTML = attached.length
+                ? attached.map(policy => `<div class="flex items-center justify-between border-b border-slate-700/10 py-1">
+                        <span class="text-sm">${iamEscape(policy.name)}</span>
+                        <button type="button" class="btn-icon text-bad-500" title="Detach" data-id="${iamEscape(policy.id)}" onclick="detachIamPolicy(this.getAttribute('data-id'))"><i data-lucide="unlink-2"></i></button>
+                    </div>`).join('')
+                : '<p class="field-help">No policies attached.</p>';
+
+            const attachedIds = attached.map(policy => policy.id);
+            const candidates = _iamPolicies.filter(policy => !attachedIds.includes(policy.id));
+            const select = document.getElementById('iamAttachSelect');
+            select.innerHTML = candidates.length
+                ? candidates.map(policy => `<option value="${iamEscape(policy.id)}">${iamEscape(policy.name)}</option>`).join('')
+                : '<option value="">No other policies</option>';
+            refreshIcons();
+        }
+
+        async function attachIamPolicy() {
+            const policyId = document.getElementById('iamAttachSelect').value;
+            if (!policyId) return;
+            const {kind, name} = _iamAttachTarget;
+            const response = await apiFetch(`${IAM_BASE}/${kind}/${encodeURIComponent(name)}/policies`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({policyId})
+            });
+            if (!response.ok) return cfgError('iamAttachError', await getResponseErrorMessage(response, 'Failed to attach the policy'));
+            cfgClearError('iamAttachError');
+            renderIamAttachments();
+        }
+
+        async function detachIamPolicy(policyId) {
+            const {kind, name} = _iamAttachTarget;
+            const response = await apiFetch(
+                `${IAM_BASE}/${kind}/${encodeURIComponent(name)}/policies?policyId=${encodeURIComponent(policyId)}`,
+                {method: 'DELETE'});
+            if (!response.ok) return cfgError('iamAttachError', await getResponseErrorMessage(response, 'Failed to detach the policy'));
+            cfgClearError('iamAttachError');
+            renderIamAttachments();
+        }
+
+        // ── Access keys ──────────────────────────────────────────────────
+
+        async function openIamKeysModal(userName) {
+            _iamKeysUser = userName;
+            cfgClearError('iamKeysError');
+            document.getElementById('iamKeysNotice').classList.add('hidden');
+            document.getElementById('iamKeysTitle').innerHTML = `<i data-lucide="key-round"></i>Access keys for ${iamEscape(userName)}`;
+            await renderIamKeys();
+            openDialog('iamKeysModal');
+            refreshIcons();
+        }
+
+        async function renderIamKeys() {
+            const list = document.getElementById('iamKeysList');
+            const response = await apiFetch(`${IAM_BASE}/users/${encodeURIComponent(_iamKeysUser)}/keys`);
+            if (!response.ok) {
+                cfgError('iamKeysError', await getResponseErrorMessage(response, 'Failed to load access keys'));
+                return;
+            }
+            const keys = await response.json();
+            list.innerHTML = keys.length
+                ? keys.map(key => `<div class="flex items-center justify-between border-b border-slate-700/10 py-1">
+                        <span class="font-mono text-xs">${iamEscape(key.accessKeyId)}</span>
+                        <span class="text-sm text-slate-500">${iamEscape(key.status)} · ${iamEscape(iamDate(key.createdAt))}</span>
+                        <button type="button" class="btn-icon text-bad-500" title="Delete key" data-id="${iamEscape(key.accessKeyId)}" onclick="deleteIamKey(this.getAttribute('data-id'))"><i data-lucide="trash-2"></i></button>
+                    </div>`).join('')
+                : '<p class="field-help">No access keys.</p>';
+            refreshIcons();
+        }
+
+        async function createIamKey() {
+            const response = await apiFetch(`${IAM_BASE}/users/${encodeURIComponent(_iamKeysUser)}/keys`, {method: 'POST'});
+            if (!response.ok) return cfgError('iamKeysError', await getResponseErrorMessage(response, 'Failed to create an access key'));
+            const stored = await response.json();
+            const notice = document.getElementById('iamKeysNotice');
+            notice.textContent = `Key ${stored.accessKeyId} created and stored as S3 key "${stored.credentialName}".`;
+            notice.classList.remove('hidden');
+            cfgClearError('iamKeysError');
+            renderIamKeys();
+        }
+
+        async function deleteIamKey(accessKeyId) {
+            const response = await apiFetch(
+                `${IAM_BASE}/users/${encodeURIComponent(_iamKeysUser)}/keys/${encodeURIComponent(accessKeyId)}`,
+                {method: 'DELETE'});
+            if (!response.ok) return cfgError('iamKeysError', await getResponseErrorMessage(response, 'Failed to delete the access key'));
+            cfgClearError('iamKeysError');
+            renderIamKeys();
+        }
+
+        document.addEventListener('DOMContentLoaded', initIam);
+    </script>
+</div>
+
+</body>
+</html>
