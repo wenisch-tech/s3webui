@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.1.0 - 2026-09-10
+
+## [1.1.0](https://github.com/wenisch-tech/s3webui/compare/v1.0.6...v1.1.0) (2026-09-10)
+
+
+### Features
+
+* view and edit bucket policy and CORS config from the UI ([994c70f](https://github.com/wenisch-tech/s3webui/commit/994c70f6b25b784831114d5246707b53f841f4ff))
+
+
+
+Docker image: ghcr.io/wenisch-tech/s3webui:1.1.0
+
+
 ## v1.0.6 - 2026-09-09
 
 ### [1.0.6](https://github.com/wenisch-tech/s3webui/compare/v1.0.5...v1.0.6) (2026-09-09)
