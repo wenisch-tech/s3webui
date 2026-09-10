@@ -1,5 +1,24 @@
 # Changelog
 
+## v1.2.0 - 2026-09-10
+
+## [1.2.0](https://github.com/wenisch-tech/s3webui/compare/v1.1.0...v1.2.0) (2026-09-10)
+
+
+### Features
+
+* optional IAM management for users, groups, policies and keys ([0b912af](https://github.com/wenisch-tech/s3webui/commit/0b912af047c2edd35bfdf31508de7e29c52131cf))
+
+
+### Bug Fixes
+
+* bucket card context menu showed a page loader that never cleared ([e2e8e08](https://github.com/wenisch-tech/s3webui/commit/e2e8e087eb9d4e015533c69e8e318896f885c8a8))
+
+
+
+Docker image: ghcr.io/wenisch-tech/s3webui:1.2.0
+
+
 ## v1.1.0 - 2026-09-10
 
 ## [1.1.0](https://github.com/wenisch-tech/s3webui/compare/v1.0.6...v1.1.0) (2026-09-10)
