@@ -35,6 +35,14 @@ window.showPageLoading = () => {
   loader.classList.add('is-visible');
   loader.setAttribute('aria-hidden', 'false');
 };
+window.hidePageLoading = () => {
+  const loader = document.getElementById('pageLoader');
+  if (!loader) return;
+  loader.classList.remove('is-visible');
+  loader.setAttribute('aria-hidden', 'true');
+};
+// A bfcache restore reuses the document we left mid-navigation, overlay and all.
+window.addEventListener('pageshow', () => window.hidePageLoading());
 
 document.addEventListener('click', event => {
   if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
@@ -47,7 +55,10 @@ document.addEventListener('click', event => {
 document.addEventListener('submit', event => {
   if (!event.defaultPrevented) window.showPageLoading();
 });
+// Mirrors the card's own navigation guard in buckets.html: a click on a link or a button
+// (the "..." menu, its items) does not navigate, so it must not raise the overlay either.
 document.addEventListener('click', event => {
+  if (event.target.closest('a,button')) return;
   if (event.target.closest('.bucket-card[data-bucket-url]')) window.showPageLoading();
 });
 
