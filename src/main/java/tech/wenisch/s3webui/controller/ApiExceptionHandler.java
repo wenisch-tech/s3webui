@@ -51,11 +51,15 @@ public class ApiExceptionHandler {
     }
 
     private String resolveMessage(Throwable throwable) {
-        if (throwable instanceof S3Exception s3ex
-                && s3ex.awsErrorDetails() != null
-                && s3ex.awsErrorDetails().errorMessage() != null
-                && !s3ex.awsErrorDetails().errorMessage().isBlank()) {
-            return s3ex.awsErrorDetails().errorMessage();
+        if (throwable instanceof S3Exception s3ex && s3ex.awsErrorDetails() != null) {
+            if ("NotImplemented".equals(s3ex.awsErrorDetails().errorCode())) {
+                return "This S3 provider does not support this operation. Some S3-compatible servers "
+                        + "(for example older MinIO releases) do not implement the bucket policy or CORS APIs.";
+            }
+            String errorMessage = s3ex.awsErrorDetails().errorMessage();
+            if (errorMessage != null && !errorMessage.isBlank()) {
+                return errorMessage;
+            }
         }
 
         String message = throwable.getMessage();

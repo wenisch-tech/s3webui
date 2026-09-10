@@ -1,6 +1,8 @@
 package tech.wenisch.s3webui.controller;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import tech.wenisch.s3webui.model.CompleteMultipartRequest;
+import tech.wenisch.s3webui.model.CorsRuleDto;
 import tech.wenisch.s3webui.model.S3ObjectDto;
 import tech.wenisch.s3webui.service.AuditHistoryService;
 import tech.wenisch.s3webui.service.S3Service;
@@ -16,11 +18,14 @@ import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.S3Exception;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.security.Principal;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -32,6 +37,7 @@ public class S3ApiController {
 
     private final S3Service s3Service;
     private final AuditHistoryService auditHistoryService;
+    private final JsonMapper jsonMapper;
 
     // ── Buckets ────────────────────────────────────────────────────────────
 
@@ -225,6 +231,96 @@ public class S3ApiController {
     @GetMapping("/buckets/{bucket}/stats")
     public ResponseEntity<Map<String, String>> getBucketStats(@PathVariable String bucket) {
         return ResponseEntity.ok(s3Service.getBucketStats(bucket));
+    }
+
+    // ── Bucket policy ──────────────────────────────────────────────────────
+
+    @GetMapping("/buckets/{bucket}/policy")
+    public Map<String, String> getBucketPolicy(@PathVariable String bucket) {
+        Map<String, String> body = new HashMap<>();
+        body.put("policy", s3Service.getBucketPolicy(bucket));
+        return body;
+    }
+
+    @PutMapping("/buckets/{bucket}/policy")
+    public ResponseEntity<Void> updateBucketPolicy(
+            @PathVariable String bucket,
+            @RequestBody String policyJson,
+            Principal principal) {
+        requireValidJson(policyJson, "Bucket policy");
+        try {
+            s3Service.putBucketPolicy(bucket, policyJson);
+            auditHistoryService.record(username(principal), "EDIT", "BUCKET", bucket, null, "Updated bucket policy");
+        } catch (Exception ex) {
+            recordFailure(principal, "EDIT", "BUCKET", bucket, null, ex);
+            throw ex;
+        }
+        return ResponseEntity.ok().build();
+    }
+
+    @DeleteMapping("/buckets/{bucket}/policy")
+    public ResponseEntity<Void> deleteBucketPolicy(@PathVariable String bucket, Principal principal) {
+        try {
+            s3Service.deleteBucketPolicy(bucket);
+            auditHistoryService.record(username(principal), "DELETE", "BUCKET", bucket, null, "Removed bucket policy");
+        } catch (Exception ex) {
+            recordFailure(principal, "DELETE", "BUCKET", bucket, null, ex);
+            throw ex;
+        }
+        return ResponseEntity.ok().build();
+    }
+
+    // ── Bucket CORS ───────────────────────────────────────────────────────
+
+    @GetMapping("/buckets/{bucket}/cors")
+    public CorsConfigResponse getBucketCors(@PathVariable String bucket) {
+        return new CorsConfigResponse(s3Service.getBucketCors(bucket));
+    }
+
+    @PutMapping("/buckets/{bucket}/cors")
+    public ResponseEntity<Void> updateBucketCors(
+            @PathVariable String bucket,
+            @RequestBody CorsConfigRequest request,
+            Principal principal) {
+        if (request == null || request.corsRules() == null || request.corsRules().isEmpty()) {
+            throw new IllegalArgumentException("At least one CORS rule is required (use DELETE to clear the configuration)");
+        }
+        try {
+            s3Service.putBucketCors(bucket, request.corsRules());
+            auditHistoryService.record(username(principal), "EDIT", "BUCKET", bucket, null, "Updated CORS configuration");
+        } catch (Exception ex) {
+            recordFailure(principal, "EDIT", "BUCKET", bucket, null, ex);
+            throw ex;
+        }
+        return ResponseEntity.ok().build();
+    }
+
+    @DeleteMapping("/buckets/{bucket}/cors")
+    public ResponseEntity<Void> deleteBucketCors(@PathVariable String bucket, Principal principal) {
+        try {
+            s3Service.deleteBucketCors(bucket);
+            auditHistoryService.record(username(principal), "DELETE", "BUCKET", bucket, null, "Removed CORS configuration");
+        } catch (Exception ex) {
+            recordFailure(principal, "DELETE", "BUCKET", bucket, null, ex);
+            throw ex;
+        }
+        return ResponseEntity.ok().build();
+    }
+
+    /** Rejects a body that is not well-formed JSON with a 400 before it ever reaches S3. */
+    private void requireValidJson(String json, String what) {
+        try {
+            jsonMapper.readTree(json);
+        } catch (JacksonException ex) {
+            throw new IllegalArgumentException(what + " is not valid JSON: " + ex.getOriginalMessage());
+        }
+    }
+
+    /** Mirrors {@code aws s3api put-bucket-cors}: {@code {"CORSRules":[ ... ]}}. */
+    public record CorsConfigRequest(@JsonProperty("CORSRules") List<CorsRuleDto> corsRules) {
+    }
+
+    public record CorsConfigResponse(@JsonProperty("CORSRules") List<CorsRuleDto> corsRules) {
     }
 
     private String username(Principal principal) {

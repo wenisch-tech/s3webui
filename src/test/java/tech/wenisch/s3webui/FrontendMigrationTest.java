@@ -34,8 +34,11 @@ class FrontendMigrationTest {
     assertThat(buckets).contains("bucketCardsView", "bucketPieView", "bucketTableView",
         "createBucketModal", "deleteBucketModal");
     assertThat(bucket).contains("createFolderModal", "uploadModal", "renameModal",
-        "deleteObjectModal", "folderNameError").doesNotContain("prompt(");
-    assertThat(frontend).contains("data-theme", "openDialog", "closeDialog", "showToast");
+        "deleteObjectModal", "folderNameError",
+        "bucketPolicyModal", "bucketCorsModal", "json-editor").doesNotContain("prompt(");
+    assertThat(frontend).contains("data-theme", "openDialog", "closeDialog", "showToast",
+        "createJsonEditor");
+    assertThat(Files.readString(Path.of("package.json"))).contains("@codemirror/lang-json");
   }
 
   @Test

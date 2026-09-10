@@ -85,6 +85,7 @@
   .page-loader__orbit { @apply relative grid size-8 place-items-center rounded-full border-2 border-brand-500/25 border-t-brand-500; animation: s3-spin .7s linear infinite; }
   .page-loader__orbit::after { content: ""; @apply size-2 rounded-full bg-brand-500; }
   .drop-zone { @apply cursor-pointer rounded-xl border-2 border-dashed border-brand-500/35 bg-brand-500/5 p-10 text-center transition hover:border-brand-500/70 hover:bg-brand-500/10; }.drop-zone.dragover { @apply border-brand-500 bg-brand-500/15; }.upload-item { @apply mb-2 flex items-start gap-3 rounded-lg border border-slate-700/15 bg-slate-800/5 p-3; } html[data-theme="dark"] .upload-item { @apply border-slate-700 bg-slate-850; }.progress { @apply mt-2 h-1.5 overflow-hidden rounded-full bg-slate-700/15; }.progress-bar { @apply h-full bg-brand-500 transition-[width]; }
+  .json-editor .cm-editor { @apply overflow-hidden rounded-lg border border-slate-700/25; } html[data-theme="dark"] .json-editor .cm-editor { @apply border-slate-700; } .json-editor .cm-editor.cm-focused { @apply border-brand-500 outline-none ring-2 ring-brand-500/20; } .json-editor .cm-gutters { @apply border-r border-slate-700/15 bg-slate-800/5; }
 }
 
 @keyframes s3-spin { to { transform: rotate(360deg); } }

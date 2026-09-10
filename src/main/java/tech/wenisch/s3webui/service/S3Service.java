@@ -2,6 +2,7 @@ package tech.wenisch.s3webui.service;
 
 import tech.wenisch.s3webui.model.BucketDto;
 import tech.wenisch.s3webui.model.CompleteMultipartRequest;
+import tech.wenisch.s3webui.model.CorsRuleDto;
 import tech.wenisch.s3webui.model.S3ObjectDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -322,5 +323,82 @@ public class S3Service {
                 "objectCount", String.valueOf(objectCount),
                 "totalSize", String.valueOf(totalSize)
         );
+    }
+
+    // ── Bucket policy ──────────────────────────────────────────────────────
+
+    /** The bucket's policy document as a raw JSON string, or {@code null} when none is set. */
+    public String getBucketPolicy(String bucket) {
+        try {
+            return s3Client.getBucketPolicy(GetBucketPolicyRequest.builder().bucket(bucket).build()).policy();
+        } catch (S3Exception ex) {
+            if (isS3NotFound(ex, "NoSuchBucketPolicy")) {
+                return null;
+            }
+            throw ex;
+        }
+    }
+
+    public void putBucketPolicy(String bucket, String policyJson) {
+        s3Client.putBucketPolicy(PutBucketPolicyRequest.builder()
+                .bucket(bucket)
+                .policy(policyJson)
+                .build());
+    }
+
+    public void deleteBucketPolicy(String bucket) {
+        s3Client.deleteBucketPolicy(DeleteBucketPolicyRequest.builder().bucket(bucket).build());
+    }
+
+    // ── Bucket CORS ───────────────────────────────────────────────────────
+
+    /** The bucket's CORS rules, or {@code null} when no CORS configuration is set. */
+    public List<CorsRuleDto> getBucketCors(String bucket) {
+        try {
+            return s3Client.getBucketCors(GetBucketCorsRequest.builder().bucket(bucket).build())
+                    .corsRules().stream()
+                    .map(rule -> new CorsRuleDto(
+                            rule.id(),
+                            rule.allowedMethods(),
+                            rule.allowedOrigins(),
+                            rule.allowedHeaders(),
+                            rule.exposeHeaders(),
+                            rule.maxAgeSeconds()))
+                    .toList();
+        } catch (S3Exception ex) {
+            if (isS3NotFound(ex, "NoSuchCORSConfiguration")) {
+                return null;
+            }
+            throw ex;
+        }
+    }
+
+    public void putBucketCors(String bucket, List<CorsRuleDto> rules) {
+        List<CORSRule> corsRules = rules.stream()
+                .map(dto -> CORSRule.builder()
+                        .id(dto.id())
+                        .allowedMethods(orEmpty(dto.allowedMethods()))
+                        .allowedOrigins(orEmpty(dto.allowedOrigins()))
+                        .allowedHeaders(orEmpty(dto.allowedHeaders()))
+                        .exposeHeaders(orEmpty(dto.exposeHeaders()))
+                        .maxAgeSeconds(dto.maxAgeSeconds())
+                        .build())
+                .toList();
+        s3Client.putBucketCors(PutBucketCorsRequest.builder()
+                .bucket(bucket)
+                .corsConfiguration(CORSConfiguration.builder().corsRules(corsRules).build())
+                .build());
+    }
+
+    public void deleteBucketCors(String bucket) {
+        s3Client.deleteBucketCors(DeleteBucketCorsRequest.builder().bucket(bucket).build());
+    }
+
+    private static List<String> orEmpty(List<String> values) {
+        return values == null ? List.of() : values;
+    }
+
+    private static boolean isS3NotFound(S3Exception ex, String errorCode) {
+        return ex.awsErrorDetails() != null && errorCode.equals(ex.awsErrorDetails().errorCode());
     }
 }

@@ -1,14 +1,17 @@
 import Alpine from 'alpinejs';
 import './upload.js';
+import { createJsonEditor } from './editor.js';
 import { createIcons, Archive, ArrowDownUp, Box, CheckCircle2, ChevronDown, Clock3,
-  CloudUpload, Download, File, Folder, FolderOpen, FolderPlus, History, Info, LayoutGrid, LogOut,
-  Key, Menu, Moon, MoreHorizontal, Network, Pencil, PieChart, Plus, Settings, ShieldAlert, Sun,
+  CloudUpload, Download, File, Folder, FolderOpen, FolderPlus, Globe, History, Info, LayoutGrid, LogOut,
+  Key, Menu, Moon, MoreHorizontal, Network, Pencil, PieChart, Plus, ScrollText, Settings, ShieldAlert, Sun,
   Table2, Trash2, Upload, UserCircle, Users, X } from 'lucide';
 
 const icons = { Archive, ArrowDownUp, Box, CheckCircle2, ChevronDown, Clock3, CloudUpload,
-  Download, File, Folder, FolderOpen, FolderPlus, History, Info, Key, LayoutGrid, LogOut, Menu, Moon,
-  MoreHorizontal, Network, Pencil, PieChart, Plus, Settings, ShieldAlert, Sun, Table2, Trash2,
+  Download, File, Folder, FolderOpen, FolderPlus, Globe, History, Info, Key, LayoutGrid, LogOut, Menu, Moon,
+  MoreHorizontal, Network, Pencil, PieChart, Plus, ScrollText, Settings, ShieldAlert, Sun, Table2, Trash2,
   Upload, UserCircle, Users, X };
+
+window.createJsonEditor = createJsonEditor;
 
 const preferredTheme = (() => { try { return localStorage.getItem('s3webui-theme') || 'light'; } catch { return 'light'; } })();
 function applyTheme(theme) {
