@@ -46,12 +46,15 @@ The walkthrough above uses fictional demo data in the real application UI and cy
 -  **Rename objects** — rename files without re-uploading
 -  **Delete** — delete individual objects or entire buckets
 -  **Folder support** — create virtual folders (prefix-based)
+-  **Bucket policy editor** — read, edit and remove a bucket's IAM policy in a JSON editor with syntax highlighting and inline validation
+-  **CORS editor** — edit a bucket's CORS rules in the same editor, in the `aws s3api` JSON shape
 -  **Audit history** — per-session activity log (uploads, downloads, deletes, renames) with user and action filters
 -  **Light / Dark theme** — toggle stored in `localStorage`, light is the default
 -  **Administration panel** — manage named S3 keys, decide who may use each one, and manage local accounts
 -  **Per-user S3 sessions** — every signed-in user picks their own key; several users browse different storage at the same time
 -  **Encrypted secrets** — stored S3 secret keys are encrypted at rest with AES-256-GCM
 -  **Users & roles** — local accounts in an H2 or PostgreSQL database, with a seeded default administrator
+-  **IAM management** — optional admin section for the storage backend's own users, groups, access keys and policies, with an inline policy editor
 -  **OIDC** — optional single-sign-on with role-based access control and multiple providers
 
 
@@ -115,6 +118,25 @@ table is empty; changing `ADMIN_PASSWORD` later has no effect.
 These are optional. When all three of `S3_ACCESS_KEY`, `S3_SECRET_KEY` and `S3_ENDPOINT_URL` are
 set, they appear in the key picker as a built-in key available to every signed-in user. It is shown
 read-only in the administration panel; every other key is created there and stored encrypted.
+
+### IAM (optional)
+
+| Variable | Description | Default |
+|---|---|---|
+| `IAM_ENABLED` | Enable the IAM management section | `true` |
+
+The IAM section manages identities on the *storage backend*, not the app's own local accounts. It
+is admin-only, and every call is made with the S3 key selected for your session — so it can only
+do what that key is allowed to do.
+
+Support is detected at runtime and the panel disables itself, with the reason, on a backend that
+cannot do it. There is no need to turn the flag off; it exists to remove the feature entirely.
+
+| Backend | Support |
+|---|---|
+| AWS | Everything: users, groups, access keys, standalone policies, inline policies |
+| Ceph RGW (Squid or later) | Users, groups, access keys, attach/detach and inline policies. Requires an **account root user's** key — a normal RGW user gets `AccessDenied`. Standalone policies are not implemented, so the Policies tab is disabled and only Ceph's six built-in managed policies can be attached; use an inline policy for finer grants |
+| MinIO | Not supported — MinIO has its own admin API rather than the IAM API |
 
 ### OIDC (optional)
 
@@ -329,6 +351,7 @@ env:
   ADMIN_EMAIL: "admin@example.com"
   S3_ENDPOINT_URL: "http://minio.minio.svc.cluster.local:9000"
   S3_REGION: "us-east-1"
+  IAM_ENABLED: "true"
   OIDC_ENABLED: "true"
   OIDC_PROVIDERS_0_NAME: "Internal SSO"
   OIDC_PROVIDERS_0_CLIENT_ID: "s3webui"

@@ -176,6 +176,21 @@ key available to every signed-in user; all other keys are created in the adminis
 | `env.S3_REGION` | AWS region | `us-east-1` | No |
 | `env.S3_INSECURE_SKIP_TLS_VERIFY` | Skip TLS verification (not recommended for production) | `false` | No |
 
+### IAM Parameters
+
+Optional management of the storage backend's own users, groups, access keys and policies. On by
+default; the application detects at runtime whether the backend answers IAM calls and disables the
+panel, with the reason, when it does not. Set this to `"false"` to remove the feature entirely.
+
+| Parameter | Description | Default | Required |
+|-----------|-------------|---------|----------|
+| `env.IAM_ENABLED` | Enable the IAM management section | `true` | No |
+
+Backend support: AWS is complete. Ceph RGW (Squid or later) supports users, groups, access keys and
+inline policies but needs an **account root user's** key, and has no standalone policies — the
+Policies tab disables itself and only Ceph's six built-in managed policies can be attached. MinIO
+does not implement the IAM API.
+
 ### OIDC / Authentication Parameters
 
 | Parameter | Description | Default | Required |
