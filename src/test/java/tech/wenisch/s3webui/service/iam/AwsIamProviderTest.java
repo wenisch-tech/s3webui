@@ -37,19 +37,31 @@ import software.amazon.awssdk.services.iam.model.PolicyVersion;
 import software.amazon.awssdk.services.iam.model.RemoveUserFromGroupRequest;
 import tech.wenisch.s3webui.model.iam.IamAccessKey;
 
+import software.amazon.awssdk.awscore.exception.AwsErrorDetails;
 import software.amazon.awssdk.core.pagination.sync.SdkIterable;
+import software.amazon.awssdk.services.iam.model.GetUserPolicyResponse;
+import software.amazon.awssdk.services.iam.model.IamException;
+import software.amazon.awssdk.services.iam.model.ListGroupPoliciesResponse;
+import software.amazon.awssdk.services.iam.paginators.ListGroupsIterable;
+import software.amazon.awssdk.services.iam.paginators.ListUsersIterable;
+import tech.wenisch.s3webui.model.iam.IamPolicySummary;
+import tech.wenisch.s3webui.model.iam.IamTarget;
 
 import java.time.Instant;
 import java.util.Collections;
+import java.util.List;
 import java.util.function.Consumer;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -163,29 +175,152 @@ class AwsIamProviderTest {
 
     @Test
     void policyListingIsScopedToCustomerManagedPolicies() {
-        ListPoliciesIterable paginator = mock(ListPoliciesIterable.class);
-        SdkIterable<Policy> noPolicies = Collections::emptyIterator;
-        when(paginator.policies()).thenReturn(noPolicies);
-        when(iamClient.listPoliciesPaginator(any(Consumer.class))).thenReturn(paginator);
+        stubUsers();
+        stubGroups();
+        stubPolicies();
 
         provider.listPolicies();
 
         ArgumentCaptor<Consumer<ListPoliciesRequest.Builder>> captor = ArgumentCaptor.forClass(Consumer.class);
-        verify(iamClient).listPoliciesPaginator(captor.capture());
+        verify(iamClient, atLeastOnce()).listPoliciesPaginator(captor.capture());
         var request = ListPoliciesRequest.builder();
         captor.getValue().accept(request);
         assertEquals(PolicyScopeType.LOCAL, request.build().scope(),
                 "AWS ships 1000+ managed policies; listing them would bury the curated ones");
     }
 
+    // Capability probing
+
     @Test
-    void capabilitiesReportAwsIamAsFullyAvailable() {
+    void everythingIsReportedWhenEveryProbeSucceeds() {
+        stubUsers();
+        stubGroups();
+        stubPolicies();
+
         var capabilities = provider.capabilities();
 
         assertTrue(capabilities.available());
         assertTrue(capabilities.groups());
         assertTrue(capabilities.accessKeys());
-        assertEquals("AWS IAM", capabilities.provider());
+        assertTrue(capabilities.managedPolicies());
+        assertTrue(capabilities.inlinePolicies());
+    }
+
+    @Test
+    void aProviderWithoutStandalonePoliciesStaysAvailableWithThatOneFeatureOff() {
+        stubUsers();
+        stubGroups();
+        when(iamClient.listPoliciesPaginator(any(Consumer.class))).thenThrow(awsError("NotImplemented", 501));
+
+        var capabilities = provider.capabilities();
+
+        assertTrue(capabilities.available(), "Ceph answers users and groups; only policies are missing");
+        assertTrue(capabilities.groups());
+        assertFalse(capabilities.managedPolicies());
+        assertTrue(capabilities.inlinePolicies());
+    }
+
+    @Test
+    void withoutStandalonePoliciesTheBuiltInCatalogueIsListedInstead() {
+        stubUsers();
+        stubGroups();
+        when(iamClient.listPoliciesPaginator(any(Consumer.class))).thenThrow(awsError("NotImplemented", 501));
+
+        var policies = provider.listPolicies();
+
+        assertEquals(6, policies.size());
+        assertTrue(policies.stream().noneMatch(IamPolicySummary::editable));
+        assertTrue(policies.stream().anyMatch(policy -> "AmazonS3ReadOnlyAccess".equals(policy.name())));
+        assertTrue(policies.stream().allMatch(policy -> policy.id().startsWith("arn:aws:iam::aws:policy/")));
+    }
+
+    @Test
+    void anUnauthorisedKeyIsReportedWithTheCephAccountRootHint() {
+        when(iamClient.listUsersPaginator()).thenThrow(awsError("AccessDenied", 403));
+
+        var capabilities = provider.capabilities();
+
+        assertFalse(capabilities.available());
+        assertTrue(capabilities.reason().contains("account root"),
+                "expected the Ceph hint, got: " + capabilities.reason());
+    }
+
+    @Test
+    void theProbeRunsOnlyOncePerProvider() {
+        stubUsers();
+        stubGroups();
+        stubPolicies();
+
+        provider.capabilities();
+        provider.capabilities();
+
+        verify(iamClient, times(1)).listUsersPaginator();
+    }
+
+    // Inline policies
+
+    @Test
+    void inlineUserPolicyDocumentsAreUrlDecoded() {
+        when(iamClient.getUserPolicy(any(Consumer.class))).thenReturn(GetUserPolicyResponse.builder()
+                .policyDocument("%7B%22Version%22%3A%222012-10-17%22%7D").build());
+
+        assertEquals("{\"Version\":\"2012-10-17\"}",
+                provider.getInlinePolicy(IamTarget.user("alice"), "read-one-bucket"));
+    }
+
+    @Test
+    void inlinePolicyWritesGoToTheUserOrTheGroupAsAppropriate() {
+        provider.putInlinePolicy(IamTarget.user("alice"), "p", "{}");
+        provider.putInlinePolicy(IamTarget.group("devs"), "p", "{}");
+        provider.deleteInlinePolicy(IamTarget.user("alice"), "p");
+        provider.deleteInlinePolicy(IamTarget.group("devs"), "p");
+
+        verify(iamClient).putUserPolicy(any(Consumer.class));
+        verify(iamClient).putGroupPolicy(any(Consumer.class));
+        verify(iamClient).deleteUserPolicy(any(Consumer.class));
+        verify(iamClient).deleteGroupPolicy(any(Consumer.class));
+    }
+
+    @Test
+    void inlinePolicyNamesComeFromTheRightListCall() {
+        when(iamClient.listUserPolicies(any(Consumer.class)))
+                .thenReturn(ListUserPoliciesResponse.builder().policyNames("on-user").build());
+        when(iamClient.listGroupPolicies(any(Consumer.class)))
+                .thenReturn(ListGroupPoliciesResponse.builder().policyNames("on-group").build());
+
+        assertEquals(List.of("on-user"), provider.listInlinePolicies(IamTarget.user("alice")));
+        assertEquals(List.of("on-group"), provider.listInlinePolicies(IamTarget.group("devs")));
+    }
+
+    // Helpers
+
+    private void stubUsers() {
+        ListUsersIterable paginator = mock(ListUsersIterable.class);
+        SdkIterable<software.amazon.awssdk.services.iam.model.User> none = Collections::emptyIterator;
+        when(paginator.users()).thenReturn(none);
+        when(iamClient.listUsersPaginator()).thenReturn(paginator);
+    }
+
+    private void stubGroups() {
+        ListGroupsIterable paginator = mock(ListGroupsIterable.class);
+        SdkIterable<Group> none = Collections::emptyIterator;
+        when(paginator.groups()).thenReturn(none);
+        when(iamClient.listGroupsPaginator()).thenReturn(paginator);
+    }
+
+    private void stubPolicies() {
+        ListPoliciesIterable paginator = mock(ListPoliciesIterable.class);
+        SdkIterable<Policy> none = Collections::emptyIterator;
+        when(paginator.policies()).thenReturn(none);
+        when(iamClient.listPoliciesPaginator(any(Consumer.class))).thenReturn(paginator);
+    }
+
+    private static IamException awsError(String errorCode, int statusCode) {
+        return (IamException) IamException.builder()
+                .statusCode(statusCode)
+                .awsErrorDetails(AwsErrorDetails.builder()
+                        .errorCode(errorCode).errorMessage(errorCode).build())
+                .build();
     }
 
     private static PolicyVersion version(String id, boolean isDefault, Instant createdAt) {

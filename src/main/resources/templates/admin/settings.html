@@ -32,7 +32,7 @@
                 <i data-lucide="settings"></i>General
             </button>
         </li>
-        <li class="" role="presentation" th:if="${iamEnabled}">
+        <li class="" role="presentation">
             <button class="tab" id="adminTabBtn-iam" onclick="switchAdminTab('iam')" type="button">
                 <i data-lucide="shield-check"></i>IAM
             </button>
@@ -113,11 +113,9 @@
         </div>
 
         <!-- ── IAM ───────────────────────────────────────────── -->
-        <th:block th:if="${iamEnabled}">
-            <div class="admin-tab hidden" id="tab-iam">
-                <div th:replace="~{admin/fragments/iam :: panel}"></div>
-            </div>
-        </th:block>
+        <div class="admin-tab hidden" id="tab-iam">
+            <div th:replace="~{admin/fragments/iam :: panel}"></div>
+        </div>
     </div>
 </main>
 
@@ -239,7 +237,7 @@
 
 
 <div th:replace="~{fragments/shell :: scripts}"></div>
-<th:block th:if="${iamEnabled}"><div th:replace="~{admin/fragments/iam :: script}"></div></th:block>
+<div th:replace="~{admin/fragments/iam :: script}"></div>
 <script th:inline="javascript">
     const GRANT_TYPES = /*[[${grantTypes}]]*/ [];
     const USER_ROLES = /*[[${userRoles}]]*/ [];
@@ -260,6 +258,8 @@
             .forEach(tab => tab.classList.toggle('hidden', tab.id !== 'tab-' + name));
         document.querySelectorAll('[id^="adminTabBtn-"]')
             .forEach(button => button.classList.toggle('active', button.id === 'adminTabBtn-' + name));
+        // IAM probes the storage backend, so only do it once the tab is actually opened.
+        if (name === 'iam') window.initIam?.();
     }
 
     document.addEventListener('DOMContentLoaded', () => {

@@ -1,6 +1,10 @@
 package tech.wenisch.s3webui.service.iam;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import software.amazon.awssdk.awscore.exception.AwsServiceException;
+import software.amazon.awssdk.core.exception.ApiCallAttemptTimeoutException;
+import software.amazon.awssdk.core.exception.ApiCallTimeoutException;
 import software.amazon.awssdk.services.iam.IamClient;
 import software.amazon.awssdk.services.iam.model.AttachedPolicy;
 import software.amazon.awssdk.services.iam.model.PolicyScopeType;
@@ -13,12 +17,19 @@ import tech.wenisch.s3webui.model.iam.IamPolicySummary;
 import tech.wenisch.s3webui.model.iam.IamTarget;
 import tech.wenisch.s3webui.model.iam.IamUser;
 
+import java.net.SocketTimeoutException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Stream;
 
-/** Talks the real AWS IAM API. Also works against IAM-compatible endpoints such as LocalStack. */
+/**
+ * Talks the IAM API. Serves real AWS, Ceph RGW (Squid and later) and any other IAM-compatible
+ * endpoint such as LocalStack; {@link #capabilities()} probes which parts actually answer.
+ */
+@Slf4j
 @RequiredArgsConstructor
 public class AwsIamProvider implements IamProvider {
 
@@ -27,11 +38,112 @@ public class AwsIamProvider implements IamProvider {
 
     private static final String AWS_MANAGED_PREFIX = "arn:aws:iam::aws:policy/";
 
+    /**
+     * What Ceph RGW offers when standalone policies are unsupported: a fixed catalogue that can
+     * be attached but not inspected or edited. Listing these keeps the attach picker useful.
+     */
+    private static final List<IamPolicySummary> BUILT_IN_POLICIES = Stream.of(
+                    "AmazonS3FullAccess",
+                    "AmazonS3ReadOnlyAccess",
+                    "IAMFullAccess",
+                    "IAMReadOnlyAccess",
+                    "AmazonSNSFullAccess",
+                    "AmazonSNSReadOnlyAccess")
+            .map(name -> new IamPolicySummary(AWS_MANAGED_PREFIX + name, name, AWS_MANAGED_PREFIX + name, false))
+            .toList();
+
+    /** Error codes a provider uses to say "I do not implement this operation". */
+    private static final Set<String> UNSUPPORTED_CODES =
+            Set.of("NotImplemented", "InvalidAction", "MethodNotAllowed", "InvalidRequest");
+
     private final IamClient iamClient;
+
+    /** Probed once per request; the provider bean is request-scoped. */
+    private IamCapabilities cachedCapabilities;
 
     @Override
     public IamCapabilities capabilities() {
-        return new IamCapabilities(true, "AWS IAM", null, true, true);
+        if (cachedCapabilities == null) {
+            cachedCapabilities = probeCapabilities();
+        }
+        return cachedCapabilities;
+    }
+
+    private IamCapabilities probeCapabilities() {
+        try {
+            listUsers();
+        } catch (RuntimeException ex) {
+            // A refusal here is about the endpoint or the key, not about one missing operation.
+            return IamCapabilities.unavailable(unavailableReason(ex));
+        }
+        boolean groups = supports(this::listGroups);
+        boolean managedPolicies = supports(() -> iamClient.listPoliciesPaginator(
+                request -> request.scope(PolicyScopeType.LOCAL)).policies().iterator().hasNext());
+        // Every IAM implementation we target supports PutUserPolicy, and there is no cheap probe
+        // for it without an existing user to hang one off.
+        return new IamCapabilities(true, "IAM API", null, groups, true, managedPolicies, true);
+    }
+
+    private static String unavailableReason(RuntimeException ex) {
+        if (ex instanceof AwsServiceException awsEx
+                && awsEx.awsErrorDetails() != null
+                && "AccessDenied".equals(awsEx.awsErrorDetails().errorCode())) {
+            return "The selected S3 key is not authorised for the IAM API. On Ceph the IAM API is "
+                    + "restricted to an account root user's key.";
+        }
+        if (isTimeout(ex)) {
+            // A backend without an IAM API tends to leave the request hanging rather than
+            // refusing it outright, so a timeout here is the normal "not supported" signal.
+            return "This S3 provider did not answer an IAM request in time. It most likely does "
+                    + "not implement the IAM API - MinIO, for instance, uses its own admin API.";
+        }
+        return "This S3 provider did not answer an IAM request: " + rootMessage(ex);
+    }
+
+    private static boolean isTimeout(Throwable throwable) {
+        for (Throwable cause = throwable; cause != null && cause != cause.getCause(); cause = cause.getCause()) {
+            if (cause instanceof ApiCallTimeoutException
+                    || cause instanceof ApiCallAttemptTimeoutException
+                    || cause instanceof SocketTimeoutException) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** True when the call works, false when the provider says it does not implement it. */
+    private static boolean supports(Runnable call) {
+        try {
+            call.run();
+            return true;
+        } catch (AwsServiceException ex) {
+            if (isUnsupported(ex)) {
+                return false;
+            }
+            log.debug("IAM capability probe failed for a reason other than lack of support", ex);
+            return false;
+        } catch (RuntimeException ex) {
+            log.debug("IAM capability probe failed", ex);
+            return false;
+        }
+    }
+
+    private static boolean isUnsupported(AwsServiceException ex) {
+        if (ex.statusCode() == 404 || ex.statusCode() == 405 || ex.statusCode() == 501) {
+            return true;
+        }
+        return ex.awsErrorDetails() != null && UNSUPPORTED_CODES.contains(ex.awsErrorDetails().errorCode());
+    }
+
+    private static String rootMessage(Throwable throwable) {
+        if (throwable instanceof AwsServiceException awsEx
+                && awsEx.awsErrorDetails() != null
+                && awsEx.awsErrorDetails().errorMessage() != null
+                && !awsEx.awsErrorDetails().errorMessage().isBlank()) {
+            return awsEx.awsErrorDetails().errorMessage();
+        }
+        String message = throwable.getMessage();
+        return message == null || message.isBlank() ? throwable.getClass().getSimpleName() : message;
     }
 
     // ── Users ────────────────────────────────────────────────────────────
@@ -118,10 +230,14 @@ public class AwsIamProvider implements IamProvider {
 
     /**
      * Customer-managed policies only. AWS ships over a thousand managed policies, which would bury
-     * the handful an operator actually curates here and make the attach picker unusable.
+     * the handful an operator actually curates here and make the attach picker unusable. Providers
+     * without standalone policies fall back to their fixed attachable catalogue.
      */
     @Override
     public List<IamPolicySummary> listPolicies() {
+        if (!capabilities().managedPolicies()) {
+            return BUILT_IN_POLICIES;
+        }
         return iamClient.listPoliciesPaginator(request -> request.scope(PolicyScopeType.LOCAL)).policies().stream()
                 .map(policy -> new IamPolicySummary(
                         policy.arn(), policy.policyName(), policy.arn(), isEditable(policy.arn())))
@@ -201,6 +317,43 @@ public class AwsIamProvider implements IamProvider {
             iamClient.detachUserPolicy(request -> request.userName(target.name()).policyArn(policyId));
         } else {
             iamClient.detachGroupPolicy(request -> request.groupName(target.name()).policyArn(policyId));
+        }
+    }
+
+    // ── Inline policies ──────────────────────────────────────────────────
+
+    @Override
+    public List<String> listInlinePolicies(IamTarget target) {
+        return target.type() == IamTarget.Type.USER
+                ? iamClient.listUserPolicies(r -> r.userName(target.name())).policyNames()
+                : iamClient.listGroupPolicies(r -> r.groupName(target.name())).policyNames();
+    }
+
+    @Override
+    public String getInlinePolicy(IamTarget target, String policyName) {
+        String document = target.type() == IamTarget.Type.USER
+                ? iamClient.getUserPolicy(r -> r.userName(target.name()).policyName(policyName)).policyDocument()
+                : iamClient.getGroupPolicy(r -> r.groupName(target.name()).policyName(policyName)).policyDocument();
+        return URLDecoder.decode(document, StandardCharsets.UTF_8);
+    }
+
+    @Override
+    public void putInlinePolicy(IamTarget target, String policyName, String document) {
+        if (target.type() == IamTarget.Type.USER) {
+            iamClient.putUserPolicy(r -> r.userName(target.name())
+                    .policyName(policyName).policyDocument(document));
+        } else {
+            iamClient.putGroupPolicy(r -> r.groupName(target.name())
+                    .policyName(policyName).policyDocument(document));
+        }
+    }
+
+    @Override
+    public void deleteInlinePolicy(IamTarget target, String policyName) {
+        if (target.type() == IamTarget.Type.USER) {
+            iamClient.deleteUserPolicy(r -> r.userName(target.name()).policyName(policyName));
+        } else {
+            iamClient.deleteGroupPolicy(r -> r.groupName(target.name()).policyName(policyName));
         }
     }
 

@@ -51,7 +51,7 @@ s3:
   insecure-skip-tls-verify: ${S3_INSECURE_SKIP_TLS_VERIFY:false}
 
 iam:
-  enabled: ${IAM_ENABLED:false}
+  enabled: ${IAM_ENABLED:true}
 
 oidc:
   enabled: ${OIDC_ENABLED:false}

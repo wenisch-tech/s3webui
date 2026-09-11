@@ -89,8 +89,9 @@ env:
   S3_ENDPOINT_URL: ""
   S3_REGION: "us-east-1"
   S3_INSECURE_SKIP_TLS_VERIFY: "false"
-  # IAM management for the storage backend (optional; needs a provider that exposes an IAM API)
-  IAM_ENABLED: "false"
+  # IAM management for the storage backend. On by default; the app detects at runtime whether
+  # the provider answers IAM calls and disables the panel with an explanation when it does not.
+  IAM_ENABLED: "true"
   # OIDC / Keycloak (optional)
   OIDC_ENABLED: "false"
   OIDC_PROVIDER_NAME: "Single Sign-On"

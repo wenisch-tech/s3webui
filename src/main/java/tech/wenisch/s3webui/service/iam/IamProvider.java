@@ -69,6 +69,18 @@ public interface IamProvider {
 
     void detachPolicy(IamTarget target, String policyId);
 
+    // ── Inline policies ──────────────────────────────────────────────────
+    // Documents embedded directly on a user or group. On providers without standalone policy
+    // CRUD (Ceph RGW) this is the only way to express a fine-grained, per-bucket grant.
+
+    List<String> listInlinePolicies(IamTarget target);
+
+    String getInlinePolicy(IamTarget target, String policyName);
+
+    void putInlinePolicy(IamTarget target, String policyName, String document);
+
+    void deleteInlinePolicy(IamTarget target, String policyName);
+
     // ── Access keys ──────────────────────────────────────────────────────
 
     List<IamAccessKeySummary> listAccessKeys(String userName);

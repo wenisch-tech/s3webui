@@ -6,6 +6,7 @@ import org.springframework.beans.factory.ObjectProvider;
 import tech.wenisch.s3webui.config.IamProperties;
 import tech.wenisch.s3webui.entity.S3Credential;
 import tech.wenisch.s3webui.model.iam.IamAccessKey;
+import tech.wenisch.s3webui.model.iam.IamCapabilities;
 import tech.wenisch.s3webui.repository.S3CredentialRepository;
 import tech.wenisch.s3webui.service.iam.IamProvider;
 
@@ -127,12 +128,26 @@ class IamServiceTest {
     @Test
     void theFeatureReportsUnavailableWhenTheEndpointRejectsIamCalls() {
         enable();
-        when(provider.listUsers()).thenThrow(new RuntimeException("NotImplemented"));
+        when(provider.capabilities()).thenThrow(new RuntimeException("NotImplemented"));
 
         var capabilities = newService().capabilities();
 
         assertFalse(capabilities.available());
         assertTrue(capabilities.reason().contains("NotImplemented"));
+    }
+
+    @Test
+    void perFeatureCapabilitiesComeStraightFromTheProvider() {
+        enable();
+        when(provider.capabilities()).thenReturn(
+                new IamCapabilities(true, "IAM API", null, true, true, false, true));
+
+        var capabilities = newService().capabilities();
+
+        assertTrue(capabilities.available());
+        assertTrue(capabilities.groups());
+        assertFalse(capabilities.managedPolicies(), "Ceph has no standalone policies");
+        assertTrue(capabilities.inlinePolicies());
     }
 
     @Test

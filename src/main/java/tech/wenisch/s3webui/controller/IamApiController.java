@@ -209,6 +209,75 @@ public class IamApiController {
         detach(IamTarget.group(groupName), GROUP, policyId, principal);
     }
 
+    // ── Inline policies ──────────────────────────────────────────────────
+
+    @GetMapping("/users/{userName}/inline-policies")
+    public List<String> listUserInlinePolicies(@PathVariable String userName) {
+        return iamService.provider().listInlinePolicies(IamTarget.user(userName));
+    }
+
+    @GetMapping("/users/{userName}/inline-policy")
+    public Map<String, String> getUserInlinePolicy(@PathVariable String userName,
+                                                   @RequestParam String name) {
+        return inlineDocument(IamTarget.user(userName), name);
+    }
+
+    @PutMapping("/users/{userName}/inline-policy")
+    public void putUserInlinePolicy(@PathVariable String userName, @RequestParam String name,
+                                    @RequestBody String document, Principal principal) {
+        putInline(IamTarget.user(userName), USER, name, document, principal);
+    }
+
+    @DeleteMapping("/users/{userName}/inline-policy")
+    public void deleteUserInlinePolicy(@PathVariable String userName, @RequestParam String name,
+                                       Principal principal) {
+        deleteInline(IamTarget.user(userName), USER, name, principal);
+    }
+
+    @GetMapping("/groups/{groupName}/inline-policies")
+    public List<String> listGroupInlinePolicies(@PathVariable String groupName) {
+        return iamService.provider().listInlinePolicies(IamTarget.group(groupName));
+    }
+
+    @GetMapping("/groups/{groupName}/inline-policy")
+    public Map<String, String> getGroupInlinePolicy(@PathVariable String groupName,
+                                                    @RequestParam String name) {
+        return inlineDocument(IamTarget.group(groupName), name);
+    }
+
+    @PutMapping("/groups/{groupName}/inline-policy")
+    public void putGroupInlinePolicy(@PathVariable String groupName, @RequestParam String name,
+                                     @RequestBody String document, Principal principal) {
+        putInline(IamTarget.group(groupName), GROUP, name, document, principal);
+    }
+
+    @DeleteMapping("/groups/{groupName}/inline-policy")
+    public void deleteGroupInlinePolicy(@PathVariable String groupName, @RequestParam String name,
+                                        Principal principal) {
+        deleteInline(IamTarget.group(groupName), GROUP, name, principal);
+    }
+
+    private Map<String, String> inlineDocument(IamTarget target, String policyName) {
+        Map<String, String> body = new HashMap<>();
+        body.put("document", iamService.provider().getInlinePolicy(target, policyName));
+        return body;
+    }
+
+    private void putInline(IamTarget target, String resourceType, String policyName,
+                           String document, Principal principal) {
+        String name = requireText(policyName, "Policy name");
+        requireValidJson(document);
+        audit.audited(principal, "EDIT", resourceType, target.name(), "Set inline policy " + name,
+                () -> iamService.provider().putInlinePolicy(target, name, document));
+    }
+
+    private void deleteInline(IamTarget target, String resourceType, String policyName,
+                              Principal principal) {
+        String name = requireText(policyName, "Policy name");
+        audit.audited(principal, "EDIT", resourceType, target.name(), "Removed inline policy " + name,
+                () -> iamService.provider().deleteInlinePolicy(target, name));
+    }
+
     private void attach(IamTarget target, String resourceType, PolicyRefRequest request,
                         Principal principal) {
         String policyId = requireText(request == null ? null : request.policyId(), "Policy");

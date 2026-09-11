@@ -81,10 +81,11 @@
                     Standalone policy documents. Provider-managed policies can be attached but not
                     edited.
                 </p>
-                <button class="btn-primary" onclick="openIamPolicyModal(null)">
+                <button class="btn-primary" id="iamNewPolicyButton" onclick="openIamPolicyModal(null)">
                     <i data-lucide="plus"></i>New policy
                 </button>
             </div>
+            <div id="iamPolicyUnsupported" class="alert alert-warn mb-3 hidden"></div>
             <div class="table-wrap">
                 <table class="data-table">
                     <thead>
@@ -170,20 +171,53 @@
     <div id="iamAttachModal" class="modal-backdrop hidden" aria-hidden="true" role="dialog" aria-modal="true">
         <div class="modal-card max-w-2xl">
             <div class="modal-header">
-                <h2 class="font-semibold" id="iamAttachTitle"><i data-lucide="link-2"></i>Attached policies</h2>
+                <h2 class="font-semibold" id="iamAttachTitle"><i data-lucide="shield-check"></i>Permissions</h2>
                 <button class="btn-icon" type="button" onclick="closeDialog('iamAttachModal')"><i data-lucide="x"></i></button>
             </div>
             <div class="modal-body">
                 <div id="iamAttachError" class="alert alert-error mb-3 hidden"></div>
+
+                <h3 class="field-label">Attached policies</h3>
                 <div id="iamAttachList" class="mb-3"></div>
                 <label class="field-label" for="iamAttachSelect">Attach a policy</label>
                 <div class="flex gap-2">
                     <select class="input" id="iamAttachSelect"></select>
                     <button type="button" class="btn-secondary whitespace-nowrap" onclick="attachIamPolicy()"><i data-lucide="link-2"></i>Attach</button>
                 </div>
+
+                <div id="iamInlineSection" class="mt-5 border-t border-slate-700/15 pt-4">
+                    <div class="mb-2 flex items-center justify-between gap-3">
+                        <h3 class="field-label mb-0">Inline policies</h3>
+                        <button type="button" class="btn-secondary" onclick="openIamInlinePolicyModal(null)"><i data-lucide="plus"></i>Add inline policy</button>
+                    </div>
+                    <p class="field-help mb-2">A policy document that lives on this identity only - the way to express a fine-grained, per-bucket grant.</p>
+                    <div id="iamInlineList"></div>
+                </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn-secondary" onclick="closeDialog('iamAttachModal')">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Inline policy document -->
+    <div id="iamInlinePolicyModal" class="modal-backdrop hidden" aria-hidden="true" role="dialog" aria-modal="true">
+        <div class="modal-card max-w-3xl">
+            <div class="modal-header">
+                <h2 class="font-semibold" id="iamInlineTitle"><i data-lucide="scroll-text"></i>Inline policy</h2>
+                <button class="btn-icon" type="button" onclick="closeDialog('iamInlinePolicyModal')"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body">
+                <div id="iamInlineError" class="alert alert-error mb-3 hidden"></div>
+                <label class="field-label" for="iamInlineName">Policy name</label>
+                <input class="input mb-3" id="iamInlineName" type="text" autocomplete="off"/>
+                <p class="field-help mb-2">An IAM-style JSON policy document.</p>
+                <div id="iamInlineEditor" class="json-editor"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" onclick="closeDialog('iamInlinePolicyModal')">Cancel</button>
+                <button type="button" class="btn-danger hidden" id="iamInlineRemove" onclick="removeIamInlinePolicy(this)"><i data-lucide="trash-2"></i>Remove</button>
+                <button type="button" class="btn-primary" onclick="saveIamInlinePolicy()"><i data-lucide="check-circle-2"></i>Save</button>
             </div>
         </div>
     </div>
@@ -236,7 +270,11 @@
         const IAM_BASE = '/api/admin/iam';
         const IAM_POLICY_TEMPLATE = '{\n  "Version": "2012-10-17",\n  "Statement": [\n    {\n      "Effect": "Allow",\n      "Action": ["s3:GetObject"],\n      "Resource": ["arn:aws:s3:::example-bucket/*"]\n    }\n  ]\n}';
 
+        let _iamInitialised = false;
+        let _iamCapabilities = {};
         let _iamPolicyEditor = null;
+        let _iamInlineEditor = null;
+        let _iamInlineOriginalName = null;
         let _iamPolicies = [];
         let _iamUsers = [];
         let _iamEditingPolicyId = null;
@@ -270,8 +308,12 @@
             if (name === 'policies') loadIamPolicies();
         }
 
+        // Probed the first time the tab is opened, not on page load: against a backend with no
+        // IAM API (MinIO) that would be a doomed round trip on every visit to Settings.
         async function initIam() {
-            if (!document.getElementById('iamBody')) return;
+            if (_iamInitialised || !document.getElementById('iamBody')) return;
+            _iamInitialised = true;
+
             let capabilities;
             try {
                 const response = await apiFetch(`${IAM_BASE}/capabilities`);
@@ -280,17 +322,46 @@
             } catch (error) {
                 capabilities = {available: false, reason: error.message};
             }
+            _iamCapabilities = capabilities;
+
+            const banner = document.getElementById('iamUnavailable');
+            const body = document.getElementById('iamBody');
+            body.classList.remove('hidden');
+
             if (!capabilities.available) {
-                // Keep the tab reachable - the banner inside it is the only place that says why.
-                const banner = document.getElementById('iamUnavailable');
+                // Show the panel the operator would get, greyed out, with the reason above it -
+                // hiding it entirely is what made the feature look absent in the first place.
                 banner.textContent = capabilities.reason || 'IAM management is not available for this S3 key.';
                 banner.classList.remove('hidden');
+                body.classList.add('is-disabled');
                 return;
             }
-            document.getElementById('iamUnavailable').classList.add('hidden');
-            document.getElementById('iamBody').classList.remove('hidden');
+            banner.classList.add('hidden');
+            body.classList.remove('is-disabled');
+
+            document.getElementById('iamTabBtn-groups').classList.toggle('hidden', !capabilities.groups);
+            applyPolicySupport(capabilities);
             loadIamUsers();
             loadIamPolicies();
+        }
+
+        /** Ceph has no standalone policies, only a fixed catalogue to attach from. */
+        function applyPolicySupport(capabilities) {
+            const note = document.getElementById('iamPolicyUnsupported');
+            const pane = document.getElementById('iam-policies');
+            const newButton = document.getElementById('iamNewPolicyButton');
+            if (capabilities.managedPolicies) {
+                note.classList.add('hidden');
+                pane.querySelector('.table-wrap').classList.remove('is-disabled');
+                newButton.classList.remove('hidden');
+                return;
+            }
+            note.textContent = 'This provider does not support standalone policies. The built-in '
+                + 'policies below can still be attached, and you can grant finer access with an '
+                + 'inline policy from a user or group.';
+            note.classList.remove('hidden');
+            pane.querySelector('.table-wrap').classList.add('is-disabled');
+            newButton.classList.add('hidden');
         }
 
         // ── Users ────────────────────────────────────────────────────────
@@ -595,9 +666,12 @@
         async function openIamAttachModal(kind, name) {
             _iamAttachTarget = {kind, name};
             cfgClearError('iamAttachError');
-            document.getElementById('iamAttachTitle').innerHTML = `<i data-lucide="link-2"></i>Policies for ${iamEscape(name)}`;
+            document.getElementById('iamAttachTitle').innerHTML = `<i data-lucide="shield-check"></i>Permissions for ${iamEscape(name)}`;
+            document.getElementById('iamInlineSection')
+                .classList.toggle('hidden', _iamCapabilities.inlinePolicies === false);
             if (!_iamPolicies.length) await loadIamPolicies();
             await renderIamAttachments();
+            if (_iamCapabilities.inlinePolicies !== false) await renderIamInlinePolicies();
             openDialog('iamAttachModal');
             refreshIcons();
         }
@@ -701,7 +775,95 @@
             renderIamKeys();
         }
 
-        document.addEventListener('DOMContentLoaded', initIam);
+        // ── Inline policies ──────────────────────────────────
+
+        function iamInlineUrl(suffix, policyName) {
+            const {kind, name} = _iamAttachTarget;
+            const base = `${IAM_BASE}/${kind}/${encodeURIComponent(name)}/${suffix}`;
+            return policyName === undefined ? base : `${base}?name=${encodeURIComponent(policyName)}`;
+        }
+
+        async function renderIamInlinePolicies() {
+            const list = document.getElementById('iamInlineList');
+            const response = await apiFetch(iamInlineUrl('inline-policies'));
+            if (!response.ok) {
+                cfgError('iamAttachError', await getResponseErrorMessage(response, 'Failed to load inline policies'));
+                return;
+            }
+            const names = await response.json();
+            list.innerHTML = names.length
+                ? names.map(policyName => `<div class="flex items-center justify-between border-b border-slate-700/10 py-1">
+                        <span class="text-sm">${iamEscape(policyName)}</span>
+                        <button type="button" class="btn-icon" title="View or edit" data-name="${iamEscape(policyName)}" onclick="openIamInlinePolicyModal(this.getAttribute('data-name'))"><i data-lucide="pencil"></i></button>
+                    </div>`).join('')
+                : '<p class="field-help">No inline policies.</p>';
+            refreshIcons();
+        }
+
+        async function openIamInlinePolicyModal(policyName) {
+            cfgClearError('iamInlineError');
+            cfgResetRemove('iamInlineRemove');
+            _iamInlineOriginalName = policyName;
+            _iamInlineEditor = cfgEnsureEditor('iamInlineEditor', _iamInlineEditor);
+
+            const nameField = document.getElementById('iamInlineName');
+            nameField.value = policyName || '';
+            nameField.disabled = Boolean(policyName);
+            document.getElementById('iamInlineTitle').innerHTML = policyName
+                ? `<i data-lucide="scroll-text"></i>${iamEscape(policyName)}`
+                : '<i data-lucide="scroll-text"></i>New inline policy';
+            document.getElementById('iamInlineRemove').classList.toggle('hidden', !policyName);
+
+            if (policyName) {
+                const response = await apiFetch(iamInlineUrl('inline-policy', policyName));
+                if (!response.ok) {
+                    cfgError('iamAttachError', await getResponseErrorMessage(response, 'Failed to load the inline policy'));
+                    return;
+                }
+                _iamInlineEditor.setValue(cfgPretty((await response.json()).document));
+            } else {
+                _iamInlineEditor.setValue(IAM_POLICY_TEMPLATE);
+            }
+            openDialog('iamInlinePolicyModal');
+            refreshIcons();
+        }
+
+        async function saveIamInlinePolicy() {
+            const policyName = document.getElementById('iamInlineName').value.trim();
+            if (!policyName) return cfgError('iamInlineError', 'Policy name is required');
+            const documentText = _iamInlineEditor.getValue();
+            try {
+                JSON.parse(documentText);
+            } catch (error) {
+                return cfgError('iamInlineError', 'Not valid JSON: ' + error.message);
+            }
+            cfgClearError('iamInlineError');
+
+            const response = await apiFetch(iamInlineUrl('inline-policy', policyName), {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                body: documentText
+            });
+            if (!response.ok) return cfgError('iamInlineError', await getResponseErrorMessage(response, 'Failed to save the inline policy'));
+            closeDialog('iamInlinePolicyModal');
+            showToast('Inline policy saved', 'success');
+            renderIamInlinePolicies();
+        }
+
+        async function removeIamInlinePolicy(button) {
+            if (button.dataset.confirm !== '1') {
+                button.dataset.confirm = '1';
+                button.textContent = 'Confirm remove';
+                return;
+            }
+            const response = await apiFetch(iamInlineUrl('inline-policy', _iamInlineOriginalName), {method: 'DELETE'});
+            if (!response.ok) return cfgError('iamInlineError', await getResponseErrorMessage(response, 'Failed to remove the inline policy'));
+            closeDialog('iamInlinePolicyModal');
+            showToast('Inline policy removed', 'success');
+            renderIamInlinePolicies();
+        }
+
+        window.initIam = initIam;
     </script>
 </div>
 

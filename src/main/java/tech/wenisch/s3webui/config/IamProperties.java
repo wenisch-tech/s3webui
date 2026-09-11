@@ -4,14 +4,16 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 /**
- * Toggles the optional IAM management section. Off by default: it is only useful against a
- * provider that actually exposes an IAM API, and it hands admins a lot of rope.
+ * Switches the IAM management section off entirely. On by default - whether IAM is actually
+ * usable is decided at runtime by probing the provider, so a deployment against a backend
+ * without an IAM API needs no configuration. Set it to false to keep the client out of the
+ * context altogether.
  */
 @Component
 @ConfigurationProperties(prefix = "iam")
 public class IamProperties {
 
-    private boolean enabled;
+    private boolean enabled = true;
 
     public boolean isEnabled() {
         return enabled;

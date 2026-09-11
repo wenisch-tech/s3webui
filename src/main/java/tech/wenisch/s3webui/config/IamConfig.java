@@ -17,18 +17,29 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 import java.net.URI;
 import java.security.cert.X509Certificate;
+import java.time.Duration;
 
 /**
  * Builds the IAM client from the S3 key selected for the current session, mirroring
- * {@link S3Config}. Only present when {@code iam.enabled} is true, so a deployment that does not
- * want the feature never even constructs the client.
+ * {@link S3Config}. Absent when {@code iam.enabled} is explicitly false, so a deployment that
+ * does not want the feature never even constructs the client.
  */
 @Configuration
-@ConditionalOnProperty(name = "iam.enabled", havingValue = "true")
+@ConditionalOnProperty(name = "iam.enabled", havingValue = "true", matchIfMissing = true)
 public class IamConfig {
 
     /** IAM is a global service; a real AWS endpoint only answers under this pseudo-region. */
     private static final Region GLOBAL = Region.AWS_GLOBAL;
+
+    /**
+     * Hard ceiling on a single IAM call. A backend with no IAM API may simply never answer rather
+     * than refusing - MinIO leaves the request hanging - and the SDK would otherwise retry four
+     * times at thirty seconds each, freezing the capability probe for two minutes. IAM is a
+     * control-plane API; a healthy one answers in well under a second.
+     */
+    private static final Duration API_CALL_TIMEOUT = Duration.ofSeconds(12);
+    private static final Duration SOCKET_TIMEOUT = Duration.ofSeconds(8);
+    private static final Duration CONNECTION_TIMEOUT = Duration.ofSeconds(3);
 
     @Bean
     @RequestScope
@@ -36,14 +47,19 @@ public class IamConfig {
         var settings = settingsService.getEffectiveSettingsOrThrow();
         var credentials = AwsBasicCredentials.create(settings.accessKey(), settings.secretKey());
 
-        UrlConnectionHttpClient.Builder httpClientBuilder = UrlConnectionHttpClient.builder();
+        UrlConnectionHttpClient.Builder httpClientBuilder = UrlConnectionHttpClient.builder()
+                .connectionTimeout(CONNECTION_TIMEOUT)
+                .socketTimeout(SOCKET_TIMEOUT);
         if (settings.insecureSkipTlsVerify()) {
             httpClientBuilder.tlsTrustManagersProvider(IamConfig::insecureTrustManagers);
         }
 
         var builder = IamClient.builder()
                 .credentialsProvider(StaticCredentialsProvider.create(credentials))
-                .httpClientBuilder(httpClientBuilder);
+                .httpClientBuilder(httpClientBuilder)
+                .overrideConfiguration(override -> override
+                        .apiCallTimeout(API_CALL_TIMEOUT)
+                        .apiCallAttemptTimeout(SOCKET_TIMEOUT));
 
         if (settings.endpointUrl() != null && !settings.endpointUrl().isBlank()) {
             // A custom endpoint (LocalStack, an IAM-capable gateway) signs under the key's own

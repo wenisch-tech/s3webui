@@ -48,9 +48,13 @@ class FrontendMigrationTest {
 
     assertThat(settings).contains("tab-iam", "adminTabBtn-iam", "admin/fragments/iam :: panel",
         "admin/fragments/iam :: script");
+    // The tab is rendered unconditionally; the panel disables itself when the backend cannot
+    // do IAM. Gating it server-side is what made the feature look absent entirely.
+    assertThat(settings).doesNotContain("${iamEnabled}");
     assertThat(iam)
         .contains("iamUserModal", "iamGroupModal", "iamPolicyModal", "iamAttachModal",
-            "iamMembersModal", "iamKeysModal", "json-editor", "refreshIcons();")
+            "iamMembersModal", "iamKeysModal", "iamInlinePolicyModal", "is-disabled",
+            "json-editor", "refreshIcons();")
         .doesNotContain("prompt(", "confirm(");
   }
 

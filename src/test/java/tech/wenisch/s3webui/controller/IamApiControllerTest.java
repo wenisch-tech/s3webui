@@ -134,6 +134,41 @@ class IamApiControllerTest {
     }
 
     @Test
+    void settingAnInlinePolicyIsAuditedAgainstTheIdentity() {
+        withProvider();
+
+        controller.putUserInlinePolicy("alice", "read-one-bucket", "{\"Version\":\"2012-10-17\"}", null);
+        controller.putGroupInlinePolicy("devs", "read-one-bucket", "{}", null);
+
+        verify(provider).putInlinePolicy(IamTarget.user("alice"), "read-one-bucket", "{\"Version\":\"2012-10-17\"}");
+        verify(provider).putInlinePolicy(IamTarget.group("devs"), "read-one-bucket", "{}");
+        verify(audit).record(isNull(), eq("EDIT"), eq("IAM_USER"), isNull(), eq("alice"),
+                eq("Set inline policy read-one-bucket"));
+        verify(audit).record(isNull(), eq("EDIT"), eq("IAM_GROUP"), isNull(), eq("devs"),
+                eq("Set inline policy read-one-bucket"));
+    }
+
+    @Test
+    void removingAnInlinePolicyIsAudited() {
+        withProvider();
+
+        controller.deleteUserInlinePolicy("alice", "read-one-bucket", null);
+
+        verify(provider).deleteInlinePolicy(IamTarget.user("alice"), "read-one-bucket");
+        verify(audit).record(isNull(), eq("EDIT"), eq("IAM_USER"), isNull(), eq("alice"),
+                eq("Removed inline policy read-one-bucket"));
+    }
+
+    @Test
+    void aMalformedInlinePolicyIsRejectedBeforeTheProviderIsTouched() {
+        assertThrows(IllegalArgumentException.class,
+                () -> controller.putUserInlinePolicy("alice", "broken", "{ not json", null));
+
+        verify(iamService, never()).provider();
+        verify(audit, never()).record(any(), any(), any(), any(), any(), any());
+    }
+
+    @Test
     void aFailedProviderCallStillRecordsTheFailure() {
         withProvider();
         doThrow(new RuntimeException("NoSuchEntity")).when(provider).deleteGroup("ghosts");

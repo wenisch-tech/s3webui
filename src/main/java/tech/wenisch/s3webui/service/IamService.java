@@ -55,9 +55,9 @@ public class IamService {
     }
 
     /**
-     * Whether the UI should show the IAM section. Probes the endpoint with a cheap read, because a
-     * provider being wired says nothing about the endpoint actually answering IAM calls - MinIO,
-     * for instance, returns an error for every IAM operation.
+     * What the UI may show. The provider probes its own endpoint, because being wired says nothing
+     * about which IAM operations actually answer: MinIO implements none of them, and Ceph RGW
+     * implements users and groups but not standalone policies.
      */
     public IamCapabilities capabilities() {
         if (!iamProperties.isEnabled()) {
@@ -68,13 +68,12 @@ public class IamService {
             return IamCapabilities.unavailable("No IAM provider is configured for the selected S3 key");
         }
         try {
-            provider.listUsers();
+            return provider.capabilities();
         } catch (RuntimeException ex) {
             log.debug("IAM probe failed for the active S3 key", ex);
             return IamCapabilities.unavailable(
                     "This S3 provider did not answer an IAM request: " + rootMessage(ex));
         }
-        return provider.capabilities();
     }
 
     /** Creates the IAM user, then files its new key in the app's own S3 key store. */
