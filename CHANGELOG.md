@@ -1,5 +1,24 @@
 # Changelog
 
+## v1.2.1 - 2026-09-11
+
+### [1.2.1](https://github.com/wenisch-tech/s3webui/compare/v1.2.0...v1.2.1) (2026-09-11)
+
+
+### Bug Fixes
+
+* IAM section was invisible by default and unusable on Ceph ([f671554](https://github.com/wenisch-tech/s3webui/commit/f6715542f71a1f0a953da8b15be5e5b4fd4f1a2e))
+
+
+### Documentation
+
+* document IAM management, bucket policy and CORS editing ([b0f403a](https://github.com/wenisch-tech/s3webui/commit/b0f403a33d054e7d5e71e621cc7a2b600fa89b55))
+
+
+
+Docker image: ghcr.io/wenisch-tech/s3webui:1.2.1
+
+
 ## v1.2.0 - 2026-09-10
 
 ## [1.2.0](https://github.com/wenisch-tech/s3webui/compare/v1.1.0...v1.2.0) (2026-09-10)
