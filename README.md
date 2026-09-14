@@ -395,5 +395,4 @@ Pull requests welcomed.
 ## License
 
 AGPL-3.0 — see [LICENSE](LICENSE) for details.
-
 Copyright (C) 2026 Jean-Fabian Wenisch / wenisch.tech
