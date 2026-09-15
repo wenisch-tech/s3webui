@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.2.2 - 2026-09-15
+
+### [1.2.2](https://github.com/wenisch-tech/s3webui/compare/v1.2.1...v1.2.2) (2026-09-15)
+
+
+### Bug Fixes
+
+* updated deps ([96e7b47](https://github.com/wenisch-tech/s3webui/commit/96e7b47602365ad8203387d25242f0ffe09ee3e2))
+
+
+
+Docker image: ghcr.io/wenisch-tech/s3webui:1.2.2
+
+
 ## v1.2.1 - 2026-09-11
 
 ### [1.2.1](https://github.com/wenisch-tech/s3webui/compare/v1.2.0...v1.2.1) (2026-09-11)
