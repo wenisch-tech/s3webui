@@ -24,6 +24,10 @@
         <!-- Boot 4.1.1 still manages 11.0.24, which carries several CVEs (incl. CVE-2026-65182,
              a security constraint bypass) fixed in 11.0.25. Override until Boot's BOM catches up. -->
         <tomcat.version>11.0.25</tomcat.version>
+        <!-- Boot 4.1.1 manages Netty 4.2.17.Final; override until its BOM includes 4.2.18.Final. -->
+        <netty.version>4.2.18.Final</netty.version>
+        <!-- Boot 4.1.1 manages Jackson 3.1.5; override until its BOM includes 3.1.6. -->
+        <jackson-bom.version>3.1.6</jackson-bom.version>
     </properties>
 
     <dependencies>
