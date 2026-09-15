@@ -114,7 +114,7 @@
                 <input class="input" id="iamUserName" data-autofocus type="text" autocomplete="off"/>
                 <div class="field-help mt-2">
                     An access key is created with the user and stored as an S3 key with no grants.
-                    The secret is written straight to the encrypted store and is never shown here.
+                    Its secret is shown once after creation; copy it before closing that dialog.
                 </div>
             </div>
             <div class="modal-footer">
@@ -259,6 +259,34 @@
             <div class="modal-footer">
                 <button type="button" class="btn-secondary" onclick="closeDialog('iamKeysModal')">Close</button>
                 <button type="button" class="btn-primary" onclick="createIamKey()"><i data-lucide="key-round"></i>New access key</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Newly created access key (shown once) ───────────────────────── -->
+    <div id="iamCreatedKeyModal" class="modal-backdrop hidden" aria-hidden="true" role="dialog" aria-modal="true">
+        <div class="modal-card max-w-xl">
+            <div class="modal-header">
+                <h2 class="font-semibold"><i data-lucide="key-round"></i>Save this access key</h2>
+                <button class="btn-icon" type="button" onclick="closeIamCreatedKeyModal()"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warn mb-4">
+                    Copy these values now. The secret access key cannot be displayed again after this dialog is closed.
+                </div>
+                <label class="field-label" for="iamCreatedAccessKey">Access key</label>
+                <div class="mb-4 flex gap-2">
+                    <input class="input font-mono text-sm" id="iamCreatedAccessKey" type="text" readonly/>
+                    <button class="btn-secondary whitespace-nowrap" type="button" onclick="copyIamCreatedKey('iamCreatedAccessKey')"><i data-lucide="copy"></i>Copy</button>
+                </div>
+                <label class="field-label" for="iamCreatedSecretKey">Secret access key</label>
+                <div class="flex gap-2">
+                    <input class="input font-mono text-sm" id="iamCreatedSecretKey" type="text" readonly/>
+                    <button class="btn-secondary whitespace-nowrap" type="button" onclick="copyIamCreatedKey('iamCreatedSecretKey')"><i data-lucide="copy"></i>Copy</button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-primary" onclick="closeIamCreatedKeyModal()">I have saved these values</button>
             </div>
         </div>
     </div>
@@ -414,6 +442,7 @@
             if (!response.ok) return cfgError('iamUserError', await getResponseErrorMessage(response, 'Failed to create the IAM user'));
             const stored = await response.json();
             closeDialog('iamUserModal');
+            showIamCreatedKey(stored);
             showToast(`IAM user ${name} created; access key stored as "${stored.credentialName}"`, 'success');
             loadIamUsers();
         }
@@ -763,7 +792,43 @@
             notice.textContent = `Key ${stored.accessKeyId} created and stored as S3 key "${stored.credentialName}".`;
             notice.classList.remove('hidden');
             cfgClearError('iamKeysError');
+            showIamCreatedKey(stored);
             renderIamKeys();
+        }
+
+        function showIamCreatedKey(stored) {
+            document.getElementById('iamCreatedAccessKey').value = stored.accessKeyId || '';
+            document.getElementById('iamCreatedSecretKey').value = stored.secretAccessKey || '';
+            openDialog('iamCreatedKeyModal');
+            refreshIcons();
+        }
+
+        function closeIamCreatedKeyModal() {
+            closeDialog('iamCreatedKeyModal');
+        }
+
+        function clearIamCreatedKey() {
+            document.getElementById('iamCreatedAccessKey').value = '';
+            document.getElementById('iamCreatedSecretKey').value = '';
+        }
+
+        // closeDialog also fires for Escape and backdrop clicks, so clear the secret for every
+        // route that closes this creation-only dialog.
+        document.getElementById('iamCreatedKeyModal')
+            .addEventListener('s3webui:dialogclosed', clearIamCreatedKey);
+
+        async function copyIamCreatedKey(id) {
+            const input = document.getElementById(id);
+            input.select();
+            input.setSelectionRange(0, input.value.length);
+            try {
+                await navigator.clipboard.writeText(input.value);
+                showToast('Copied to clipboard', 'success');
+            } catch (_) {
+                const copied = document.execCommand('copy');
+                showToast(copied ? 'Copied to clipboard' : 'Could not copy to clipboard',
+                    copied ? 'success' : 'danger');
+            }
         }
 
         async function deleteIamKey(accessKeyId) {

@@ -7,6 +7,7 @@ import tech.wenisch.s3webui.service.IamService;
 import tech.wenisch.s3webui.service.iam.IamProvider;
 import tools.jackson.databind.json.JsonMapper;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -33,10 +34,11 @@ class IamApiControllerTest {
     @Test
     void creatingAUserIsAuditedAgainstTheUserName() {
         when(iamService.createUserAndStoreKey(eq("alice"), isNull()))
-                .thenReturn(new IamService.StoredKey("alice", "AKIA1", 1L, "IAM: alice"));
+                .thenReturn(new IamService.StoredKey("alice", "AKIA1", 1L, "IAM: alice", "s3cr3t"));
 
-        controller.createUser(new IamApiController.NameRequest("alice"), null);
+        var created = controller.createUser(new IamApiController.NameRequest("alice"), null);
 
+        assertEquals("s3cr3t", created.secretAccessKey());
         verify(audit).record(isNull(), eq("CREATE"), eq("IAM_USER"), isNull(), eq("alice"),
                 eq("Created IAM user and stored its access key"));
     }

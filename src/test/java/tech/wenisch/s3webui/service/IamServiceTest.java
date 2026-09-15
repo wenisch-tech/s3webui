@@ -80,6 +80,7 @@ class IamServiceTest {
 
         assertEquals("AKIA1", stored.accessKeyId());
         assertEquals(7L, stored.credentialId());
+        assertEquals("s3cr3t", stored.secretAccessKey());
     }
 
     @Test

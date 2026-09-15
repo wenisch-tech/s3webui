@@ -91,7 +91,8 @@ public class IamService {
     /**
      * Persists the key pair as a normal stored S3 key pointing at the same endpoint as the session
      * that created it, with no grants - an admin hands it out from the S3 keys tab. The secret is
-     * written straight to the encrypted column and never returned.
+     * encrypted at rest and is included only in the immediate creation response, because an IAM
+     * provider cannot return it again later.
      */
     private StoredKey storeKey(IamAccessKey key, String createdBy) {
         var settings = settingsService.getEffectiveSettingsOrThrow();
@@ -105,7 +106,8 @@ public class IamService {
                 settings.insecureSkipTlsVerify(),
                 true,
                 List.of()), createdBy);
-        return new StoredKey(key.userName(), key.accessKeyId(), credential.getId(), credential.getName());
+        return new StoredKey(key.userName(), key.accessKeyId(), credential.getId(), credential.getName(),
+                key.secretAccessKey());
     }
 
     /**
@@ -145,7 +147,11 @@ public class IamService {
         return throwable.getClass().getSimpleName();
     }
 
-    /** What the API reports back after a key was created: never the secret. */
-    public record StoredKey(String userName, String accessKeyId, Long credentialId, String credentialName) {
+    /**
+     * What the API reports back immediately after a key was created. The secret must be presented
+     * to the administrator once and must never be returned from a read/list endpoint.
+     */
+    public record StoredKey(String userName, String accessKeyId, Long credentialId, String credentialName,
+                            String secretAccessKey) {
     }
 }
