@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.2.3 - 2026-09-15
+
+### [1.2.3](https://github.com/wenisch-tech/s3webui/compare/v1.2.2...v1.2.3) (2026-09-15)
+
+
+### Bug Fixes
+
+* secretkey is displayed once after creation ([0ca7a72](https://github.com/wenisch-tech/s3webui/commit/0ca7a72084cc85358af276ac544098b1498241fd))
+
+
+
+Docker image: ghcr.io/wenisch-tech/s3webui:1.2.3
+
+
 ## v1.2.2 - 2026-09-15
 
 ### [1.2.2](https://github.com/wenisch-tech/s3webui/compare/v1.2.1...v1.2.2) (2026-09-15)
