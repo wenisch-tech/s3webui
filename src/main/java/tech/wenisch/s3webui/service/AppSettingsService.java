@@ -26,6 +26,16 @@ public class AppSettingsService {
     }
 
     @Transactional(readOnly = true)
+    public boolean areUsersAllowedToRevealKeys() {
+        return getBoolean(AppSetting.ALLOW_USERS_TO_REVEAL_KEYS, false);
+    }
+
+    @Transactional
+    public void setUsersAllowedToRevealKeys(boolean allowed) {
+        setValue(AppSetting.ALLOW_USERS_TO_REVEAL_KEYS, Boolean.toString(allowed));
+    }
+
+    @Transactional(readOnly = true)
     public boolean getBoolean(String key, boolean defaultValue) {
         return settingRepository.findById(key)
                 .map(AppSetting::getSettingValue)

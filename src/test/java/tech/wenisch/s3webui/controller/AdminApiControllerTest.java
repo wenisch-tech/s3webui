@@ -157,6 +157,7 @@ class AdminApiControllerTest {
     void ownCredentialsAreAllowedByDefault() throws Exception {
         mockMvc.perform(get("/api/admin/settings"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.allowUserSuppliedCredentials").value(true));
+                .andExpect(jsonPath("$.allowUserSuppliedCredentials").value(true))
+                .andExpect(jsonPath("$.allowUsersToRevealKeys").value(false));
     }
 }

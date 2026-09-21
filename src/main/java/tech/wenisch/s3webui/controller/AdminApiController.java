@@ -102,12 +102,15 @@ public class AdminApiController {
 
     @GetMapping("/settings")
     public SettingsResponse getSettings() {
-        return new SettingsResponse(appSettingsService.isUserSuppliedCredentialsAllowed());
+        return new SettingsResponse(
+                appSettingsService.isUserSuppliedCredentialsAllowed(),
+                appSettingsService.areUsersAllowedToRevealKeys());
     }
 
     @PutMapping("/settings")
     public SettingsResponse updateSettings(@RequestBody SettingsResponse request) {
         appSettingsService.setUserSuppliedCredentialsAllowed(Boolean.TRUE.equals(request.allowUserSuppliedCredentials()));
+        appSettingsService.setUsersAllowedToRevealKeys(Boolean.TRUE.equals(request.allowUsersToRevealKeys()));
         return getSettings();
     }
 
@@ -218,6 +221,6 @@ public class AdminApiController {
     ) {
     }
 
-    public record SettingsResponse(Boolean allowUserSuppliedCredentials) {
+    public record SettingsResponse(Boolean allowUserSuppliedCredentials, Boolean allowUsersToRevealKeys) {
     }
 }

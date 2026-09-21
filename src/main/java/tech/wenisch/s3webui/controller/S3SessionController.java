@@ -1,9 +1,11 @@
 package tech.wenisch.s3webui.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.CacheControl;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -29,8 +31,17 @@ public class S3SessionController {
                 s3ConnectionSettingsService.getActiveCredentialId(),
                 s3ConnectionSettingsService.getActiveCredentialName(),
                 s3ConnectionSettingsService.isUserSuppliedCredentialsAllowed(),
+                s3ConnectionSettingsService.areUsersAllowedToRevealKeys(),
                 s3ConnectionSettingsService.listAvailableCredentials()
         );
+    }
+
+    @GetMapping("/credentials/{credentialId}/reveal")
+    public ResponseEntity<S3ConnectionSettingsService.RevealedS3Credential> revealCredential(
+            @PathVariable String credentialId) {
+        return ResponseEntity.ok()
+                .cacheControl(CacheControl.noStore())
+                .body(s3ConnectionSettingsService.revealCredential(credentialId));
     }
 
     @PostMapping
@@ -66,6 +77,7 @@ public class S3SessionController {
             String activeCredentialId,
             String activeCredentialName,
             boolean allowOwnCredentials,
+            boolean allowUsersToRevealKeys,
             List<S3CredentialView> credentials
     ) {
     }

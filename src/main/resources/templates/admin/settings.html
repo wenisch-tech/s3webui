@@ -30,7 +30,7 @@
         </li>
         <li class="" role="presentation">
             <button class="tab" id="adminTabBtn-general" onclick="switchAdminTab('general')" type="button">
-                <i data-lucide="settings"></i>General
+                <i data-lucide="settings"></i>Options
             </button>
         </li>
         <li class="" role="presentation">
@@ -111,6 +111,19 @@
                 When switched off, users can only pick a key you have granted them. Sessions already
                 running on their own credentials lose access at their next request.
             </p>
+            <div class="mt-5 border-t border-slate-700/15 pt-5">
+                <div class="mb-2 flex items-center gap-2">
+                    <input class="form-check-input" type="checkbox" id="allowUsersToRevealKeys"
+                           onchange="saveGeneralSettings()"/>
+                    <label class="text-sm" for="allowUsersToRevealKeys">
+                        Allow users to reveal keys
+                    </label>
+                </div>
+                <p class="text-sm text-slate-500">
+                    Lets users view and copy the access key and secret key for any stored S3 or IAM key
+                    currently assigned to them. Disabled by default.
+                </p>
+            </div>
         </div>
 
         <!-- ── IAM ───────────────────────────────────────────── -->
@@ -594,14 +607,16 @@
         if (!response.ok) return;
         const settings = await response.json();
         document.getElementById('allowOwnCredentials').checked = settings.allowUserSuppliedCredentials;
+        document.getElementById('allowUsersToRevealKeys').checked = settings.allowUsersToRevealKeys;
     }
 
     async function saveGeneralSettings() {
         const allowUserSuppliedCredentials = document.getElementById('allowOwnCredentials').checked;
+        const allowUsersToRevealKeys = document.getElementById('allowUsersToRevealKeys').checked;
         const response = await apiFetch('/api/admin/settings', {
             method: 'PUT',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({allowUserSuppliedCredentials})
+            body: JSON.stringify({allowUserSuppliedCredentials, allowUsersToRevealKeys})
         });
 
         showToast(response.ok
