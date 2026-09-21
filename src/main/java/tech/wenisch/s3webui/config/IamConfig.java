@@ -59,7 +59,8 @@ public class IamConfig {
                 .httpClientBuilder(httpClientBuilder)
                 .overrideConfiguration(override -> override
                         .apiCallTimeout(API_CALL_TIMEOUT)
-                        .apiCallAttemptTimeout(SOCKET_TIMEOUT));
+                        .apiCallAttemptTimeout(SOCKET_TIMEOUT)
+                        .addExecutionInterceptor(new CephIamResponseInterceptor()));
 
         if (settings.endpointUrl() != null && !settings.endpointUrl().isBlank()) {
             // A custom endpoint (LocalStack, an IAM-capable gateway) signs under the key's own
