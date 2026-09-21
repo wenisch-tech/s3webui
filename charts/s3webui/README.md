@@ -198,7 +198,19 @@ can be created later. Generated keys are stored as encrypted S3 Web UI keys for 
 with no application grants initially, and the secret is shown only once after creation. Assign
 grants under **Settings → S3 keys** before making a generated key available to non-administrators.
 
-### OIDC / Authentication Parameters
+### Authentication Parameters
+
+By default, S3 Web UI requires a local or OIDC sign-in. Set `env.DISABLE_AUTHENTICATION` to
+`"true"` only when a trusted network boundary protects the application: every visitor becomes a
+virtual administrator, local user management is unavailable, and OIDC configuration is ignored.
+IAM management remains available. See the [authentication guide](../../docs/Authentication.md) for
+the local, OIDC, and disabled-authentication modes.
+
+| Parameter | Description | Default | Required |
+|-----------|-------------|---------|----------|
+| `env.DISABLE_AUTHENTICATION` | Disable all application sign-in and make every visitor a virtual administrator | `false` | No |
+
+### OIDC Parameters
 
 | Parameter | Description | Default | Required |
 |-----------|-------------|---------|----------|

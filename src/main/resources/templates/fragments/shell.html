@@ -17,8 +17,8 @@
         </div>
         <div class="ml-auto flex items-center gap-2">
             <button th:if="${activeCredentialName != null}" class="btn-secondary hidden md:inline-flex" type="button" onclick="openS3SessionDialog()" title="S3 key used in this session"><i data-lucide="key"></i><span th:text="${activeCredentialName}">S3 key</span><i data-lucide="chevron-down"></i></button>
-            <span sec:authorize="isAuthenticated()" class="hidden text-sm text-slate-500 lg:inline" sec:authentication="name">username</span>
-            <form th:action="@{/logout}" method="post"><button class="btn-secondary" type="submit"><i data-lucide="log-out"></i><span>Logout</span></button></form>
+            <span th:if="${!authenticationDisabled}" sec:authorize="isAuthenticated()" class="hidden text-sm text-slate-500 lg:inline" sec:authentication="name">username</span>
+            <form th:if="${!authenticationDisabled}" th:action="@{/logout}" method="post"><button class="btn-secondary" type="submit"><i data-lucide="log-out"></i><span>Logout</span></button></form>
             <button class="btn-icon" @click="toggleTheme()" :aria-label="theme === 'dark' ? 'Use light theme' : 'Use dark theme'"><i :data-lucide="theme === 'dark' ? 'sun' : 'moon'"></i></button>
             <button class="btn-icon sm:hidden" @click="mobileOpen = !mobileOpen" aria-label="Toggle navigation"><i data-lucide="menu"></i></button>
         </div>

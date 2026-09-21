@@ -130,7 +130,8 @@ class SecurityConfigInsecureTlsTest {
 
     @Test
     void insecureRestClientCompletesARealTokenExchange() {
-        SecurityConfig securityConfig = new SecurityConfig(new OidcProperties(), mock(UserService.class));
+        SecurityConfig securityConfig = new SecurityConfig(
+                new OidcProperties(), mock(UserService.class), new AuthenticationProperties());
         var tokenResponseClient = new RestClientAuthorizationCodeTokenResponseClient();
         tokenResponseClient.setRestClient(securityConfig.insecureRestClient());
 

@@ -23,6 +23,7 @@ public class DataInitializer implements ApplicationRunner {
     private final AppUserRepository userRepository;
     private final UserService userService;
     private final AppSettingsService appSettingsService;
+    private final AuthenticationProperties authenticationProperties;
 
     @Value("${app.admin.email:admin@s3webui.local}")
     private String adminEmail;
@@ -37,6 +38,10 @@ public class DataInitializer implements ApplicationRunner {
     }
 
     private void initDefaultAdmin() {
+        if (authenticationProperties.isDisabled()) {
+            log.info("Authentication is disabled; skipping default local administrator creation");
+            return;
+        }
         if (userRepository.count() != 0) {
             return;
         }

@@ -22,20 +22,28 @@ public class GlobalModelAttributes {
     private final BuildProperties buildProperties;
     private final S3ConnectionSettingsService s3ConnectionSettingsService;
     private final OidcProperties oidcProperties;
+    private final AuthenticationProperties authenticationProperties;
 
     @Autowired
     public GlobalModelAttributes(
             ObjectProvider<BuildProperties> buildPropertiesProvider,
             S3ConnectionSettingsService s3ConnectionSettingsService,
-            OidcProperties oidcProperties) {
+            OidcProperties oidcProperties,
+            AuthenticationProperties authenticationProperties) {
         this.buildProperties = buildPropertiesProvider.getIfAvailable();
         this.s3ConnectionSettingsService = s3ConnectionSettingsService;
         this.oidcProperties = oidcProperties;
+        this.authenticationProperties = authenticationProperties;
     }
 
     @ModelAttribute("oidcEnabled")
     public boolean oidcEnabled() {
-        return oidcProperties.isEnabled();
+        return !authenticationProperties.isDisabled() && oidcProperties.isEnabled();
+    }
+
+    @ModelAttribute("authenticationDisabled")
+    public boolean authenticationDisabled() {
+        return authenticationProperties.isDisabled();
     }
 
     @ModelAttribute("oidcRequiredRole")

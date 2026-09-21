@@ -2,6 +2,7 @@ package tech.wenisch.s3webui.controller;
 
 import tech.wenisch.s3webui.service.S3Service;
 import tech.wenisch.s3webui.service.S3ConnectionSettingsService;
+import tech.wenisch.s3webui.config.AuthenticationProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
@@ -17,6 +18,7 @@ public class UiController {
 
     private final S3Service s3Service;
     private final S3ConnectionSettingsService s3ConnectionSettingsService;
+    private final AuthenticationProperties authenticationProperties;
 
     @GetMapping("/")
     public String buckets(Model model) {
@@ -70,6 +72,9 @@ public class UiController {
                         @RequestParam(required = false) String logout,
                         @RequestParam(required = false) String oidcError,
                         Model model) {
+        if (authenticationProperties.isDisabled()) {
+            return "redirect:/";
+        }
         model.addAttribute("loginError", error != null);
         model.addAttribute("loggedOut", logout != null);
         model.addAttribute("oidcError", oidcError != null);

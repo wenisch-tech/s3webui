@@ -83,6 +83,9 @@ env:
   APP_DATA_DIR: "/app/data"
   # Default administrator, created on first start only. Change the password immediately.
   ADMIN_EMAIL: "admin@s3webui.local"
+  # Disable every application sign-in method and give each visitor administrator access. Only use
+  # behind a trusted network boundary; local user management and OIDC are unavailable in this mode.
+  DISABLE_AUTHENTICATION: "false"
   # Built-in S3 key offered to every signed-in user (optional; keys are normally added in the UI)
   S3_ACCESS_KEY: ""
   S3_SECRET_KEY: ""
