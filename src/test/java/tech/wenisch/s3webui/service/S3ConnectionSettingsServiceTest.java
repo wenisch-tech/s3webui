@@ -135,6 +135,27 @@ class S3ConnectionSettingsServiceTest {
     }
 
     @Test
+    void assignedKeysCannotBeRevealedUntilAnAdministratorEnablesIt() {
+        when(appSettingsService.areUsersAllowedToRevealKeys()).thenReturn(false);
+
+        assertThatThrownBy(() -> service.revealCredential("7"))
+                .isInstanceOf(AccessDeniedException.class)
+                .hasMessageContaining("disabled");
+    }
+
+    @Test
+    void revealingAnAssignedKeyRechecksAccessAndReturnsItsPair() {
+        when(appSettingsService.areUsersAllowedToRevealKeys()).thenReturn(true);
+        when(accessService.resolve(any(), eq("7"))).thenReturn(resolved());
+
+        var revealed = service.revealCredential("7");
+
+        assertThat(revealed.name()).isEqualTo("Archive");
+        assertThat(revealed.accessKey()).isEqualTo("AKIA");
+        assertThat(revealed.secretKey()).isEqualTo("secret");
+    }
+
+    @Test
     void disablingOwnCredentialsCutsOffSessionsAlreadyUsingThem() {
         service.selectOwnCredentials(new S3ConnectionSettingsService.SubmittedS3Settings(
                 "own-access", "own-secret", "https://minio.local", null, false));

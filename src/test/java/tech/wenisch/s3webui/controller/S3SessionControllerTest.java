@@ -10,12 +10,21 @@ import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
+import tech.wenisch.s3webui.entity.GrantType;
+import tech.wenisch.s3webui.entity.S3Credential;
+import tech.wenisch.s3webui.entity.S3CredentialGrant;
+import tech.wenisch.s3webui.repository.S3CredentialRepository;
+import tech.wenisch.s3webui.service.AppSettingsService;
+
+import java.util.ArrayList;
+import java.util.UUID;
 
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
@@ -31,10 +40,17 @@ class S3SessionControllerTest {
     @Autowired
     private WebApplicationContext webApplicationContext;
 
+    @Autowired
+    private AppSettingsService appSettingsService;
+
+    @Autowired
+    private S3CredentialRepository credentialRepository;
+
     private MockMvc mockMvc;
 
     @BeforeEach
     void setUpMockMvc() {
+        appSettingsService.setUsersAllowedToRevealKeys(false);
         mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext)
                 .apply(springSecurity())
                 .build();
@@ -84,5 +100,47 @@ class S3SessionControllerTest {
         mockMvc.perform(get("/api/s3/session").session(session))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.selectionRequired").value(false));
+    }
+
+    @Test
+    @WithMockUser(username = "bob@example.com", roles = "USER")
+    void assignedKeySecretsStayUnavailableByDefault() throws Exception {
+        Long credentialId = createSharedCredential();
+
+        mockMvc.perform(get("/api/s3/session/credentials/{credentialId}/reveal", credentialId))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.message").exists())
+                .andExpect(jsonPath("$.secretKey").doesNotExist());
+    }
+
+    @Test
+    @WithMockUser(username = "bob@example.com", roles = "USER")
+    void assignedKeySecretsCanBeRevealedWhenTheOptionIsEnabled() throws Exception {
+        Long credentialId = createSharedCredential();
+        appSettingsService.setUsersAllowedToRevealKeys(true);
+
+        mockMvc.perform(get("/api/s3/session/credentials/{credentialId}/reveal", credentialId))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Cache-Control", org.hamcrest.Matchers.containsString("no-store")))
+                .andExpect(jsonPath("$.name").value(org.hamcrest.Matchers.startsWith("Shared-")))
+                .andExpect(jsonPath("$.accessKey").value("AKIA-SHARED"))
+                .andExpect(jsonPath("$.secretKey").value("shared-secret"));
+    }
+
+    private Long createSharedCredential() {
+        S3Credential credential = S3Credential.builder()
+                .name("Shared-" + UUID.randomUUID())
+                .endpointUrl("https://s3.example.com")
+                .region("eu-central-1")
+                .accessKey("AKIA-SHARED")
+                .secretKey("shared-secret")
+                .enabled(true)
+                .grants(new ArrayList<>())
+                .build();
+        credential.getGrants().add(S3CredentialGrant.builder()
+                .credential(credential)
+                .grantType(GrantType.ALL_AUTHENTICATED)
+                .build());
+        return credentialRepository.save(credential).getId();
     }
 }
