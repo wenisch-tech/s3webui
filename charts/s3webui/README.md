@@ -191,6 +191,13 @@ inline policies but needs an **account root user's** key, and has no standalone 
 Policies tab disables itself and only Ceph's six built-in managed policies can be attached. MinIO
 does not implement the IAM API.
 
+Open **Settings → IAM** as an administrator after selecting an S3 key with IAM permissions. The
+selected key determines which IAM operations are available, and all changes are recorded in the
+application's audit history. Creating an IAM user creates its first access key; additional keys
+can be created later. Generated keys are stored as encrypted S3 Web UI keys for the same endpoint,
+with no application grants initially, and the secret is shown only once after creation. Assign
+grants under **Settings → S3 keys** before making a generated key available to non-administrators.
+
 ### OIDC / Authentication Parameters
 
 | Parameter | Description | Default | Required |
