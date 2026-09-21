@@ -32,6 +32,7 @@ import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.http.converter.OAuth2AccessTokenResponseHttpMessageConverter;
 import org.springframework.security.oauth2.core.oidc.user.OidcUserAuthority;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.AnonymousAuthenticationFilter;
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
 import org.springframework.security.web.authentication.SavedRequestAwareAuthenticationSuccessHandler;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
@@ -61,10 +62,13 @@ public class SecurityConfig {
 
     private final OidcProperties oidcProperties;
     private final UserService userService;
+    private final AuthenticationProperties authenticationProperties;
 
-    public SecurityConfig(OidcProperties oidcProperties, UserService userService) {
+    public SecurityConfig(OidcProperties oidcProperties, UserService userService,
+                          AuthenticationProperties authenticationProperties) {
         this.oidcProperties = oidcProperties;
         this.userService = userService;
+        this.authenticationProperties = authenticationProperties;
     }
 
     @Bean
@@ -86,26 +90,21 @@ public class SecurityConfig {
                             // rather than killing it via liveness) - both 401'd otherwise.
                             "/actuator/health", "/actuator/health/**", "/favicon.ico"
                     ).permitAll();
-                    auth.requestMatchers("/admin/**", "/api/admin/**").hasRole("ADMIN");
-                    if (oidcProperties.getRequiredRole() != null && !oidcProperties.getRequiredRole().isBlank()) {
-                        auth.anyRequest().hasAnyRole(oidcProperties.getRequiredRole(), "ADMIN");
+                    if (authenticationProperties.isDisabled()) {
+                        // Keep the local-account API unavailable even though every browser is a
+                        // virtual administrator in this mode. IAM remains under /api/admin/ and
+                        // deliberately does not match this rule.
+                        auth.requestMatchers("/api/admin/users", "/api/admin/users/**").denyAll();
+                        auth.anyRequest().permitAll();
                     } else {
-                        auth.anyRequest().authenticated();
+                        auth.requestMatchers("/admin/**", "/api/admin/**").hasRole("ADMIN");
+                        if (oidcProperties.getRequiredRole() != null && !oidcProperties.getRequiredRole().isBlank()) {
+                            auth.anyRequest().hasAnyRole(oidcProperties.getRequiredRole(), "ADMIN");
+                        } else {
+                            auth.anyRequest().authenticated();
+                        }
                     }
                 })
-                .formLogin(form -> form
-                        .loginPage("/login")
-                        .loginProcessingUrl("/login")
-                        .usernameParameter("email")
-                        .passwordParameter("password")
-                        .failureUrl("/login?error=true")
-                        .successHandler(formLoginSuccessHandler())
-                )
-                .logout(logout -> logout
-                        .logoutSuccessUrl("/login?logout=true")
-                        .clearAuthentication(true)
-                        .invalidateHttpSession(true)
-                )
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint(new LoginUrlAuthenticationEntryPoint("/login"))
                         .accessDeniedHandler(new ApiAwareAccessDeniedHandler("/access-denied"))
@@ -115,7 +114,25 @@ public class SecurityConfig {
                         .csrfTokenRequestHandler(new SpaCsrfTokenRequestHandler())
                 );
 
-        if (oidcProperties.isEnabled() && !oidcProperties.getResolvedProviders().isEmpty()) {
+        if (authenticationProperties.isDisabled()) {
+            http.addFilterBefore(new DisabledAuthenticationFilter(), AnonymousAuthenticationFilter.class);
+        } else {
+            http.formLogin(form -> form
+                    .loginPage("/login")
+                    .loginProcessingUrl("/login")
+                    .usernameParameter("email")
+                    .passwordParameter("password")
+                    .failureUrl("/login?error=true")
+                    .successHandler(formLoginSuccessHandler())
+            ).logout(logout -> logout
+                    .logoutSuccessUrl("/login?logout=true")
+                    .clearAuthentication(true)
+                    .invalidateHttpSession(true)
+            );
+        }
+
+        if (!authenticationProperties.isDisabled()
+                && oidcProperties.isEnabled() && !oidcProperties.getResolvedProviders().isEmpty()) {
             http.oauth2Login(oauth2 -> {
                 oauth2.loginPage("/login")
                         .successHandler(new OidcLoginSuccessHandler(userService, oidcProperties.isCreateUsers()))
@@ -155,6 +172,7 @@ public class SecurityConfig {
 
     @Bean
     @ConditionalOnProperty(name = "oidc.enabled", havingValue = "true")
+    @ConditionalOnProperty(name = "authentication.disabled", havingValue = "false", matchIfMissing = true)
     public ClientRegistrationRepository clientRegistrationRepository() {
         if (oidcProperties.isInsecureSkipTlsVerify()) {
             enableInsecureTlsForOidc();

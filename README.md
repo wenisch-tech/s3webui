@@ -12,25 +12,30 @@ A modern, clean graphical web interface for S3-compatible object storage, with l
 
 
 > [!IMPORTANT]
-> **Breaking change since 0.7.0 — the application always requires a sign-in.**
+> **By default, the application requires a sign-in.**
 > Earlier versions were open to everyone when `OIDC_ENABLED=false`. On first start a default
 > administrator `admin@s3webui.local` / `admin` is created and a warning is logged; change that
 > password immediately, or set `ADMIN_EMAIL` / `ADMIN_PASSWORD` before the first start.
 > S3 credentials are now managed in the administration panel rather than only through
-> `S3_ACCESS_KEY` / `S3_SECRET_KEY`.
+> `S3_ACCESS_KEY` / `S3_SECRET_KEY`. Set `DISABLE_AUTHENTICATION=true` only when the deployment is
+> protected by a trusted network boundary; it makes every visitor an administrator.
 
 ## How access works
 
-1. A user signs in — with e-mail and password, or through an OIDC provider. (Optional: Authentication can be disabled)
+1. A user signs in — with e-mail and password, or through an OIDC provider.
 2. They pick which **S3 key** to use for this session. A key is an S3 connection an administrator
    configured under **Settings → S3 keys**, and each key is granted to *everyone signed in*, to a
    *named user* (by e-mail), to a *role*, or to a *group* — roles and groups come from the claims
-   the identity provider sends. Administrators see every key. (Optional: User can be allowed to enter own secret & accesskey)
+   the identity provider sends. Administrators see every key.
 3. The bucket browser loads with that key. The navbar switcher changes key without signing out.
 
 Users may also connect with credentials they type in themselves; administrators can switch that off
 under **Settings → General**. Grants are re-checked on every request, so revoking one takes effect
 immediately.
+
+Set `DISABLE_AUTHENTICATION=true` to skip sign-in entirely. Every visitor then runs as a virtual
+administrator, while local user management and OIDC are disabled; IAM management continues to work.
+See [Authentication](docs/Authentication.md) for the complete configuration and security guidance.
 
 ## Product tour
 
@@ -104,6 +109,17 @@ replica needs PostgreSQL **and** sticky sessions, because HTTP sessions are held
 If you let the key be generated, **`${APP_DATA_DIR}` must be on persistent storage** — without that
 file the stored S3 secret keys cannot be decrypted. The administrator is created only when the user
 table is empty; changing `ADMIN_PASSWORD` later has no effect.
+
+### Authentication
+
+| Variable | Description | Default |
+|---|---|---|
+| `DISABLE_AUTHENTICATION` | Disable all application sign-in and make every visitor a virtual administrator | `false` |
+
+When `DISABLE_AUTHENTICATION=true`, local sign-in, OIDC and local-user management are disabled.
+Every request is handled as an administrator, including IAM management. Use this mode only behind a
+trusted network boundary; no application-level access control remains. Full instructions for local
+accounts, OIDC and disabled authentication are in [Authentication](docs/Authentication.md).
 
 ### S3 connection
 

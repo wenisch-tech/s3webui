@@ -13,7 +13,8 @@
     <div class="mb-4">
         <p class="eyebrow">Administration</p>
         <h1 class="page-title">Settings</h1>
-        <p class="page-copy">Manage S3 keys, who may use them, and local accounts.</p>
+        <p th:if="${authenticationDisabled}" class="page-copy">Manage S3 keys and IAM identities.</p>
+        <p th:if="${!authenticationDisabled}" class="page-copy">Manage S3 keys, who may use them, and local accounts.</p>
     </div>
 
     <ul class="mb-4 flex gap-2" role="tablist">
@@ -22,7 +23,7 @@
                 <i data-lucide="key"></i>S3 keys
             </button>
         </li>
-        <li class="" role="presentation">
+        <li th:if="${!authenticationDisabled}" class="" role="presentation">
             <button class="tab" id="adminTabBtn-users" onclick="switchAdminTab('users')" type="button">
                 <i data-lucide="users"></i>Users
             </button>
@@ -70,7 +71,7 @@
         </div>
 
         <!-- ── Users ───────────────────────────────────────────────────── -->
-        <div class="admin-tab hidden" id="tab-users">
+        <div th:if="${!authenticationDisabled}" class="admin-tab hidden" id="tab-users">
             <div class="mb-3 flex flex-wrap items-center justify-between gap-3">
                 <p class="page-copy">
                     Local accounts sign in with e-mail and password. Accounts from single sign-on appear
@@ -199,7 +200,7 @@
 </div>
 
 <!-- ── New user modal ─────────────────────────────────────────────────── -->
-<div class="modal-backdrop hidden" aria-hidden="true" role="dialog" aria-modal="true" id="userModal" tabindex="-1">
+<div th:if="${!authenticationDisabled}" class="modal-backdrop hidden" aria-hidden="true" role="dialog" aria-modal="true" id="userModal" tabindex="-1">
     <div class="modal-card">
         <div class="">
             <div class="modal-header">
@@ -241,6 +242,7 @@
 <script th:inline="javascript">
     const GRANT_TYPES = /*[[${grantTypes}]]*/ [];
     const USER_ROLES = /*[[${userRoles}]]*/ [];
+    const userManagementEnabled = /*[[${!authenticationDisabled}]]*/ true;
 
     const GRANT_LABELS = {
         ALL_AUTHENTICATED: 'Everyone signed in',
@@ -264,7 +266,7 @@
 
     document.addEventListener('DOMContentLoaded', () => {
         loadCredentials();
-        loadUsers();
+        if (userManagementEnabled) loadUsers();
         loadGeneralSettings();
     });
 

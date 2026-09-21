@@ -43,6 +43,9 @@ app:
     email: ${ADMIN_EMAIL:admin@s3webui.local}
     password: ${ADMIN_PASSWORD:admin}
 
+authentication:
+  disabled: ${DISABLE_AUTHENTICATION:false}
+
 s3:
   access-key: ${S3_ACCESS_KEY:}
   secret-key: ${S3_SECRET_KEY:}
