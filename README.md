@@ -21,11 +21,11 @@ A modern, clean graphical web interface for S3-compatible object storage, with l
 
 ## How access works
 
-1. A user signs in — with e-mail and password, or through an OIDC provider.
+1. A user signs in — with e-mail and password, or through an OIDC provider. (Optional: Authentication can be disabled)
 2. They pick which **S3 key** to use for this session. A key is an S3 connection an administrator
    configured under **Settings → S3 keys**, and each key is granted to *everyone signed in*, to a
    *named user* (by e-mail), to a *role*, or to a *group* — roles and groups come from the claims
-   the identity provider sends. Administrators see every key.
+   the identity provider sends. Administrators see every key. (Optional: User can be allowed to enter own secret & accesskey)
 3. The bucket browser loads with that key. The navbar switcher changes key without signing out.
 
 Users may also connect with credentials they type in themselves; administrators can switch that off
@@ -54,7 +54,7 @@ The walkthrough above uses fictional demo data in the real application UI and cy
 -  **Per-user S3 sessions** — every signed-in user picks their own key; several users browse different storage at the same time
 -  **Encrypted secrets** — stored S3 secret keys are encrypted at rest with AES-256-GCM
 -  **Users & roles** — local accounts in an H2 or PostgreSQL database, with a seeded default administrator
--  **IAM management** — optional admin section for the storage backend's own users, groups, access keys and policies, with an inline policy editor
+-  **IAM management** — optional admin section for the storage backend's users, groups, memberships, access keys, managed policies, policy attachments and inline policies
 -  **OIDC** — optional single-sign-on with role-based access control and multiple providers
 
 
@@ -137,6 +137,28 @@ cannot do it. There is no need to turn the flag off; it exists to remove the fea
 | AWS | Everything: users, groups, access keys, standalone policies, inline policies |
 | Ceph RGW (Squid or later) | Users, groups, access keys, attach/detach and inline policies. Requires an **account root user's** key — a normal RGW user gets `AccessDenied`. Standalone policies are not implemented, so the Policies tab is disabled and only Ceph's six built-in managed policies can be attached; use an inline policy for finer grants |
 | MinIO | Not supported — MinIO has its own admin API rather than the IAM API |
+
+#### Using IAM management
+
+Open **Settings → IAM** as an administrator and select an S3 key that is authorised to call the
+backend's IAM API. The selected key is used for every IAM request, so changing the active S3 key
+can change both the visible identities and the operations you are allowed to perform. All IAM
+mutations are recorded in **History**.
+
+Creating an IAM user also creates its first access key. Additional keys can be created from the
+user's access-key dialog. Each generated key is saved in S3 Web UI as an encrypted S3 key for the
+same endpoint, but initially has no application grants; grant it to users, roles or groups under
+**Settings → S3 keys** before non-administrators can select it. The secret access key is shown only
+once immediately after creation, so copy it before closing the dialog. Administrators can always
+use stored keys, and deleting an IAM user cleans up its backend keys, group memberships and policy
+attachments before removing the user.
+
+The IAM panel probes capabilities when it is opened. Users, groups, access keys, standalone
+managed policies and inline policies are reported independently, so a backend can expose part of
+the feature. AWS-managed policies are attach-only; AWS customer-managed policies can be edited or
+deleted, and policy documents are validated as JSON before they are sent to the backend. On Ceph,
+inline policies are the way to express fine-grained permissions because standalone policy CRUD is
+not available.
 
 ### OIDC (optional)
 
