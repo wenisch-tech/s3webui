@@ -1,5 +1,30 @@
 # Changelog
 
+## v1.3.0 - 2026-09-22
+
+## [1.3.0](https://github.com/wenisch-tech/s3webui/compare/v1.2.3...v1.3.0) (2026-09-22)
+
+
+### Features
+
+*  option flag to reveal secrets ([da07e68](https://github.com/wenisch-tech/s3webui/commit/da07e68124d8f08be98d77626dcbf2b176b75ece))
+
+
+### Bug Fixes
+
+* fixed user policy handling with ceph ([cb26752](https://github.com/wenisch-tech/s3webui/commit/cb2675287dc30cdc06d57de2edae0932c2029891))
+* re-added authenticationless mode allowing usage of s3webui without user credentials (besides s3 creds) ([e24b4d6](https://github.com/wenisch-tech/s3webui/commit/e24b4d67fa5e7bf58d99f3916eba80d869bf2ff5))
+
+
+### Documentation
+
+* updated readme regarding IAM usage ([559bde1](https://github.com/wenisch-tech/s3webui/commit/559bde15dc7c459cb63293b6e29ec05e6bb31c97))
+
+
+
+Docker image: ghcr.io/wenisch-tech/s3webui:1.3.0
+
+
 ## v1.2.3 - 2026-09-15
 
 ### [1.2.3](https://github.com/wenisch-tech/s3webui/compare/v1.2.2...v1.2.3) (2026-09-15)
