@@ -68,4 +68,28 @@ class FrontendMigrationTest {
         .doesNotContain("@{/admin}");
     assertThat(settings).contains("renderCredentials", "renderUsers", "refreshIcons();");
   }
+
+  @Test
+  void frontendRequestsUseTheRuntimeContextPath() throws IOException {
+    String shell = Files.readString(Path.of("src/main/resources/templates/fragments/shell.html"));
+    String frontend = Files.readString(Path.of("src/main/frontend/s3webui.js"));
+    String uploads = Files.readString(Path.of("src/main/frontend/upload.js"));
+    String history = Files.readString(Path.of("src/main/resources/templates/history.html"));
+    String bucket = Files.readString(Path.of("src/main/resources/templates/bucket.html"));
+    String buckets = Files.readString(Path.of("src/main/resources/templates/buckets.html"));
+
+    assertThat(shell)
+        .contains("s3webui-base-path", "@{/img/logo.png}")
+        .doesNotContain("href=\"/img/logo.png\"");
+    assertThat(frontend)
+        .contains("window.appUrl = appUrl", "fetch(appUrl(url),", "appUrl('/api/')");
+    assertThat(uploads)
+        .contains("import { appUrl } from './url.js'")
+        .doesNotContain("xhr.open('POST', `/api/", "xhr.open('PUT', `/api/");
+    assertThat(history)
+        .contains("apiFetch('/api/history')")
+        .doesNotContain("fetch('/api/history')");
+    assertThat(bucket).contains("location.href=appUrl('/')");
+    assertThat(buckets).contains("appUrl('/buckets/'+encodeURIComponent(i.name))");
+  }
 }

@@ -322,6 +322,39 @@ docker run -d -p 8080:8080 \
 
 Sign in as `admin@s3webui.local` / `admin`, then change the password under **Settings → Users**.
 
+### Running under a subpath
+
+S3 Web UI supports any servlet context path. Set the standard Spring Boot property
+`SERVER_SERVLET_CONTEXT_PATH` to the public path prefix, for example `/s3webui` or `/s3/foo`.
+Changing the value only changes the environment variable; no rebuild or application code change is
+required. A reverse proxy must forward the complete public URI, including that prefix.
+
+```bash
+docker run -d -p 127.0.0.1:8080:8080 \
+  -v s3webui-data:/app/data \
+  -e SERVER_SERVLET_CONTEXT_PATH=/s3webui \
+  -e SERVER_FORWARD_HEADERS_STRATEGY=framework \
+  ghcr.io/wenisch-tech/s3webui:latest
+```
+
+The matching Nginx location keeps the prefix intact and forwards the public origin:
+
+```nginx
+location = /s3webui {
+    return 308 /s3webui/;
+}
+
+location ^~ /s3webui/ {
+    absolute_redirect off;
+
+    proxy_pass http://127.0.0.1:8080;
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header X-Forwarded-Host $host;
+    proxy_set_header X-Forwarded-Port $server_port;
+}
+```
+
 ## Docker
 
 Mount a volume on `/app/data`: it holds the H2 database and the generated encryption key, without

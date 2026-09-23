@@ -1,6 +1,7 @@
 import Alpine from 'alpinejs';
 import './upload.js';
 import { createJsonEditor } from './editor.js';
+import { appUrl } from './url.js';
 import { createIcons, Archive, ArrowDownUp, Box, CheckCircle2, ChevronDown, Clock3,
   CloudUpload, Copy, Download, Eye, File, Folder, FolderOpen, FolderPlus, Globe, History, Info, LayoutGrid, LogOut,
   Key, KeyRound, Link2, Menu, Moon, MoreHorizontal, Network, Pencil, PieChart, Plus, ScrollText, Settings,
@@ -12,6 +13,7 @@ const icons = { Archive, ArrowDownUp, Box, CheckCircle2, ChevronDown, Clock3, Cl
   Sun, Table2, Trash2, Unlink2, Upload, UserCircle, UserPlus, Users, X };
 
 window.createJsonEditor = createJsonEditor;
+window.appUrl = appUrl;
 
 const preferredTheme = (() => { try { return localStorage.getItem('s3webui-theme') || 'light'; } catch { return 'light'; } })();
 function applyTheme(theme) {
@@ -49,7 +51,7 @@ document.addEventListener('click', event => {
   const link = event.target.closest('a[href]');
   if (!link || link.target || link.hasAttribute('download')) return;
   const url = new URL(link.href, window.location.href);
-  if (url.origin !== window.location.origin || url.pathname.startsWith('/api/')) return;
+  if (url.origin !== window.location.origin || url.pathname.startsWith(appUrl('/api/'))) return;
   window.showPageLoading();
 });
 document.addEventListener('submit', event => {
@@ -79,7 +81,7 @@ window.csrfToken = csrfToken;
 const apiFetch = (url, options = {}) => {
   const method = (options.method || 'GET').toUpperCase(), headers = new Headers(options.headers || {});
   if (!['GET','HEAD','OPTIONS','TRACE'].includes(method)) { const token = csrfToken(); if (token) headers.set('X-XSRF-TOKEN', token); }
-  return fetch(url, {...options, headers, credentials:'same-origin'});
+  return fetch(appUrl(url), {...options, headers, credentials:'same-origin'});
 };
 window.apiFetch = apiFetch;
 async function loadS3SessionStatus() { if (!document.getElementById('s3SessionModal')) return null; try { const response = await apiFetch('/api/s3/session', {headers:{Accept:'application/json'}}); return response.ok ? response.json() : null; } catch (error) { showToast(error.message || 'Failed to read the S3 session status', 'danger'); return null; } }

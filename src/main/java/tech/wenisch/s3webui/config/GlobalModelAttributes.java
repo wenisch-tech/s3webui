@@ -7,6 +7,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import jakarta.servlet.http.HttpServletRequest;
 import tech.wenisch.s3webui.model.S3CredentialView;
 import tech.wenisch.s3webui.service.S3ConnectionSettingsService;
 
@@ -72,6 +73,11 @@ public class GlobalModelAttributes {
     @ModelAttribute("availableCredentials")
     public List<S3CredentialView> availableCredentials(Authentication authentication) {
         return isSignedIn(authentication) ? s3ConnectionSettingsService.listAvailableCredentials() : List.of();
+    }
+
+    @ModelAttribute("basePath")
+    public String basePath(HttpServletRequest request) {
+        return request.getContextPath();
     }
 
     @ModelAttribute("appVersion")
