@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.3.3 - 2026-09-24
+
+### [1.3.3](https://github.com/wenisch-tech/s3webui/compare/v1.3.2...v1.3.3) (2026-09-24)
+
+
+### Bug Fixes
+
+* **deps:** update dependency alpinejs to v3.17.4 ([5ef4fcf](https://github.com/wenisch-tech/s3webui/commit/5ef4fcf552a58b8426d5e6cf856d78a15595fcf3))
+
+
+
+Docker image: ghcr.io/wenisch-tech/s3webui:1.3.3
+
+
 ## v1.3.2 - 2026-09-24
 
 ### [1.3.2](https://github.com/wenisch-tech/s3webui/compare/v1.3.1...v1.3.2) (2026-09-24)
