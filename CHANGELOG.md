@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.3.2 - 2026-09-24
+
+### [1.3.2](https://github.com/wenisch-tech/s3webui/compare/v1.3.1...v1.3.2) (2026-09-24)
+
+
+### Bug Fixes
+
+* support arbitrary servlet context paths ([edf2022](https://github.com/wenisch-tech/s3webui/commit/edf202265c6c4642f778250cf93d05e51f652639))
+
+
+
+Docker image: ghcr.io/wenisch-tech/s3webui:1.3.2
+
+
 ## v1.3.1 - 2026-09-22
 
 ### [1.3.1](https://github.com/wenisch-tech/s3webui/compare/v1.3.0...v1.3.1) (2026-09-22)
