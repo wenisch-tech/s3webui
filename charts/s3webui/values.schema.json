@@ -261,6 +261,12 @@
         "secrets": {
             "type": "object"
         },
+        "existingSecrets": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        },
         "securityContext": {
             "type": "object",
             "properties": {

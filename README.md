@@ -411,6 +411,20 @@ helm install s3webui wenisch-tech/s3webui \
 `persistence.enabled=true` claims a volume for `/app/data`. Skip it only when you run PostgreSQL and
 set `secrets.APP_ENCRYPTION_KEY` yourself.
 
+To keep secrets out of your Helm values, pre-create the Kubernetes Secret and pass its name:
+
+```bash
+kubectl create secret generic s3webui-secrets \
+  --from-literal=ADMIN_PASSWORD=choose-something-better \
+  --from-literal=S3_ACCESS_KEY=your-access-key \
+  --from-literal=S3_SECRET_KEY=your-secret-key
+```
+
+```bash
+helm install s3webui wenisch-tech/s3webui \
+  --set existingSecrets[0]=s3webui-secrets
+```
+
 ### Example `values.yaml` with multiple OIDC providers
 
 ```yaml
@@ -448,6 +462,41 @@ ingress:
         - path: /
           pathType: Prefix
 ```
+
+### Example `values.yaml` with `existingSecrets`
+
+```yaml
+persistence:
+  enabled: true
+  size: 1Gi
+
+existingSecrets:
+  - s3webui-oidc-prod
+  - s3webui-s3-credentials
+
+env:
+  ADMIN_EMAIL: "admin@example.com"
+  S3_ENDPOINT_URL: "http://minio.minio.svc.cluster.local:9000"
+  S3_REGION: "us-east-1"
+  IAM_ENABLED: "true"
+  OIDC_ENABLED: "true"
+  OIDC_PROVIDERS_0_NAME: "Internal SSO"
+  OIDC_PROVIDERS_0_CLIENT_ID: "s3webui"
+  OIDC_PROVIDERS_0_ISSUER_URI: "http://keycloak.auth.svc.cluster.local:8080/realms/myrealm"
+  OIDC_REQUIRED_ROLE: "s3-access"
+
+ingress:
+  enabled: true
+  className: nginx
+  hosts:
+    - host: s3webui.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+```
+
+Create each Secret separately — one per OIDC provider, one for S3 credentials, etc. The keys inside
+the Secrets must match the environment variable names the application expects.
 
 ## Building from source
 
