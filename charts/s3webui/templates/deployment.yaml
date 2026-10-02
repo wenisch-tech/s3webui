@@ -58,7 +58,10 @@ spec:
           envFrom:
             - configMapRef:
                 name: {{ include "s3webui.fullname" . }}
-          {{- if .Values.secrets }}
+            {{- range .Values.existingSecrets }}
+            - secretRef:
+                name: {{ . }}
+            {{- end }}
           env:
             {{- range $key, $value := .Values.secrets }}
             - name: {{ $key }}
@@ -67,7 +70,6 @@ spec:
                   name: {{ include "s3webui.fullname" $ }}
                   key: {{ $key }}
             {{- end }}
-          {{- end }}
       {{- if .Values.persistence.enabled }}
       volumes:
         - name: data
