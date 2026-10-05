@@ -6,8 +6,6 @@
 [![Container](https://img.shields.io/badge/container-ghcr.io-blue?logo=github)](https://github.com/wenisch-tech/s3webui/pkgs/container/s3webui)
 [![Signed](https://img.shields.io/badge/signed-cosign-green?logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0id2hpdGUiIGQ9Ik0xMiAxTDMgNXY2YzAgNS41NSAzLjg0IDEwLjc0IDkgMTIgNS4xNi0xLjI2IDktNi40NSA5LTEyVjVsLTktNHoiLz48L3N2Zz4=)](https://github.com/wenisch-tech/Kairos/releases)
 
-![S3WEBUI product tour](docs/img/s3webui-tour.gif)
-
 A modern, clean graphical web interface for S3-compatible object storage, with local and optional OIDC authentication, audit history, administration, and client-side multipart upload. Built with Spring Boot, Tailwind CSS, Alpine.js, and Lucide.
 
 
@@ -19,6 +17,25 @@ A modern, clean graphical web interface for S3-compatible object storage, with l
 > S3 credentials are now managed in the administration panel rather than only through
 > `S3_ACCESS_KEY` / `S3_SECRET_KEY`. Set `DISABLE_AUTHENTICATION=true` only when the deployment is
 > protected by a trusted network boundary; it makes every visitor an administrator.
+
+## Table of contents
+
+- [How access works](#how-access-works)
+- [Quick start with RustFS](#quick-start-with-rustfs)
+- [Features](#features)
+- [Upload flow](#upload-flow)
+- [Configuration](#configuration)
+  - [Database](#database)
+  - [Administrator and secret encryption](#administrator-and-secret-encryption)
+  - [Authentication](#authentication)
+  - [S3 connection](#s3-connection)
+  - [IAM](#iam-optional)
+  - [OIDC](#oidc-optional)
+- [Docker](#docker)
+- [Helm chart](#helm-chart)
+- [Running locally](#running-locally)
+- [Contributing](#contributing)
+- [License](#license)
 
 ## How access works
 
@@ -37,20 +54,43 @@ Set `DISABLE_AUTHENTICATION=true` to skip sign-in entirely. Every visitor then r
 administrator, while local user management and OIDC are disabled; IAM management continues to work.
 See [Authentication](docs/Authentication.md) for the complete configuration and security guidance.
 
-## Product tour
+## Quick start with RustFS
 
-The walkthrough above uses fictional demo data in the real application UI and cycles through card, list, and chart views, object browsing, file selection, audit history, S3 connection setup, and sign-in.
+Start a local RustFS instance with dedicated development credentials:
+
+```bash
+docker run -d --name rustfs -p 9000:9000 -p 9001:9001 \
+  -v rustfs-data:/data \
+  -e RUSTFS_ACCESS_KEY=S3WEBUI \
+  -e RUSTFS_SECRET_KEY=s3webui-secret \
+  -e RUSTFS_ADDRESS=":9000" \
+  -e RUSTFS_CONSOLE_ADDRESS=":9001" \
+  -e RUSTFS_CONSOLE_ENABLE=true \
+  rustfs/rustfs:latest /data
+```
+
+Then start S3 Web UI and point it at RustFS:
+
+```bash
+docker run -d --name s3webui -p 8080:8080 \
+  --add-host=host.docker.internal:host-gateway \
+  -v s3webui-data:/app/data \
+  -e S3_ACCESS_KEY=S3WEBUI \
+  -e S3_SECRET_KEY=s3webui-secret \
+  -e S3_ENDPOINT_URL=http://host.docker.internal:9000 \
+  ghcr.io/wenisch-tech/s3webui:latest
+```
+
+Open <http://localhost:8080> and sign in as `admin@s3webui.local` / `admin`; change that password
+immediately. RustFS's S3 API is available on port 9000 and its console on <http://localhost:9001>.
+This example is for local development only; use unique credentials and TLS for a real deployment.
 
 ## Features
 
--  **Browse buckets** — list all buckets with creation date
--  **Navigate folders** — browse objects with breadcrumb navigation
+-  **Browse buckets and folders** — list buckets with creation dates, navigate objects with breadcrumbs, and create virtual prefix-based folders
+-  **Search and sort objects** — filter the current folder's files and folders as you type; sort by name, size, or last modified date
+-  **File management** — upload with multipart progress and ETA, download objects, rename files without re-uploading, and delete objects or buckets
 -  **Create buckets** — create new buckets directly from the UI
--  **Upload files** — client-side multipart upload with real-time progress bar and ETA
--  **Download files** — download any object in a single click
--  **Rename objects** — rename files without re-uploading
--  **Delete** — delete individual objects or entire buckets
--  **Folder support** — create virtual folders (prefix-based)
 -  **Bucket policy editor** — read, edit and remove a bucket's IAM policy in a JSON editor with syntax highlighting and inline validation
 -  **CORS editor** — edit a bucket's CORS rules in the same editor, in the `aws s3api` JSON shape
 -  **Audit history** — per-session activity log (uploads, downloads, deletes, renames) with user and action filters
@@ -86,14 +126,14 @@ environment variables.
 The application ships with an H2 file database and needs no configuration. Point the standard Spring
 datasource variables at PostgreSQL for production; no profile is needed.
 
-| Variable | Description | Default |
-|---|---|---|
-| `APP_DATA_DIR` | Directory holding the H2 database and the generated encryption key | `./data` (`/app/data` in the container) |
-| `SPRING_DATASOURCE_URL` | JDBC URL | `jdbc:h2:file:${APP_DATA_DIR}/s3webui` |
-| `SPRING_DATASOURCE_DRIVER_CLASS_NAME` | JDBC driver | `org.h2.Driver` |
-| `SPRING_DATASOURCE_USERNAME` | Database user | `sa` |
-| `SPRING_DATASOURCE_PASSWORD` | Database password | — |
-| `SPRING_JPA_DATABASE_PLATFORM` | Set to `org.hibernate.dialect.PostgreSQLDialect` for PostgreSQL | — |
+| Variable | Description | Default | PostgreSQL configuration |
+|---|---|---|---|
+| `APP_DATA_DIR` | Directory holding the H2 database and the generated encryption key | `./data` (`/app/data` in the container) | Not used for the database; persist it only when `APP_ENCRYPTION_KEY` is generated rather than supplied |
+| `SPRING_DATASOURCE_URL` | JDBC URL | `jdbc:h2:file:${APP_DATA_DIR}/s3webui` | `jdbc:postgresql://<host>:5432/s3webui` |
+| `SPRING_DATASOURCE_DRIVER_CLASS_NAME` | JDBC driver | `org.h2.Driver` | `org.postgresql.Driver` |
+| `SPRING_DATASOURCE_USERNAME` | Database user | `sa` | PostgreSQL role, for example `s3webui` |
+| `SPRING_DATASOURCE_PASSWORD` | Database password | — | Password for that PostgreSQL role |
+| `SPRING_JPA_DATABASE_PLATFORM` | Set to `org.hibernate.dialect.PostgreSQLDialect` for PostgreSQL | — | `org.hibernate.dialect.PostgreSQLDialect` |
 
 The H2 file database tolerates a single writer, so keep `replicaCount: 1`. Running more than one
 replica needs PostgreSQL **and** sticky sessions, because HTTP sessions are held in memory.
@@ -153,6 +193,7 @@ cannot do it. There is no need to turn the flag off; it exists to remove the fea
 | AWS | Everything: users, groups, access keys, standalone policies, inline policies |
 | Ceph RGW (Squid or later) | Users, groups, access keys, attach/detach and inline policies. Requires an **account root user's** key — a normal RGW user gets `AccessDenied`. Standalone policies are not implemented, so the Policies tab is disabled and only Ceph's six built-in managed policies can be attached; use an inline policy for finer grants |
 | MinIO | Not supported — MinIO has its own admin API rather than the IAM API |
+| RustFS | S3 data access works, but the IAM panel is not supported: RustFS IAM uses its own [admin API](https://docs.rustfs.com/en/security-compliance/iam/policies), not the AWS IAM API. Manage RustFS users, groups, access keys, and policies through its console, `rc`, or admin API. |
 
 #### Using IAM management
 
@@ -233,127 +274,6 @@ To configure multiple providers, use indexed environment variables:
 | `OIDC_PROVIDERS_0_USER_NAME_ATTRIBUTE` | Optional username claim, defaults to `preferred_username` |
 
 Repeat the same pattern with `_1_`, `_2_`, and so on. Each configured provider is rendered as its own login button.
-
-## Running locally
-
-**Prerequisites:** Java 17+, Maven 3.9+
-
-### Without OIDC
-
-```bash
-mvn spring-boot:run
-```
-
-Then open <http://localhost:8080> and sign in as `admin@s3webui.local` / `admin` (the password is
-logged as a warning on first start). Add your storage under **Settings → S3 keys**, or pre-seed a
-built-in key from the environment:
-
-```bash
-export S3_ACCESS_KEY=your-access-key
-export S3_SECRET_KEY=your-secret-key
-export S3_ENDPOINT_URL=http://your-s3-endpoint:9000
-export S3_REGION=us-east-1
-
-mvn spring-boot:run
-```
-
-### With a single OIDC provider
-
-```bash
-export S3_ACCESS_KEY=your-access-key
-export S3_SECRET_KEY=your-secret-key
-export S3_ENDPOINT_URL=http://your-s3-endpoint:9000
-
-export OIDC_ENABLED=true
-export OIDC_PROVIDER_NAME="Company SSO"
-export OIDC_CLIENT_ID=s3webui
-export OIDC_CLIENT_SECRET=your-client-secret
-export OIDC_ISSUER_URI=http://localhost:8180/realms/myrealm
-# Optional — require a specific realm role:
-export OIDC_REQUIRED_ROLE=s3-access
-
-mvn spring-boot:run
-```
-
-### With multiple OIDC providers
-
-```bash
-export S3_ACCESS_KEY=your-access-key
-export S3_SECRET_KEY=your-secret-key
-export S3_ENDPOINT_URL=http://your-s3-endpoint:9000
-
-export OIDC_ENABLED=true
-export OIDC_PROVIDERS_0_NAME="Internal SSO"
-export OIDC_PROVIDERS_0_CLIENT_ID=s3webui
-export OIDC_PROVIDERS_0_CLIENT_SECRET=internal-secret
-export OIDC_PROVIDERS_0_ISSUER_URI=https://auth.example.com/realms/internal
-
-export OIDC_PROVIDERS_1_NAME="Partner Login"
-export OIDC_PROVIDERS_1_CLIENT_ID=s3webui-partner
-export OIDC_PROVIDERS_1_CLIENT_SECRET=partner-secret
-export OIDC_PROVIDERS_1_ISSUER_URI=https://auth.partner.example/realms/partner
-
-mvn spring-boot:run
-```
-
-> **OIDC provider setup:** Create a client in your realm/provider with:
-> - Client Protocol: `openid-connect`
-> - Access Type: `confidential`
-> - Valid Redirect URIs: `http://localhost:8080/*`
-> - Set the issuer URI to `http://<provider-host>/realms/<realm-name>` or the provider's standard OIDC issuer URL
-
-### Quick start with MinIO
-
-```bash
-# Start MinIO
-docker run -d -p 9000:9000 -p 9001:9001 \
-  -e MINIO_ROOT_USER=minioadmin \
-  -e MINIO_ROOT_PASSWORD=minioadmin \
-  minio/minio server /data --console-address ":9001"
-
-# Start S3 Web UI
-docker run -d -p 8080:8080 \
-  -v s3webui-data:/app/data \
-  -e S3_ACCESS_KEY=minioadmin \
-  -e S3_SECRET_KEY=minioadmin \
-  -e S3_ENDPOINT_URL=http://host.docker.internal:9000 \
-  ghcr.io/wenisch-tech/s3webui:latest
-```
-
-Sign in as `admin@s3webui.local` / `admin`, then change the password under **Settings → Users**.
-
-### Running under a subpath
-
-S3 Web UI supports any servlet context path. Set the standard Spring Boot property
-`SERVER_SERVLET_CONTEXT_PATH` to the public path prefix, for example `/s3webui` or `/s3/foo`.
-Changing the value only changes the environment variable; no rebuild or application code change is
-required. A reverse proxy must forward the complete public URI, including that prefix.
-
-```bash
-docker run -d -p 127.0.0.1:8080:8080 \
-  -v s3webui-data:/app/data \
-  -e SERVER_SERVLET_CONTEXT_PATH=/s3webui \
-  -e SERVER_FORWARD_HEADERS_STRATEGY=framework \
-  ghcr.io/wenisch-tech/s3webui:latest
-```
-
-The matching Nginx location keeps the prefix intact and forwards the public origin:
-
-```nginx
-location = /s3webui {
-    return 308 /s3webui/;
-}
-
-location ^~ /s3webui/ {
-    absolute_redirect off;
-
-    proxy_pass http://127.0.0.1:8080;
-    proxy_set_header Host $host;
-    proxy_set_header X-Forwarded-Proto $scheme;
-    proxy_set_header X-Forwarded-Host $host;
-    proxy_set_header X-Forwarded-Port $server_port;
-}
-```
 
 ## Docker
 
@@ -501,11 +421,112 @@ ingress:
 Create each Secret separately — one per OIDC provider, one for S3 credentials, etc. The keys inside
 the Secrets must match the environment variable names the application expects.
 
-## Building from source
+## Running locally
+
+**Prerequisites:** Java 17+, Maven 3.9+
+
+### Building from source
 
 ```bash
 mvn -B package -DskipTests
 java -jar target/s3webui-*.jar
+```
+
+### Without OIDC
+
+```bash
+mvn spring-boot:run
+```
+
+Then open <http://localhost:8080> and sign in as `admin@s3webui.local` / `admin` (the password is
+logged as a warning on first start). Add your storage under **Settings → S3 keys**, or pre-seed a
+built-in key from the environment:
+
+```bash
+export S3_ACCESS_KEY=your-access-key
+export S3_SECRET_KEY=your-secret-key
+export S3_ENDPOINT_URL=http://your-s3-endpoint:9000
+export S3_REGION=us-east-1
+
+mvn spring-boot:run
+```
+
+### With a single OIDC provider
+
+```bash
+export S3_ACCESS_KEY=your-access-key
+export S3_SECRET_KEY=your-secret-key
+export S3_ENDPOINT_URL=http://your-s3-endpoint:9000
+
+export OIDC_ENABLED=true
+export OIDC_PROVIDER_NAME="Company SSO"
+export OIDC_CLIENT_ID=s3webui
+export OIDC_CLIENT_SECRET=your-client-secret
+export OIDC_ISSUER_URI=http://localhost:8180/realms/myrealm
+# Optional — require a specific realm role:
+export OIDC_REQUIRED_ROLE=s3-access
+
+mvn spring-boot:run
+```
+
+### With multiple OIDC providers
+
+```bash
+export S3_ACCESS_KEY=your-access-key
+export S3_SECRET_KEY=your-secret-key
+export S3_ENDPOINT_URL=http://your-s3-endpoint:9000
+
+export OIDC_ENABLED=true
+export OIDC_PROVIDERS_0_NAME="Internal SSO"
+export OIDC_PROVIDERS_0_CLIENT_ID=s3webui
+export OIDC_PROVIDERS_0_CLIENT_SECRET=internal-secret
+export OIDC_PROVIDERS_0_ISSUER_URI=https://auth.example.com/realms/internal
+
+export OIDC_PROVIDERS_1_NAME="Partner Login"
+export OIDC_PROVIDERS_1_CLIENT_ID=s3webui-partner
+export OIDC_PROVIDERS_1_CLIENT_SECRET=partner-secret
+export OIDC_PROVIDERS_1_ISSUER_URI=https://auth.partner.example/realms/partner
+
+mvn spring-boot:run
+```
+
+> **OIDC provider setup:** Create a client in your realm/provider with:
+> - Client Protocol: `openid-connect`
+> - Access Type: `confidential`
+> - Valid Redirect URIs: `http://localhost:8080/*`
+> - Set the issuer URI to `http://<provider-host>/realms/<realm-name>` or the provider's standard OIDC issuer URL
+
+### Running under a subpath
+
+S3 Web UI supports any servlet context path. Set the standard Spring Boot property
+`SERVER_SERVLET_CONTEXT_PATH` to the public path prefix, for example `/s3webui` or `/s3/foo`.
+Changing the value only changes the environment variable; no rebuild or application code change is
+required. A reverse proxy must forward the complete public URI, including that prefix.
+
+```bash
+docker run -d -p 127.0.0.1:8080:8080 \
+  -v s3webui-data:/app/data \
+  -e SERVER_SERVLET_CONTEXT_PATH=/s3webui \
+  -e SERVER_FORWARD_HEADERS_STRATEGY=framework \
+  ghcr.io/wenisch-tech/s3webui:latest
+```
+
+The matching Nginx location keeps the prefix intact and forwards the public origin:
+
+```nginx
+location = /s3webui {
+    return 308 /s3webui/;
+}
+
+location ^~ /s3webui/ {
+    absolute_redirect off;
+
+    proxy_pass http://127.0.0.1:8080;
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header X-Forwarded-Host $host;
+    proxy_set_header X-Forwarded-Port $server_port;
+}
 ```
 
 
