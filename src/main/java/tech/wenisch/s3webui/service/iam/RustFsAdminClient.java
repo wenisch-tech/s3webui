@@ -27,7 +27,6 @@ import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -84,20 +83,23 @@ public class RustFsAdminClient {
     }
 
     public JsonNode put(String path, Map<String, String> query, Object body) {
-        return request(SdkHttpMethod.PUT, path, query, body);
+        return request(SdkHttpMethod.PUT, path, query, writeJson(body));
+    }
+
+    public JsonNode putRawJson(String path, Map<String, String> query, String body) {
+        return request(SdkHttpMethod.PUT, path, query, body.getBytes(StandardCharsets.UTF_8));
     }
 
     public JsonNode post(String path, Object body) {
-        return request(SdkHttpMethod.POST, path, Map.of(), body);
+        return request(SdkHttpMethod.POST, path, Map.of(), writeJson(body));
     }
 
     public JsonNode delete(String path, Map<String, String> query) {
         return request(SdkHttpMethod.DELETE, path, query, null);
     }
 
-    private JsonNode request(SdkHttpMethod method, String path, Map<String, String> query, Object body) {
-        byte[] requestBody = body == null ? null : writeJson(body);
-        RawResponse response = send(true, method, ADMIN_PREFIX + path, query, requestBody, false);
+    private JsonNode request(SdkHttpMethod method, String path, Map<String, String> query, byte[] body) {
+        RawResponse response = send(true, method, ADMIN_PREFIX + path, query, body, false);
         if (response.body().length == 0) {
             return null;
         }
@@ -197,9 +199,6 @@ public class RustFsAdminClient {
     }
 
     private byte[] writeJson(Object value) {
-        if (value instanceof RustFsIamProvider.RawJson rawJson) {
-            return rawJson.json().getBytes(StandardCharsets.UTF_8);
-        }
         try {
             return jsonMapper.writeValueAsBytes(value);
         } catch (JacksonException ex) {
