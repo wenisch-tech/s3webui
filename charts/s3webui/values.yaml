@@ -118,11 +118,12 @@ env:
   # OIDC_PROVIDERS_1_CLIENT_ID: "s3webui-partner"
   # OIDC_PROVIDERS_1_ISSUER_URI: "https://login.partner.example/realms/partner"
 
-# Name of an existing Kubernetes Secret containing sensitive env vars.
-# When set, Helm uses envFrom instead of creating a Secret.
+# Existing Kubernetes Secrets imported as environment variables, in the order listed.
+# These can be used alone or together with the chart-managed secrets below.
 existingSecrets: []
 
-# Sensitive values — used only when existingSecrets is empty.
+# Sensitive values stored in a chart-managed Kubernetes Secret.
+# On duplicate keys, these values take precedence over existingSecrets.
 secrets: {}
   # ADMIN_PASSWORD: "change-me-on-first-login"
   # Base64 encoded 32 byte AES key protecting the stored S3 secrets.
