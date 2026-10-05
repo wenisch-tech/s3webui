@@ -40,11 +40,14 @@ class FrontendMigrationTest {
         "data-object-sort-header=\"name\"", "data-object-sort-header=\"size\"",
         "data-object-sort-header=\"lastModified\"", "aria-sort=\"none\"",
         "id=\"objectTableBody\"", "data-object-name", "data-object-size",
-        "data-object-modified", "data-object-directory").doesNotContain("prompt(");
+        "data-object-modified", "data-object-directory", "id=\"objectSearch\"",
+        "filterObjectTable(this.value)", "id=\"objectSearchStatus\"",
+        "id=\"objectSearchEmpty\"", "syncObjectSelectAll()").doesNotContain("prompt(");
     assertThat(frontend).contains("data-theme", "openDialog", "closeDialog", "showToast",
         "createJsonEditor", "createObjectTableSorter", "hidePageLoading");
     assertThat(objectSort).contains("nextSortDirection", "compareObjectItems",
-        "sortObjectItems", "lastModified", "directory", "aria-sort");
+        "sortObjectItems", "filterObjectItems", "matchesObjectSearch", "lastModified",
+        "directory", "aria-sort", "tr:not([hidden])");
     assertThat(Files.readString(Path.of("package.json")))
         .contains("@codemirror/lang-json", "node --test src/test/frontend/*.test.mjs");
   }

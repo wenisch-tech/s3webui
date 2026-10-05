@@ -34,9 +34,22 @@ export function sortObjectItems(items, key, direction) {
   return [...items].sort((left, right) => compareObjectItems(left, right, key, direction));
 }
 
+export function normalizeObjectSearch(query) {
+  return String(query ?? '').trim().toLocaleLowerCase();
+}
+
+export function matchesObjectSearch(item, query) {
+  const normalizedQuery = normalizeObjectSearch(query);
+  return !normalizedQuery || item.name.toLocaleLowerCase().includes(normalizedQuery);
+}
+
+export function filterObjectItems(items, query) {
+  return items.filter(item => matchesObjectSearch(item, query));
+}
+
 const rowToItem = row => ({
   row,
-  name: row.dataset.objectName,
+  name: row.dataset.objectName ?? '',
   size: Number(row.dataset.objectSize),
   lastModified: row.dataset.objectModified ? Number(row.dataset.objectModified) : null,
   directory: row.dataset.objectDirectory === 'true'
@@ -55,6 +68,49 @@ function updateSortHeaders(root, key, direction) {
       button.setAttribute('aria-label', `Sort by ${label} ${nextDirection}`);
     }
   });
+}
+
+const visibleObjectCheckboxes = root =>
+  [...root.querySelectorAll('#objectTableBody tr:not([hidden]) .obj-check')];
+
+export function syncObjectSelectAll(root = document) {
+  const selectAll = root.getElementById('selectAll');
+  if (!selectAll) return;
+  const visible = visibleObjectCheckboxes(root);
+  const selected = visible.filter(checkbox => checkbox.checked).length;
+  selectAll.checked = visible.length > 0 && selected === visible.length;
+  selectAll.indeterminate = selected > 0 && selected < visible.length;
+}
+
+export function toggleVisibleObjectSelection(checked, root = document) {
+  visibleObjectCheckboxes(root).forEach(checkbox => { checkbox.checked = checked; });
+  syncObjectSelectAll(root);
+}
+
+export function createObjectTableFilter(root = document) {
+  return query => {
+    const body = root.getElementById('objectTableBody');
+    if (!body) return;
+
+    const normalizedQuery = normalizeObjectSearch(query);
+    const items = [...body.rows].map(rowToItem);
+    let visibleCount = 0;
+    items.forEach(item => {
+      const matches = matchesObjectSearch(item, normalizedQuery);
+      item.row.hidden = !matches;
+      if (matches) visibleCount++;
+    });
+
+    const status = root.getElementById('objectSearchStatus');
+    if (status) {
+      status.textContent = normalizedQuery
+        ? `${visibleCount} of ${items.length} items`
+        : `${items.length} items`;
+    }
+    const empty = root.getElementById('objectSearchEmpty');
+    if (empty) empty.classList.toggle('hidden', !normalizedQuery || visibleCount > 0);
+    syncObjectSelectAll(root);
+  };
 }
 
 export function createObjectTableSorter(root = document) {

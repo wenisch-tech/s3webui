@@ -1,21 +1,25 @@
 import Alpine from 'alpinejs';
 import './upload.js';
 import { createJsonEditor } from './editor.js';
-import { createObjectTableSorter } from './object-sort.mjs';
+import { createObjectTableFilter, createObjectTableSorter, syncObjectSelectAll,
+  toggleVisibleObjectSelection } from './object-sort.mjs';
 import { appUrl } from './url.js';
 import { createIcons, Archive, ArrowDownUp, Box, CheckCircle2, ChevronDown, Clock3,
   CloudUpload, Copy, Download, Eye, File, Folder, FolderOpen, FolderPlus, Globe, History, Info, LayoutGrid, LogOut,
-  Key, KeyRound, Link2, Menu, Moon, MoreHorizontal, Network, Pencil, PieChart, Plus, ScrollText, Settings,
+  Key, KeyRound, Link2, Menu, Moon, MoreHorizontal, Network, Pencil, PieChart, Plus, Search, ScrollText, Settings,
   ShieldAlert, ShieldCheck, Sun, Table2, Trash2, Unlink2, Upload, UserCircle, UserPlus, Users, X } from 'lucide';
 
 const icons = { Archive, ArrowDownUp, Box, CheckCircle2, ChevronDown, Clock3, CloudUpload, Copy, Eye,
   Download, File, Folder, FolderOpen, FolderPlus, Globe, History, Info, Key, KeyRound, Link2, LayoutGrid, LogOut,
-  Menu, Moon, MoreHorizontal, Network, Pencil, PieChart, Plus, ScrollText, Settings, ShieldAlert, ShieldCheck,
+  Menu, Moon, MoreHorizontal, Network, Pencil, PieChart, Plus, Search, ScrollText, Settings, ShieldAlert, ShieldCheck,
   Sun, Table2, Trash2, Unlink2, Upload, UserCircle, UserPlus, Users, X };
 
 window.createJsonEditor = createJsonEditor;
 window.appUrl = appUrl;
+window.filterObjectTable = createObjectTableFilter();
 window.sortObjectTable = createObjectTableSorter();
+window.syncObjectSelectAll = () => syncObjectSelectAll();
+window.toggleSelectAll = box => toggleVisibleObjectSelection(box.checked);
 
 const preferredTheme = (() => { try { return localStorage.getItem('s3webui-theme') || 'light'; } catch { return 'light'; } })();
 function applyTheme(theme) {
