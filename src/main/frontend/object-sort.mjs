@@ -3,6 +3,9 @@ const nameCollator = new Intl.Collator(undefined, {
   sensitivity: 'base'
 });
 
+export const DEFAULT_OBJECT_PAGE_SIZE = 200;
+export const OBJECT_PAGE_SIZES = [50, 100, 200, 500, 'all'];
+
 const compareNames = (left, right) => nameCollator.compare(left.name, right.name);
 
 export function nextSortDirection(current, key) {
@@ -47,6 +50,45 @@ export function filterObjectItems(items, query) {
   return items.filter(item => matchesObjectSearch(item, query));
 }
 
+export function normalizeObjectPageSize(value) {
+  if (String(value).toLocaleLowerCase() === 'all') return 'all';
+  const parsed = Number(value);
+  return OBJECT_PAGE_SIZES.includes(parsed) ? parsed : DEFAULT_OBJECT_PAGE_SIZE;
+}
+
+export function paginateObjectItems(items, requestedPage, requestedPageSize) {
+  const pageSize = normalizeObjectPageSize(requestedPageSize);
+  const totalPages = pageSize === 'all' ? 1 : Math.max(1, Math.ceil(items.length / pageSize));
+  const page = Math.min(Math.max(1, Number(requestedPage) || 1), totalPages);
+  const offset = pageSize === 'all' ? 0 : (page - 1) * pageSize;
+  const pageItems = pageSize === 'all' ? [...items] : items.slice(offset, offset + pageSize);
+
+  return {
+    items: pageItems,
+    page,
+    pageSize,
+    totalPages,
+    totalItems: items.length,
+    start: pageItems.length ? offset + 1 : 0,
+    end: offset + pageItems.length
+  };
+}
+
+export function objectPaginationEntries(currentPage, totalPages) {
+  if (totalPages <= 7) return Array.from({ length: totalPages }, (_, index) => index + 1);
+
+  const pages = [...new Set([1, totalPages, currentPage - 1, currentPage, currentPage + 1]
+    .filter(page => page >= 1 && page <= totalPages))].sort((left, right) => left - right);
+  const entries = [];
+  pages.forEach((page, index) => {
+    const previous = pages[index - 1];
+    if (previous != null && page - previous === 2) entries.push(previous + 1);
+    else if (previous != null && page - previous > 2) entries.push('ellipsis');
+    entries.push(page);
+  });
+  return entries;
+}
+
 const rowToItem = row => ({
   row,
   name: row.dataset.objectName ?? '',
@@ -87,43 +129,116 @@ export function toggleVisibleObjectSelection(checked, root = document) {
   syncObjectSelectAll(root);
 }
 
-export function createObjectTableFilter(root = document) {
-  return query => {
-    const body = root.getElementById('objectTableBody');
-    if (!body) return;
+function updatePaginationButtons(root, pageData, goToPage) {
+  const previous = root.getElementById('objectPagePrevious');
+  const next = root.getElementById('objectPageNext');
+  if (previous) {
+    previous.disabled = pageData.page <= 1 || pageData.pageSize === 'all';
+    previous.onclick = () => goToPage(pageData.page - 1);
+  }
+  if (next) {
+    next.disabled = pageData.page >= pageData.totalPages || pageData.pageSize === 'all';
+    next.onclick = () => goToPage(pageData.page + 1);
+  }
 
-    const normalizedQuery = normalizeObjectSearch(query);
-    const items = [...body.rows].map(rowToItem);
-    let visibleCount = 0;
-    items.forEach(item => {
-      const matches = matchesObjectSearch(item, normalizedQuery);
-      item.row.hidden = !matches;
-      if (matches) visibleCount++;
-    });
-
-    const status = root.getElementById('objectSearchStatus');
-    if (status) {
-      status.textContent = normalizedQuery
-        ? `${visibleCount} of ${items.length} items`
-        : `${items.length} items`;
+  const pages = root.getElementById('objectPageNumbers');
+  if (!pages) return;
+  pages.replaceChildren();
+  objectPaginationEntries(pageData.page, pageData.totalPages).forEach(entry => {
+    if (entry === 'ellipsis') {
+      const ellipsis = root.createElement('span');
+      ellipsis.className = 'px-1 text-slate-500';
+      ellipsis.textContent = '…';
+      ellipsis.setAttribute('aria-hidden', 'true');
+      pages.append(ellipsis);
+      return;
     }
-    const empty = root.getElementById('objectSearchEmpty');
-    if (empty) empty.classList.toggle('hidden', !normalizedQuery || visibleCount > 0);
-    syncObjectSelectAll(root);
-  };
+
+    const button = root.createElement('button');
+    button.type = 'button';
+    button.className = entry === pageData.page ? 'btn-primary min-w-9' : 'btn-secondary min-w-9';
+    button.textContent = String(entry);
+    button.setAttribute('aria-label', `Go to page ${entry}`);
+    if (entry === pageData.page) button.setAttribute('aria-current', 'page');
+    button.addEventListener('click', () => goToPage(entry));
+    pages.append(button);
+  });
 }
 
-export function createObjectTableSorter(root = document) {
-  const current = { key: null, direction: null };
-  return key => {
-    const body = root.getElementById('objectTableBody');
-    if (!body) return;
-
-    const direction = nextSortDirection(current, key);
-    sortObjectItems([...body.rows].map(rowToItem), key, direction)
-      .forEach(item => body.append(item.row));
-    current.key = key;
-    current.direction = direction;
-    updateSortHeaders(root, key, direction);
+export function createObjectTableController(root = document) {
+  const body = root.getElementById('objectTableBody');
+  const allItems = body ? [...body.rows].map(rowToItem) : [];
+  let orderedItems = [...allItems];
+  const state = {
+    query: '',
+    sortKey: null,
+    sortDirection: null,
+    page: 1,
+    pageSize: DEFAULT_OBJECT_PAGE_SIZE
   };
+
+  const render = () => {
+    if (!body) return;
+    const query = normalizeObjectSearch(state.query);
+    const matchingItems = filterObjectItems(orderedItems, query);
+    const pageData = paginateObjectItems(matchingItems, state.page, state.pageSize);
+    state.page = pageData.page;
+    state.pageSize = pageData.pageSize;
+
+    const visibleRows = new Set(pageData.items.map(item => item.row));
+    allItems.forEach(item => { item.row.hidden = !visibleRows.has(item.row); });
+
+    const searchStatus = root.getElementById('objectSearchStatus');
+    if (searchStatus) {
+      searchStatus.textContent = query
+        ? `${matchingItems.length} of ${allItems.length} items`
+        : `${allItems.length} items`;
+    }
+    const empty = root.getElementById('objectSearchEmpty');
+    if (empty) empty.classList.toggle('hidden', !query || matchingItems.length > 0);
+
+    const range = root.getElementById('objectPageRange');
+    if (range) {
+      range.textContent = matchingItems.length
+        ? `Showing ${pageData.start}–${pageData.end} of ${matchingItems.length}${query ? ' matching' : ''} items`
+        : `Showing 0 of 0${query ? ' matching' : ''} items`;
+    }
+    const summary = root.getElementById('objectPageSummary');
+    if (summary) summary.textContent = `Page ${pageData.page} of ${pageData.totalPages}`;
+    const pageSize = root.getElementById('objectPageSize');
+    if (pageSize) pageSize.value = String(pageData.pageSize);
+
+    updatePaginationButtons(root, pageData, goToPage);
+    syncObjectSelectAll(root);
+  };
+
+  const filter = query => {
+    state.query = query;
+    state.page = 1;
+    render();
+  };
+
+  const sort = key => {
+    const direction = nextSortDirection({ key: state.sortKey, direction: state.sortDirection }, key);
+    orderedItems = sortObjectItems(orderedItems, key, direction);
+    orderedItems.forEach(item => body?.append(item.row));
+    state.sortKey = key;
+    state.sortDirection = direction;
+    state.page = 1;
+    updateSortHeaders(root, key, direction);
+    render();
+  };
+
+  function goToPage(page) {
+    state.page = page;
+    render();
+  }
+
+  const setPageSize = pageSize => {
+    state.pageSize = normalizeObjectPageSize(pageSize);
+    state.page = 1;
+    render();
+  };
+
+  return { filter, sort, goToPage, setPageSize, render };
 }
