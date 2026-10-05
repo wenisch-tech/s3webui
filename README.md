@@ -425,6 +425,9 @@ helm install s3webui wenisch-tech/s3webui \
   --set existingSecrets[0]=s3webui-secrets
 ```
 
+`existingSecrets` can be used alone or together with `secrets`. If the same environment variable is
+defined in both, the chart-managed value from `secrets` takes precedence.
+
 ### Example `values.yaml` with multiple OIDC providers
 
 ```yaml

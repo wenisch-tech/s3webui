@@ -91,7 +91,11 @@ jobs:
         run: |
           set -euo pipefail
           helm plugin install https://github.com/karuppiah7890/helm-schema-gen.git --version 0.0.4
-          helm schema-gen charts/s3webui/values.yaml > charts/s3webui/values.schema.json
+          generated_schema="$(mktemp)"
+          helm schema-gen charts/s3webui/values.yaml \
+            | jq --indent 4 '.properties.existingSecrets.items = {"type": "string"}' \
+            > "$generated_schema"
+          mv "$generated_schema" charts/s3webui/values.schema.json
 
       - name: Commit release files
         shell: bash

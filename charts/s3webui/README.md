@@ -129,6 +129,27 @@ helm install s3webui ./s3webui -f values-prod.yaml
 
 ## Configuration
 
+### Secret Sources
+
+Use `secrets` for sensitive values that Helm should store in a chart-managed Kubernetes Secret. To
+keep those values out of Helm, create one or more Kubernetes Secrets separately and list their names
+under `existingSecrets`:
+
+```yaml
+existingSecrets:
+  - s3webui-oidc-prod
+  - s3webui-s3-credentials
+```
+
+The keys in each existing Secret must match the application's environment variable names. Both
+mechanisms can be used together; if a key occurs in both, the chart-managed `secrets` value takes
+precedence.
+
+| Parameter | Description | Default |
+|---|---|---|
+| `existingSecrets` | Existing Kubernetes Secrets imported as environment variables | `[]` |
+| `secrets` | Sensitive values stored in a chart-managed Kubernetes Secret | `{}` |
+
 ### Database & Persistence Parameters
 
 The chart ships with an H2 file database in `/app/data`, which also holds the generated encryption

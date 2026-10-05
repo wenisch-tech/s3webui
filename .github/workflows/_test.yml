@@ -38,6 +38,38 @@ jobs:
       - name: Run tests and coverage verification
         run: mvn -B verify
 
+      - name: Validate Helm secret sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          rendered_managed="$(mktemp)"
+          rendered_existing="$(mktemp)"
+          rendered_mixed="$(mktemp)"
+          rendered_numeric="$(mktemp)"
+
+          helm lint charts/s3webui
+          helm template managed charts/s3webui \
+            --set-string 'secrets.ADMIN_PASSWORD=managed-password' \
+            > "$rendered_managed"
+          helm template existing charts/s3webui \
+            --set 'existingSecrets[0]=external-primary,existingSecrets[1]=external-secondary' \
+            > "$rendered_existing"
+          helm template mixed charts/s3webui \
+            --set 'existingSecrets[0]=external-primary' \
+            --set-string 'secrets.ADMIN_PASSWORD=managed-password' \
+            > "$rendered_mixed"
+          helm template numeric charts/s3webui \
+            --set-string 'existingSecrets[0]=123' \
+            > "$rendered_numeric"
+
+          grep -q '^kind: Secret$' "$rendered_managed"
+          ! grep -q '^kind: Secret$' "$rendered_existing"
+          grep -q '^kind: Secret$' "$rendered_mixed"
+          grep -q 'name: "external-primary"' "$rendered_existing"
+          grep -q 'name: "external-secondary"' "$rendered_existing"
+          grep -q 'name: ADMIN_PASSWORD' "$rendered_mixed"
+          grep -q 'name: "123"' "$rendered_numeric"
+
       - name: Publish JUnit report
         if: always()
         uses: dorny/test-reporter@v3
