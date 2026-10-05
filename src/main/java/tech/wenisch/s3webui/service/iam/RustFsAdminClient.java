@@ -160,8 +160,7 @@ public class RustFsAdminClient {
         }
         try {
             JsonNode body = parseJson(response.body());
-            return "rustfs-endpoint".equals(body.path("service").asText())
-                    || (body.has("status") && body.has("version"));
+            return "rustfs-endpoint".equals(body.path("service").asText());
         } catch (RuntimeException ignored) {
             return false;
         }

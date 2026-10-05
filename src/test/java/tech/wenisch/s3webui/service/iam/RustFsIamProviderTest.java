@@ -65,16 +65,37 @@ class RustFsIamProviderTest {
         String authorization = probe.header("Authorization");
         assertTrue(authorization.startsWith("AWS4-HMAC-SHA256 Credential=ROOTKEY/"));
         assertTrue(authorization.contains("/us-east-1/s3/aws4_request"));
-        assertFalse(probe.header("x-amz-content-sha256").isBlank());
+        assertEquals("UNSIGNED-PAYLOAD", probe.header("x-amz-content-sha256"));
+    }
+
+    @Test
+    void unauthorisedNativeRouteIsStillDetectedAsRustFs() {
+        respond("GET", "/health", 200, "{\"status\":\"ok\"}");
+        respond("GET", "/rustfs/admin/v3/list-users", 403,
+                "<Error><Code>AccessDenied</Code><Message>access denied</Message></Error>");
+
+        assertTrue(client.isRustFs());
     }
 
     @Test
     void absentNativeRouteIsNotDetectedAsRustFs() {
-        respond("GET", "/health", 404, "");
+        // A generic S3-compatible server may expose its own healthy/versioned status document.
+        // Only RustFS's explicit service marker is sufficient without a native route probe.
+        respond("GET", "/health", 200, "{\"status\":\"ok\",\"version\":\"other-s3\"}");
         respond("GET", "/rustfs/admin/v3/list-users", 404,
                 "<Error><Code>NoSuchBucket</Code><Message>Not found</Message></Error>");
 
         assertFalse(client.isRustFs());
+    }
+
+    @Test
+    void queryValuesUseSigV4CompatiblePercentEncoding() {
+        respond("GET", "/rustfs/admin/v3/group?group=team%20a%26b", 200,
+                "{\"name\":\"team a&b\",\"members\":[],\"policy\":\"\"}");
+
+        client.get("/group", Map.of("group", "team a&b"));
+
+        request("GET", "/rustfs/admin/v3/group?group=team%20a%26b");
     }
 
     @Test
