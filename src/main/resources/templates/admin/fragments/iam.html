@@ -775,10 +775,12 @@
             }
             const keys = await response.json();
             list.innerHTML = keys.length
-                ? keys.map(key => `<div class="flex items-center justify-between border-b border-slate-700/10 py-1">
-                        <span class="font-mono text-xs">${iamEscape(key.accessKeyId)}</span>
-                        <span class="text-sm text-slate-500">${iamEscape(key.status)} · ${iamEscape(iamDate(key.createdAt))}</span>
-                        <button type="button" class="btn-icon text-bad-500" title="Delete key" data-id="${iamEscape(key.accessKeyId)}" onclick="deleteIamKey(this.getAttribute('data-id'))"><i data-lucide="trash-2"></i></button>
+                ? keys.map(key => `<div class="flex items-center justify-between gap-3 border-b border-slate-700/10 py-1">
+                        <span class="min-w-0 font-mono text-xs">${iamEscape(key.accessKeyId)}${key.primary ? ' <span class="badge">primary</span>' : ''}</span>
+                        <span class="ml-auto text-sm text-slate-500">${iamEscape(key.status)}${key.createdAt ? ' · ' + iamEscape(iamDate(key.createdAt)) : ''}</span>
+                        ${key.deletable === false
+                            ? '<span class="text-xs text-slate-500" title="Delete the IAM user to remove its primary key">protected</span>'
+                            : `<button type="button" class="btn-icon text-bad-500" title="Delete key" data-id="${iamEscape(key.accessKeyId)}" onclick="deleteIamKey(this.getAttribute('data-id'))"><i data-lucide="trash-2"></i></button>`}
                     </div>`).join('')
                 : '<p class="field-help">No access keys.</p>';
             refreshIcons();

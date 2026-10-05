@@ -83,7 +83,10 @@ docker run -d --name s3webui -p 8080:8080 \
 
 Open <http://localhost:8080> and sign in as `admin@s3webui.local` / `admin`; change that password
 immediately. RustFS's S3 API is available on port 9000 and its console on <http://localhost:9001>.
-This example is for local development only; use unique credentials and TLS for a real deployment.
+The selected RustFS root credentials also enable **Settings → IAM**, where S3 Web UI can manage
+RustFS users, groups, access keys and policies. RustFS 1.0.0 or newer is required. This example is
+for local development only; use unique credentials, scoped administration permissions and TLS for
+a real deployment.
 
 ## Features
 
@@ -193,14 +196,17 @@ cannot do it. There is no need to turn the flag off; it exists to remove the fea
 | AWS | Everything: users, groups, access keys, standalone policies, inline policies |
 | Ceph RGW (Squid or later) | Users, groups, access keys, attach/detach and inline policies. Requires an **account root user's** key — a normal RGW user gets `AccessDenied`. Standalone policies are not implemented, so the Policies tab is disabled and only Ceph's six built-in managed policies can be attached; use an inline policy for finer grants |
 | MinIO | Not supported — MinIO has its own admin API rather than the IAM API |
-| RustFS | S3 data access works, but the IAM panel is not supported: RustFS IAM uses its own [admin API](https://docs.rustfs.com/en/security-compliance/iam/policies), not the AWS IAM API. Manage RustFS users, groups, access keys, and policies through its console, `rc`, or admin API. |
+| RustFS 1.0.0+ | Users, groups, memberships, service-account access keys, named policy CRUD and policy attachments through the native [RustFS admin API](https://docs.rustfs.com/en/security-compliance/iam/policies). AWS-style inline policies are not supported; create and attach a named policy instead. |
 
 #### Using IAM management
 
 Open **Settings → IAM** as an administrator and select an S3 key that is authorised to call the
-backend's IAM API. The selected key is used for every IAM request, so changing the active S3 key
-can change both the visible identities and the operations you are allowed to perform. All IAM
-mutations are recorded in **History**.
+backend's identity-management API. The selected key is used for every IAM request, so changing the
+active S3 key can change both the visible identities and the operations you are allowed to perform.
+For RustFS, use the root credential or a credential with the corresponding `admin:*` actions; its
+built-in `consoleAdmin` policy supplies those permissions. See the official
+[RustFS IAM overview](https://docs.rustfs.com/en/security-compliance/iam) for its identity and policy
+model. All IAM mutations are recorded in **History**.
 
 Creating an IAM user also creates its first access key. Additional keys can be created from the
 user's access-key dialog. Each generated key is saved in S3 Web UI as an encrypted S3 key for the
@@ -210,12 +216,18 @@ once immediately after creation, so copy it before closing the dialog. Administr
 use stored keys, and deleting an IAM user cleans up its backend keys, group memberships and policy
 attachments before removing the user.
 
+On RustFS, the user name is also that user's protected primary access key. Additional keys created
+from the dialog are RustFS service accounts: they inherit the parent user's current policies and can
+be deleted independently. Deleting the IAM user removes its primary credential and derived service
+accounts.
+
 The IAM panel probes capabilities when it is opened. Users, groups, access keys, standalone
 managed policies and inline policies are reported independently, so a backend can expose part of
 the feature. AWS-managed policies are attach-only; AWS customer-managed policies can be edited or
 deleted, and policy documents are validated as JSON before they are sent to the backend. On Ceph,
 inline policies are the way to express fine-grained permissions because standalone policy CRUD is
-not available.
+not available. On RustFS, standalone named policies provide that fine-grained access because inline
+user and group policies are unavailable.
 
 ### OIDC (optional)
 

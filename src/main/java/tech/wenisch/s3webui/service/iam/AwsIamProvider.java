@@ -363,7 +363,7 @@ public class AwsIamProvider implements IamProvider {
     public List<IamAccessKeySummary> listAccessKeys(String userName) {
         return iamClient.listAccessKeys(request -> request.userName(userName)).accessKeyMetadata().stream()
                 .map(key -> new IamAccessKeySummary(
-                        key.accessKeyId(), key.statusAsString(), key.createDate()))
+                        key.accessKeyId(), key.statusAsString(), key.createDate(), false, true))
                 .toList();
     }
 
