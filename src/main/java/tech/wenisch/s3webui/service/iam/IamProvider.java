@@ -13,8 +13,8 @@ import java.util.List;
 /**
  * Identity management for the storage backend, abstracted over the wire protocol.
  *
- * <p>AWS and MinIO disagree on almost everything here: AWS speaks the IAM API and identifies
- * policies by ARN, MinIO speaks its own admin API and identifies them by name. Implementations
+ * <p>AWS and RustFS disagree on almost everything here: AWS speaks the IAM API and identifies
+ * policies by ARN, RustFS speaks its own admin API and identifies them by name. Implementations
  * therefore take an opaque {@code policyId} that is whatever that provider round-trips, and
  * declare what they can do through {@link #capabilities()}.
  *
@@ -30,7 +30,7 @@ public interface IamProvider {
 
     /**
      * Creates a user and mints its first access key. Providers where a user cannot exist without
-     * credentials (MinIO) need this to be one operation, so it is one operation everywhere.
+     * credentials (RustFS) need this to be one operation, so it is one operation everywhere.
      */
     IamAccessKey createUser(String userName);
 
