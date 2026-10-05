@@ -1,5 +1,29 @@
 # Changelog
 
+## v1.4.0 - 2026-10-05
+
+## [1.4.0](https://github.com/wenisch-tech/s3webui/compare/v1.3.4...v1.4.0) (2026-10-05)
+
+
+### Features
+
+* **helm:** support existingSecrets to keep secrets out of values.yaml ([8f827a3](https://github.com/wenisch-tech/s3webui/commit/8f827a309465271fedb171bdf1c86ac9b7f804ea))
+
+
+### Bug Fixes
+
+* **helm:** harden existing secret support ([79ab452](https://github.com/wenisch-tech/s3webui/commit/79ab452ae6d8be507e3f41577d04202d1b94e9bd))
+
+
+### Styles
+
+* **values:** shorten existingSecrets and secrets comments ([89dde19](https://github.com/wenisch-tech/s3webui/commit/89dde19d621cf566b3c17b92a98c9a1a347db0b4))
+
+
+
+Docker image: ghcr.io/wenisch-tech/s3webui:1.4.0
+
+
 ## v1.3.4 - 2026-09-27
 
 ### [1.3.4](https://github.com/wenisch-tech/s3webui/compare/v1.3.3...v1.3.4) (2026-09-27)
