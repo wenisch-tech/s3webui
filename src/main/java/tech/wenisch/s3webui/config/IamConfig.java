@@ -1,5 +1,6 @@
 package tech.wenisch.s3webui.config;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -12,6 +13,9 @@ import software.amazon.awssdk.services.iam.IamClient;
 import tech.wenisch.s3webui.service.S3ConnectionSettingsService;
 import tech.wenisch.s3webui.service.iam.AwsIamProvider;
 import tech.wenisch.s3webui.service.iam.IamProvider;
+import tech.wenisch.s3webui.service.iam.RustFsAdminClient;
+import tech.wenisch.s3webui.service.iam.RustFsIamProvider;
+import tools.jackson.databind.json.JsonMapper;
 
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
@@ -26,6 +30,7 @@ import java.time.Duration;
  */
 @Configuration
 @ConditionalOnProperty(name = "iam.enabled", havingValue = "true", matchIfMissing = true)
+@Slf4j
 public class IamConfig {
 
     /** IAM is a global service; a real AWS endpoint only answers under this pseudo-region. */
@@ -76,7 +81,22 @@ public class IamConfig {
 
     @Bean
     @RequestScope
-    public IamProvider iamProvider(IamClient iamClient) {
+    public IamProvider iamProvider(IamClient iamClient,
+                                   S3ConnectionSettingsService settingsService,
+                                   JsonMapper jsonMapper) {
+        var settings = settingsService.getEffectiveSettingsOrThrow();
+        if (settings.endpointUrl() != null && !settings.endpointUrl().isBlank()) {
+            try {
+                RustFsAdminClient rustFsClient = new RustFsAdminClient(settings, jsonMapper);
+                if (rustFsClient.isRustFs()) {
+                    return new RustFsIamProvider(rustFsClient);
+                }
+            } catch (RuntimeException ex) {
+                // The established IAM probe remains the fallback and provides the existing
+                // endpoint/timeout explanation when the selected storage endpoint is unavailable.
+                log.debug("RustFS IAM auto-detection failed; falling back to the IAM API", ex);
+            }
+        }
         return new AwsIamProvider(iamClient);
     }
 

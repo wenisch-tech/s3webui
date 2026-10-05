@@ -5,6 +5,7 @@ import org.springframework.http.ResponseEntity;
 import software.amazon.awssdk.awscore.exception.AwsErrorDetails;
 import software.amazon.awssdk.services.iam.model.IamException;
 import software.amazon.awssdk.services.s3.model.S3Exception;
+import tech.wenisch.s3webui.service.iam.RustFsAdminException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -53,6 +54,15 @@ class ApiExceptionHandlerTest {
 
         assertEquals(409, response.getStatusCode().value());
         assertEquals("IAM management is disabled on this deployment", response.getBody().get("message"));
+    }
+
+    @Test
+    void rustFsAdminErrorsKeepTheirStatusAndMessage() {
+        var response = handler.handleRustFsAdminException(
+                new RustFsAdminException(403, "AccessDenied", "access denied"));
+
+        assertEquals(403, response.getStatusCode().value());
+        assertEquals("access denied", response.getBody());
     }
 
     @Test

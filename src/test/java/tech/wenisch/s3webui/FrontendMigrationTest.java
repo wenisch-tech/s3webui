@@ -71,7 +71,8 @@ class FrontendMigrationTest {
     assertThat(iam)
         .contains("iamUserModal", "iamGroupModal", "iamPolicyModal", "iamAttachModal",
             "iamMembersModal", "iamKeysModal", "iamInlinePolicyModal", "is-disabled",
-            "json-editor", "refreshIcons();")
+            "json-editor", "refreshIcons();", "key.primary", "key.deletable === false",
+            "protected", "Delete the IAM user to remove its primary key")
         .doesNotContain("prompt(", "confirm(");
   }
 

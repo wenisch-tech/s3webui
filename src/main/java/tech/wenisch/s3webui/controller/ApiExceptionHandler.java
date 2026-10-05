@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import tech.wenisch.s3webui.service.DuplicateBucketException;
 import tech.wenisch.s3webui.service.MissingS3ConfigurationException;
 import tech.wenisch.s3webui.service.SecretDecryptionException;
+import tech.wenisch.s3webui.service.iam.RustFsAdminException;
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
 import software.amazon.awssdk.services.s3.model.S3Exception;
 
@@ -58,6 +59,12 @@ public class ApiExceptionHandler {
      */
     @ExceptionHandler(AwsServiceException.class)
     public ResponseEntity<String> handleAwsServiceException(AwsServiceException exception) {
+        int status = exception.statusCode() > 0 ? exception.statusCode() : 500;
+        return ResponseEntity.status(status).body(resolveMessage(exception));
+    }
+
+    @ExceptionHandler(RustFsAdminException.class)
+    public ResponseEntity<String> handleRustFsAdminException(RustFsAdminException exception) {
         int status = exception.statusCode() > 0 ? exception.statusCode() : 500;
         return ResponseEntity.status(status).body(resolveMessage(exception));
     }
