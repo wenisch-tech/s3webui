@@ -1,6 +1,7 @@
 import Alpine from 'alpinejs';
 import './upload.js';
 import { createJsonEditor } from './editor.js';
+import { createObjectTableSorter } from './object-sort.mjs';
 import { appUrl } from './url.js';
 import { createIcons, Archive, ArrowDownUp, Box, CheckCircle2, ChevronDown, Clock3,
   CloudUpload, Copy, Download, Eye, File, Folder, FolderOpen, FolderPlus, Globe, History, Info, LayoutGrid, LogOut,
@@ -14,6 +15,7 @@ const icons = { Archive, ArrowDownUp, Box, CheckCircle2, ChevronDown, Clock3, Cl
 
 window.createJsonEditor = createJsonEditor;
 window.appUrl = appUrl;
+window.sortObjectTable = createObjectTableSorter();
 
 const preferredTheme = (() => { try { return localStorage.getItem('s3webui-theme') || 'light'; } catch { return 'light'; } })();
 function applyTheme(theme) {
