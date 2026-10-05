@@ -1,14 +1,493 @@
-<!DOCTYPE html><html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"><head th:replace="~{fragments/shell :: head('Buckets')}"></head><body><nav th:replace="~{fragments/shell :: topbar('buckets')}"></nav><main class="page">
-<div th:if="${error}" class="alert alert-error mb-5"><i data-lucide="shield-alert"></i><span th:text="${error}">Error connecting to S3</span></div>
-<header class="page-header"><div><p class="eyebrow">Object storage</p><h1 class="page-title" th:text="${s3BreadcrumbLabel}">S3</h1><p class="page-copy"><span th:text="${#lists.size(buckets)} + ' bucket(s)'">0 buckets</span><span class="mx-2">·</span><span id="totalBucketSize">Total size: ...</span></p></div><div class="flex flex-wrap gap-2"><div class="flex rounded-lg border border-slate-700/20 p-1" role="group" aria-label="Bucket view"><button id="viewCardsBtn" class="btn-icon" onclick="switchBucketView('cards')" title="Cards"><i data-lucide="layout-grid"></i></button><button id="viewTableBtn" class="btn-icon" onclick="switchBucketView('table')" title="List"><i data-lucide="table-2"></i></button><button id="viewPieBtn" class="btn-icon" onclick="switchBucketView('pie')" title="Chart"><i data-lucide="pie-chart"></i></button></div><button class="btn-primary" onclick="openDialog('createBucketModal')"><i data-lucide="plus"></i>New bucket</button></div></header>
-<section id="bucketPieView" class="hidden" th:if="${!#lists.isEmpty(buckets)}"><div class="grid gap-4 xl:grid-cols-[minmax(0,1fr)_20rem]"><div class="panel flex min-h-80 items-center justify-center p-4"><svg id="bucketPieChart" viewBox="0 0 360 360" class="max-h-[420px] w-full" role="img" aria-label="Bucket size distribution"></svg></div><div class="panel"><div class="panel-header">Bucket sizes</div><div id="bucketPieLegend" class="panel-body text-sm"></div></div></div></section>
-<section id="bucketCardsView" class="bucket-grid" th:if="${!#lists.isEmpty(buckets)}"><article class="bucket-card" th:each="bucket : ${buckets}" th:attr="data-bucket-url=@{/buckets/{b}(b=${bucket.name})}"><div class="flex items-start justify-between"><div class="bucket-icon"><i data-lucide="archive"></i></div><div class="relative" x-data="{open:false}"><button class="btn-icon" @click="open=!open" aria-label="Bucket actions"><i data-lucide="more-horizontal"></i></button><div class="dropdown-menu" x-show="open" @click.outside="open=false" x-cloak><a class="dropdown-item" th:href="@{/buckets/{b}(b=${bucket.name})}"><i data-lucide="folder-open"></i>Browse</a><button class="dropdown-item text-bad-500" th:attr="data-bucket=${bucket.name}" onclick="confirmDeleteBucket(this.dataset.bucket)"><i data-lucide="trash-2"></i>Delete</button></div></div></div><a class="bucket-name" th:href="@{/buckets/{b}(b=${bucket.name})}" th:text="${bucket.name}">bucket</a><div class="mt-auto flex flex-wrap gap-2 pt-5"><span class="meta-pill"><i data-lucide="clock-3"></i><span th:text="${bucket.creationDate != null ? #temporals.format(bucket.creationDate, 'yyyy-MM-dd') : 'Unknown date'}">date</span></span><span class="meta-pill"><i data-lucide="archive"></i><span th:attr="data-bucket-size-for=${bucket.name}">...</span></span></div></article></section>
-<section id="bucketTableView" class="panel hidden" th:if="${!#lists.isEmpty(buckets)}"><div class="table-wrap"><table class="data-table"><thead><tr><th><button onclick="sortBucketTable('name')">Name</button></th><th><button onclick="sortBucketTable('created')">Created</button></th><th><button onclick="sortBucketTable('size')">Size</button></th><th>Actions</th></tr></thead><tbody id="bucketTableBody"><tr th:each="bucket : ${buckets}" th:attr="data-name=${bucket.name},data-created=${bucket.creationDate != null ? bucket.creationDate.toEpochMilli() : 0},data-created-label=${bucket.creationDate != null ? #temporals.format(bucket.creationDate, 'yyyy-MM-dd') : 'Unknown date'},data-size=0"><td><a class="font-semibold hover:text-brand-600" th:href="@{/buckets/{b}(b=${bucket.name})}" th:text="${bucket.name}">bucket</a></td><td class="text-slate-500" th:text="${bucket.creationDate != null ? #temporals.format(bucket.creationDate, 'yyyy-MM-dd') : 'Unknown date'}">date</td><td class="text-slate-500" th:attr="data-bucket-size-for=${bucket.name}">...</td><td><button class="btn-danger" th:attr="data-bucket=${bucket.name}" onclick="confirmDeleteBucket(this.dataset.bucket)"><i data-lucide="trash-2"></i><span class="sr-only">Delete</span></button></td></tr></tbody></table></div></section>
-<section th:if="${#lists.isEmpty(buckets) and error == null}" class="empty-state"><div class="mx-auto grid size-14 place-items-center rounded-full bg-brand-500/10 text-brand-700"><i data-lucide="archive"></i></div><h2 class="mt-4 text-lg font-semibold">No buckets found</h2><p class="mt-1 text-sm text-slate-500">Create a bucket to start storing objects.</p><button class="btn-primary mt-5" onclick="openDialog('createBucketModal')"><i data-lucide="plus"></i>Create your first bucket</button></section>
-</main>
-<div th:replace="~{fragments/shell :: s3ConfigDialog}"></div>
-<div id="createBucketModal" class="modal-backdrop hidden" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="createBucketTitle"><div class="modal-card"><div class="modal-header"><h2 id="createBucketTitle" class="font-semibold">New bucket</h2><button class="btn-icon" onclick="closeDialog('createBucketModal')"><i data-lucide="x"></i></button></div><div class="modal-body"><label class="field-label" for="bucketName">Bucket name</label><input id="bucketName" class="input" placeholder="my-bucket" autocomplete="off" data-autofocus/><p class="field-help">Bucket names must be lowercase and between 3 and 63 characters.</p></div><div class="modal-footer"><button class="btn-secondary" onclick="closeDialog('createBucketModal')">Cancel</button><button class="btn-primary" onclick="createBucket()">Create bucket</button></div></div></div>
-<div id="deleteBucketModal" class="modal-backdrop hidden" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="deleteBucketTitle"><div class="modal-card"><div class="modal-header"><h2 id="deleteBucketTitle" class="font-semibold text-bad-500">Delete bucket</h2><button class="btn-icon" onclick="closeDialog('deleteBucketModal')"><i data-lucide="x"></i></button></div><div class="modal-body"><p>Delete <strong id="deleteBucketName"></strong>?</p><div class="alert alert-warn mt-4">This action cannot be undone. Make sure the bucket is empty first.</div></div><div class="modal-footer"><button class="btn-secondary" onclick="closeDialog('deleteBucketModal')">Cancel</button><button class="btn-danger" onclick="doDeleteBucket()">Delete</button></div></div></div>
-<div th:replace="~{fragments/shell :: footer}"></div><div th:replace="~{fragments/shell :: scripts}"></div><script>
-document.addEventListener('DOMContentLoaded',()=>{ensureS3ConfigDialog();initBucketView();loadBucketSizes();document.querySelectorAll('.bucket-card[data-bucket-url]').forEach(c=>c.addEventListener('click',e=>{if(!e.target.closest('a,button'))location.href=c.dataset.bucketUrl}))});let _bucketToDelete=null,_bucketSort={key:'name',dir:'asc'};function initBucketView(){switchBucketView(localStorage.getItem('s3webui-bucket-view')||'cards')}function switchBucketView(view){['Cards','Pie','Table'].forEach(n=>document.getElementById('bucket'+n+'View')?.classList.toggle('hidden',n.toLowerCase()!==view));localStorage.setItem('s3webui-bucket-view',view)}function formatBytes(n){n=Number(n||0);if(n<1024)return n+' B';if(n<1048576)return(n/1024).toFixed(1)+' KB';if(n<1073741824)return(n/1048576).toFixed(1)+' MB';return(n/1073741824).toFixed(2)+' GB'}function setBucketSize(bucket,size){document.querySelectorAll(`[data-bucket-size-for="${CSS.escape(bucket)}"]`).forEach(e=>e.textContent=formatBytes(size));const row=document.querySelector(`#bucketTableBody tr[data-name="${CSS.escape(bucket)}"]`);if(row)row.dataset.size=size;updateTotalBucketSize();renderBucketPieChart()}function updateTotalBucketSize(){const rows=[...document.querySelectorAll('#bucketTableBody tr')];totalBucketSize.textContent='Total size: '+formatBytes(rows.reduce((s,r)=>s+Number(r.dataset.size||0),0))}async function loadBucketSizes(){for(const row of document.querySelectorAll('#bucketTableBody tr[data-name]'))try{const r=await apiFetch('/api/buckets/'+encodeURIComponent(row.dataset.name)+'/stats'),d=await r.json();setBucketSize(row.dataset.name,Number(d.totalSize||0))}catch{setBucketSize(row.dataset.name,0)}}function sortBucketTable(key){const body=document.getElementById('bucketTableBody');if(!body)return;_bucketSort.dir=_bucketSort.key===key&&_bucketSort.dir==='asc'?'desc':'asc';_bucketSort.key=key;[...body.rows].sort((a,b)=>{let x=key==='name'?a.dataset.name:a.dataset[key],y=key==='name'?b.dataset.name:b.dataset[key];return(x>y?1:x<y?-1:0)*(_bucketSort.dir==='asc'?1:-1)}).forEach(r=>body.append(r))}function renderBucketPieChart(){const chart=bucketPieChart,legend=bucketPieLegend;if(!chart||!legend)return;const rows=[...document.querySelectorAll('#bucketTableBody tr')],items=rows.map((r,i)=>({name:r.dataset.name,size:Number(r.dataset.size||0),color:['#079bb8','#1c9b81','#d99018','#8b71d6','#dc6a54'][i%5]})),total=items.reduce((s,i)=>s+i.size,0);if(!total){chart.innerHTML='<text x="180" y="180" text-anchor="middle" fill="currentColor">No size data</text>';legend.textContent='No bucket size data available yet.';return}let start=-Math.PI/2;chart.innerHTML='';legend.innerHTML='';items.forEach(i=>{const end=start+i.size/total*Math.PI*2,a=160,b=160,r=120,p1=[a+r*Math.cos(start),b+r*Math.sin(start)],p2=[a+r*Math.cos(end),b+r*Math.sin(end)],large=end-start>Math.PI?1:0;chart.insertAdjacentHTML('beforeend',`<path d="M ${a} ${b} L ${p1} A ${r} ${r} 0 ${large} 1 ${p2} Z" fill="${i.color}"><title>${i.name}: ${formatBytes(i.size)}</title></path>`);legend.insertAdjacentHTML('beforeend',`<a class="flex items-center justify-between gap-3 border-b py-2 last:border-0 hover:text-brand-600" href="${appUrl('/buckets/'+encodeURIComponent(i.name))}"><span class="truncate"><span class="mr-2 inline-block size-2.5 rounded-full" style="background:${i.color}"></span>${i.name}</span><span class="text-slate-500">${formatBytes(i.size)}</span></a>`);start=end})}function confirmDeleteBucket(n){_bucketToDelete=n;deleteBucketName.textContent=n;openDialog('deleteBucketModal')}function doDeleteBucket(){apiFetch('/api/buckets/'+encodeURIComponent(_bucketToDelete),{method:'DELETE'}).then(async r=>r.ok?location.reload():showToast(await getResponseErrorMessage(r,'Failed to delete bucket'),'danger')).catch(e=>showToast(e.message,'danger'))}function createBucket(){const n=bucketName.value.trim();if(!n)return;apiFetch('/api/buckets?name='+encodeURIComponent(n),{method:'POST'}).then(async r=>r.ok?location.reload():showToast(await getResponseErrorMessage(r,'Failed to create bucket'),'danger')).catch(e=>showToast(e.message,'danger'))}
-</script></body></html>
+<!doctype html>
+<html
+  lang="en"
+  xmlns:th="http://www.thymeleaf.org"
+  xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+>
+  <head th:replace="~{fragments/shell :: head('Buckets')}"></head>
+  <body>
+    <nav th:replace="~{fragments/shell :: topbar('buckets')}"></nav>
+    <main class="page">
+      <div th:if="${error}" class="alert alert-error mb-5">
+        <i data-lucide="shield-alert"></i>
+        <span th:text="${error}">Error connecting to S3</span>
+      </div>
+      <header class="page-header">
+        <div>
+          <p class="eyebrow">Object storage</p>
+          <h1 class="page-title" th:text="${s3BreadcrumbLabel}">S3</h1>
+          <p class="page-copy">
+            <span
+              th:text="${#lists.size(buckets)} + (${#lists.size(buckets) == 1} ? ' bucket' : ' buckets')"
+            >
+              0 buckets
+            </span>
+            <span class="mx-2">·</span>
+            <span id="totalBucketSize">Calculating storage…</span>
+          </p>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <div
+            class="flex rounded-lg border border-slate-700/20 p-1"
+            role="group"
+            aria-label="Bucket view"
+          >
+            <button
+              id="viewCardsBtn"
+              class="btn-icon"
+              onclick="switchBucketView('cards')"
+              title="Cards"
+              aria-label="Card view"
+              aria-pressed="true"
+            >
+              <i data-lucide="layout-grid"></i>
+            </button>
+            <button
+              id="viewTableBtn"
+              class="btn-icon"
+              onclick="switchBucketView('table')"
+              title="List"
+              aria-label="List view"
+              aria-pressed="false"
+            >
+              <i data-lucide="table-2"></i>
+            </button>
+            <button
+              id="viewPieBtn"
+              class="btn-icon"
+              onclick="switchBucketView('pie')"
+              title="Chart"
+              aria-label="Chart view"
+              aria-pressed="false"
+            >
+              <i data-lucide="pie-chart"></i>
+            </button>
+          </div>
+          <button class="btn-primary" onclick="openDialog('createBucketModal')">
+            <i data-lucide="plus"></i>
+            New bucket
+          </button>
+        </div>
+      </header>
+      <section id="bucketPieView" class="hidden" th:if="${!#lists.isEmpty(buckets)}">
+        <div class="grid gap-4 xl:grid-cols-[minmax(0,1fr)_20rem]">
+          <div class="panel flex min-h-80 items-center justify-center p-4">
+            <svg
+              id="bucketPieChart"
+              viewBox="0 0 360 360"
+              class="max-h-[420px] w-full"
+              role="img"
+              aria-label="Bucket size distribution"
+            ></svg>
+          </div>
+          <div class="panel">
+            <div class="panel-header">Bucket sizes</div>
+            <div id="bucketPieLegend" class="panel-body text-sm"></div>
+          </div>
+        </div>
+      </section>
+      <section
+        id="bucketCardsView"
+        class="bucket-grid"
+        th:if="${!#lists.isEmpty(buckets)}"
+        aria-label="Buckets"
+      >
+        <article
+          class="bucket-card"
+          th:each="bucket : ${buckets}"
+          th:attr="data-bucket-url=@{/buckets/{b}(b=${bucket.name})}"
+        >
+          <div class="bucket-card-header">
+            <div class="bucket-icon"><i data-lucide="archive" aria-hidden="true"></i></div>
+            <h2 class="bucket-heading">
+              <a
+                class="bucket-name"
+                th:href="@{/buckets/{b}(b=${bucket.name})}"
+                th:text="${bucket.name}"
+              >
+                bucket
+              </a>
+            </h2>
+            <div class="relative" x-data="{open:false}" @keydown.escape.window="open=false">
+              <button
+                class="btn-icon bucket-actions"
+                @click="open=!open"
+                :aria-expanded="open"
+                th:attr="aria-label='Actions for ' + ${bucket.name}"
+                aria-haspopup="true"
+              >
+                <i data-lucide="more-horizontal" aria-hidden="true"></i>
+              </button>
+              <div class="dropdown-menu" x-show="open" @click.outside="open=false" x-cloak>
+                <a class="dropdown-item" th:href="@{/buckets/{b}(b=${bucket.name})}">
+                  <i data-lucide="folder-open"></i>
+                  Browse
+                </a>
+                <button
+                  class="dropdown-item text-bad-500"
+                  th:attr="data-bucket=${bucket.name}"
+                  onclick="confirmDeleteBucket(this.dataset.bucket)"
+                >
+                  <i data-lucide="trash-2"></i>
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+          <dl class="bucket-metrics">
+            <div>
+              <dt>Storage used</dt>
+              <dd th:attr="data-bucket-size-for=${bucket.name}" data-stat-state="loading">
+                Loading…
+              </dd>
+            </div>
+            <div>
+              <dt>Objects</dt>
+              <dd th:attr="data-bucket-count-for=${bucket.name}" data-stat-state="loading">
+                Loading…
+              </dd>
+            </div>
+          </dl>
+          <div class="bucket-card-footer">
+            <span class="bucket-created">
+              <i data-lucide="calendar-days" aria-hidden="true"></i>
+              <span>
+                Created
+                <time
+                  th:if="${bucket.creationDate != null}"
+                  th:attr="datetime=${bucket.creationDate}"
+                  th:text="${#temporals.format(bucket.creationDate, 'MMM d, yyyy')}"
+                >
+                  date
+                </time>
+                <span th:if="${bucket.creationDate == null}">date unavailable</span>
+              </span>
+            </span>
+            <a
+              class="bucket-browse"
+              th:href="@{/buckets/{b}(b=${bucket.name})}"
+              th:attr="aria-label='Browse ' + ${bucket.name}"
+            >
+              Browse
+              <i data-lucide="arrow-up-right" aria-hidden="true"></i>
+            </a>
+          </div>
+        </article>
+      </section>
+      <section id="bucketTableView" class="panel hidden" th:if="${!#lists.isEmpty(buckets)}">
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th><button onclick="sortBucketTable('name')">Name</button></th>
+                <th><button onclick="sortBucketTable('created')">Created</button></th>
+                <th><button onclick="sortBucketTable('size')">Size</button></th>
+                <th><button onclick="sortBucketTable('count')">Objects</button></th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="bucketTableBody">
+              <tr
+                th:each="bucket : ${buckets}"
+                th:attr="data-name=${bucket.name},data-created=${bucket.creationDate != null ? bucket.creationDate.toEpochMilli() : 0},data-created-label=${bucket.creationDate != null ? #temporals.format(bucket.creationDate, 'yyyy-MM-dd') : 'Unknown date'},data-stats-state=loading"
+              >
+                <td>
+                  <a
+                    class="font-semibold hover:text-brand-600"
+                    th:href="@{/buckets/{b}(b=${bucket.name})}"
+                    th:text="${bucket.name}"
+                  >
+                    bucket
+                  </a>
+                </td>
+                <td
+                  class="text-slate-500"
+                  th:text="${bucket.creationDate != null ? #temporals.format(bucket.creationDate, 'yyyy-MM-dd') : 'Unknown date'}"
+                >
+                  date
+                </td>
+                <td class="text-slate-500" th:attr="data-bucket-size-for=${bucket.name}">
+                  Loading…
+                </td>
+                <td class="tabular-nums" th:attr="data-bucket-count-for=${bucket.name}">
+                  Loading…
+                </td>
+                <td>
+                  <button
+                    class="btn-danger"
+                    th:attr="data-bucket=${bucket.name}"
+                    onclick="confirmDeleteBucket(this.dataset.bucket)"
+                  >
+                    <i data-lucide="trash-2"></i>
+                    <span class="sr-only">Delete</span>
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+      <section th:if="${#lists.isEmpty(buckets) and error == null}" class="empty-state">
+        <div
+          class="mx-auto grid size-14 place-items-center rounded-full bg-brand-500/10 text-brand-700"
+        >
+          <i data-lucide="archive"></i>
+        </div>
+        <h2 class="mt-4 text-lg font-semibold">No buckets found</h2>
+        <p class="mt-1 text-sm text-slate-500">Create a bucket to start storing objects.</p>
+        <button class="btn-primary mt-5" onclick="openDialog('createBucketModal')">
+          <i data-lucide="plus"></i>
+          Create your first bucket
+        </button>
+      </section>
+    </main>
+    <div th:replace="~{fragments/shell :: s3ConfigDialog}"></div>
+    <div
+      id="createBucketModal"
+      class="modal-backdrop hidden"
+      aria-hidden="true"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="createBucketTitle"
+    >
+      <div class="modal-card">
+        <div class="modal-header">
+          <h2 id="createBucketTitle" class="font-semibold">New bucket</h2>
+          <button class="btn-icon" onclick="closeDialog('createBucketModal')">
+            <i data-lucide="x"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <label class="field-label" for="bucketName">Bucket name</label>
+          <input
+            id="bucketName"
+            class="input"
+            placeholder="my-bucket"
+            autocomplete="off"
+            data-autofocus
+          />
+          <p class="field-help">Bucket names must be lowercase and between 3 and 63 characters.</p>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-secondary" onclick="closeDialog('createBucketModal')">Cancel</button>
+          <button class="btn-primary" onclick="createBucket()">Create bucket</button>
+        </div>
+      </div>
+    </div>
+    <div
+      id="deleteBucketModal"
+      class="modal-backdrop hidden"
+      aria-hidden="true"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="deleteBucketTitle"
+    >
+      <div class="modal-card">
+        <div class="modal-header">
+          <h2 id="deleteBucketTitle" class="font-semibold text-bad-500">Delete bucket</h2>
+          <button class="btn-icon" onclick="closeDialog('deleteBucketModal')">
+            <i data-lucide="x"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <p>
+            Delete
+            <strong id="deleteBucketName"></strong>
+            ?
+          </p>
+          <div class="alert alert-warn mt-4">
+            This action cannot be undone. Make sure the bucket is empty first.
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-secondary" onclick="closeDialog('deleteBucketModal')">Cancel</button>
+          <button class="btn-danger" onclick="doDeleteBucket()">Delete</button>
+        </div>
+      </div>
+    </div>
+    <div th:replace="~{fragments/shell :: footer}"></div>
+    <div th:replace="~{fragments/shell :: scripts}"></div>
+    <script>
+      document.addEventListener('DOMContentLoaded', () => {
+        ensureS3ConfigDialog();
+        initBucketView();
+        loadBucketSizes();
+        document.querySelectorAll('.bucket-card[data-bucket-url]').forEach((c) =>
+          c.addEventListener('click', (e) => {
+            if (!e.target.closest('a,button')) location.href = c.dataset.bucketUrl;
+          }),
+        );
+      });
+      let _bucketToDelete = null,
+        _bucketSort = { key: 'name', dir: 'asc' };
+      function initBucketView() {
+        switchBucketView(localStorage.getItem('s3webui-bucket-view') || 'cards');
+      }
+      function switchBucketView(view) {
+        if (!['cards', 'table', 'pie'].includes(view)) view = 'cards';
+        document
+          .querySelectorAll('[id^=view][id$=Btn]')
+          .forEach((button) =>
+            button.setAttribute(
+              'aria-pressed',
+              String(button.id.toLowerCase() === 'view' + view + 'btn'),
+            ),
+          );
+        ['Cards', 'Pie', 'Table'].forEach((n) =>
+          document
+            .getElementById('bucket' + n + 'View')
+            ?.classList.toggle('hidden', n.toLowerCase() !== view),
+        );
+        localStorage.setItem('s3webui-bucket-view', view);
+      }
+      function formatBytes(n) {
+        n = Number(n || 0);
+        if (n < 1024) return n + ' B';
+        if (n < 1048576) return (n / 1024).toFixed(1) + ' KB';
+        if (n < 1073741824) return (n / 1048576).toFixed(1) + ' MB';
+        return (n / 1073741824).toFixed(2) + ' GB';
+      }
+      function setBucketStats(bucket, stats) {
+        const state = stats ? 'ready' : 'error';
+        for (const [attribute, value] of [
+          ['size', stats ? formatBytes(stats.totalSize) : 'Unavailable'],
+          ['count', stats ? Number(stats.objectCount).toLocaleString() : 'Unavailable'],
+        ]) {
+          document
+            .querySelectorAll(`[data-bucket-${attribute}-for="${CSS.escape(bucket)}"]`)
+            .forEach((element) => {
+              element.textContent = value;
+              element.dataset.statState = state;
+            });
+        }
+        const row = document.querySelector(
+          `#bucketTableBody tr[data-name="${CSS.escape(bucket)}"]`,
+        );
+        if (row) {
+          row.dataset.statsState = state;
+          if (stats) {
+            row.dataset.size = stats.totalSize;
+            row.dataset.count = stats.objectCount;
+          }
+        }
+        updateTotalBucketSize();
+        renderBucketPieChart();
+      }
+      function updateTotalBucketSize() {
+        const rows = [...document.querySelectorAll('#bucketTableBody tr')];
+        const summary = document.getElementById('totalBucketSize');
+        if (rows.some((row) => row.dataset.statsState === 'loading')) {
+          summary.textContent = 'Calculating storage…';
+          return;
+        }
+        const ready = rows.filter((row) => row.dataset.statsState === 'ready');
+        if (rows.length && !ready.length) {
+          summary.textContent = 'Storage statistics unavailable';
+          return;
+        }
+        const size = ready.reduce((sum, row) => sum + Number(row.dataset.size), 0);
+        const count = ready.reduce((sum, row) => sum + Number(row.dataset.count), 0);
+        summary.textContent = `${formatBytes(size)} used · ${count.toLocaleString()} ${count === 1 ? 'object' : 'objects'}${ready.length < rows.length ? ' (partial totals)' : ''}`;
+      }
+      async function loadBucketSizes() {
+        updateTotalBucketSize();
+        for (const row of document.querySelectorAll('#bucketTableBody tr[data-name]')) {
+          try {
+            const response = await apiFetch(
+              '/api/buckets/' + encodeURIComponent(row.dataset.name) + '/stats',
+            );
+            if (!response.ok) throw new Error('Statistics unavailable');
+            const stats = await response.json();
+            if (
+              [stats.totalSize, stats.objectCount].some(
+                (value) => value == null || !Number.isFinite(Number(value)) || Number(value) < 0,
+              )
+            ) {
+              throw new Error('Invalid statistics');
+            }
+            setBucketStats(row.dataset.name, stats);
+          } catch {
+            setBucketStats(row.dataset.name, null);
+          }
+        }
+      }
+      function sortBucketTable(key) {
+        const body = document.getElementById('bucketTableBody');
+        if (!body) return;
+        _bucketSort.dir = _bucketSort.key === key && _bucketSort.dir === 'asc' ? 'desc' : 'asc';
+        _bucketSort.key = key;
+        [...body.rows]
+          .sort((a, b) => {
+            let x = key === 'name' ? a.dataset.name : Number(a.dataset[key] || 0),
+              y = key === 'name' ? b.dataset.name : Number(b.dataset[key] || 0);
+            return (x > y ? 1 : x < y ? -1 : 0) * (_bucketSort.dir === 'asc' ? 1 : -1);
+          })
+          .forEach((r) => body.append(r));
+      }
+      function renderBucketPieChart() {
+        const chart = document.getElementById('bucketPieChart'),
+          legend = document.getElementById('bucketPieLegend');
+        if (!chart || !legend) return;
+        const rows = [...document.querySelectorAll('#bucketTableBody tr')],
+          items = rows.map((r, i) => ({
+            name: r.dataset.name,
+            size: Number(r.dataset.size || 0),
+            color: ['#079bb8', '#1c9b81', '#d99018', '#8b71d6', '#dc6a54'][i % 5],
+          })),
+          total = items.reduce((s, i) => s + i.size, 0);
+        if (!total) {
+          chart.innerHTML =
+            '<text x="180" y="180" text-anchor="middle" fill="currentColor">No size data</text>';
+          legend.textContent = 'No bucket size data available yet.';
+          return;
+        }
+        let start = -Math.PI / 2;
+        chart.innerHTML = '';
+        legend.innerHTML = '';
+        items.forEach((i) => {
+          const end = start + (i.size / total) * Math.PI * 2,
+            a = 160,
+            b = 160,
+            r = 120,
+            p1 = [a + r * Math.cos(start), b + r * Math.sin(start)],
+            p2 = [a + r * Math.cos(end), b + r * Math.sin(end)],
+            large = end - start > Math.PI ? 1 : 0;
+          chart.insertAdjacentHTML(
+            'beforeend',
+            `<path d="M ${a} ${b} L ${p1} A ${r} ${r} 0 ${large} 1 ${p2} Z" fill="${i.color}"><title>${i.name}: ${formatBytes(i.size)}</title></path>`,
+          );
+          legend.insertAdjacentHTML(
+            'beforeend',
+            `<a class="flex items-center justify-between gap-3 border-b py-2 last:border-0 hover:text-brand-600" href="${appUrl('/buckets/' + encodeURIComponent(i.name))}"><span class="truncate"><span class="mr-2 inline-block size-2.5 rounded-full" style="background:${i.color}"></span>${i.name}</span><span class="text-slate-500">${formatBytes(i.size)}</span></a>`,
+          );
+          start = end;
+        });
+      }
+      function confirmDeleteBucket(n) {
+        _bucketToDelete = n;
+        deleteBucketName.textContent = n;
+        openDialog('deleteBucketModal');
+      }
+      function doDeleteBucket() {
+        apiFetch('/api/buckets/' + encodeURIComponent(_bucketToDelete), { method: 'DELETE' })
+          .then(async (r) =>
+            r.ok
+              ? location.reload()
+              : showToast(await getResponseErrorMessage(r, 'Failed to delete bucket'), 'danger'),
+          )
+          .catch((e) => showToast(e.message, 'danger'));
+      }
+      function createBucket() {
+        const n = bucketName.value.trim();
+        if (!n) return;
+        apiFetch('/api/buckets?name=' + encodeURIComponent(n), { method: 'POST' })
+          .then(async (r) =>
+            r.ok
+              ? location.reload()
+              : showToast(await getResponseErrorMessage(r, 'Failed to create bucket'), 'danger'),
+          )
+          .catch((e) => showToast(e.message, 'danger'));
+      }
+    </script>
+  </body>
+</html>

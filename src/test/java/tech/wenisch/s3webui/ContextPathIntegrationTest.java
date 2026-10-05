@@ -11,6 +11,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
 import static org.hamcrest.Matchers.containsString;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.not;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -42,10 +43,10 @@ class ContextPathIntegrationTest {
     void templatesReceiveTheRuntimeContextPath(String contextPath) throws Exception {
         mockMvc.perform(get(contextPath + "/").contextPath(contextPath))
                 .andExpect(status().isOk())
-                .andExpect(content().string(containsString(
-                        "<meta name=\"s3webui-base-path\" content=\"" + contextPath + "\"/>")))
-                .andExpect(content().string(containsString(
-                        "<link rel=\"icon\" type=\"image/png\" href=\"" + contextPath + "/img/logo.png\"/>")))
+                .andExpect(result -> assertThat(result.getResponse().getContentAsString())
+                        .containsIgnoringWhitespaces(
+                                "<meta name=\"s3webui-base-path\" content=\"" + contextPath + "\"/>",
+                                "<link rel=\"icon\" type=\"image/png\" href=\"" + contextPath + "/img/logo.png\"/>"))
                 .andExpect(content().string(not(containsString("href=\"/img/logo.png\""))));
     }
 

@@ -1,2 +1,40 @@
-<!DOCTYPE html><html lang="en" xmlns:th="http://www.thymeleaf.org"><head th:replace="~{fragments/shell :: head('Access denied')}"></head>
-<body class="grid min-h-screen place-items-center p-4"><main class="w-full max-w-md text-center"><div class="panel"><div class="panel-body p-8"><div class="mx-auto grid size-14 place-items-center rounded-full bg-bad-500/10 text-bad-500"><i data-lucide="shield-alert"></i></div><p class="eyebrow mt-5">Authorization</p><h1 class="page-title">Access denied</h1><p class="page-copy">You do not have permission to access this page.</p><p th:if="${oidcRequiredRole != null and !oidcRequiredRole.isEmpty()}" class="mt-2 text-xs text-slate-500">Required role: <code th:text="${oidcRequiredRole}">role</code></p><div class="mt-6 flex justify-center gap-3"><a th:href="@{/}" class="btn-secondary"><i data-lucide="archive"></i>Home</a><form th:if="${oidcEnabled}" th:action="@{/logout}" method="post"><button class="btn-primary"><i data-lucide="log-out"></i>Sign out</button></form></div></div></div></main><div th:replace="~{fragments/shell :: scripts}"></div></body></html>
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+  <head th:replace="~{fragments/shell :: head('Access denied')}"></head>
+  <body class="grid min-h-screen place-items-center p-4">
+    <main class="w-full max-w-md text-center">
+      <div class="panel">
+        <div class="panel-body p-8">
+          <div
+            class="mx-auto grid size-14 place-items-center rounded-full bg-bad-500/10 text-bad-500"
+          >
+            <i data-lucide="shield-alert"></i>
+          </div>
+          <p class="eyebrow mt-5">Authorization</p>
+          <h1 class="page-title">Access denied</h1>
+          <p class="page-copy">You do not have permission to access this page.</p>
+          <p
+            th:if="${oidcRequiredRole != null and !oidcRequiredRole.isEmpty()}"
+            class="mt-2 text-xs text-slate-500"
+          >
+            Required role:
+            <code th:text="${oidcRequiredRole}">role</code>
+          </p>
+          <div class="mt-6 flex justify-center gap-3">
+            <a th:href="@{/}" class="btn-secondary">
+              <i data-lucide="archive"></i>
+              Home
+            </a>
+            <form th:if="${oidcEnabled}" th:action="@{/logout}" method="post">
+              <button class="btn-primary">
+                <i data-lucide="log-out"></i>
+                Sign out
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </main>
+    <div th:replace="~{fragments/shell :: scripts}"></div>
+  </body>
+</html>

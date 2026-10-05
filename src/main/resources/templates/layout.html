@@ -1,1 +1,10 @@
-<!DOCTYPE html><html lang="en" xmlns:th="http://www.thymeleaf.org"><head th:replace="~{fragments/shell :: head('S3WEBUI')}"></head><body><nav th:replace="~{fragments/shell :: topbar('buckets')}"></nav><main th:fragment="content" class="page"></main><div th:replace="~{fragments/shell :: footer}"></div><div th:replace="~{fragments/shell :: scripts}"></div></body></html>
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+  <head th:replace="~{fragments/shell :: head('S3WEBUI')}"></head>
+  <body>
+    <nav th:replace="~{fragments/shell :: topbar('buckets')}"></nav>
+    <main th:fragment="content" class="page"></main>
+    <div th:replace="~{fragments/shell :: footer}"></div>
+    <div th:replace="~{fragments/shell :: scripts}"></div>
+  </body>
+</html>

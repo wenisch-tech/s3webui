@@ -1,3 +1,92 @@
-<!DOCTYPE html><html lang="en" xmlns:th="http://www.thymeleaf.org"><head th:replace="~{fragments/shell :: head('Sign in')}"></head>
-<body class="grid min-h-screen place-items-center p-4" x-data="shell"><main class="w-full max-w-md"><div class="mb-7 text-center"><img th:src="@{/img/logo.png}" class="mx-auto h-14 w-14" alt="S3WEBUI logo"/><p class="eyebrow mt-4">Object storage interface</p><h1 class="page-title">S3WEBUI</h1><p class="page-copy">A focused workspace for your S3 storage.</p></div>
-<section class="panel"><div class="panel-body p-6"><div th:if="${loggedOut}" class="alert alert-success mb-4"><i data-lucide="check-circle-2"></i>You have been signed out successfully.</div><div th:if="${loginError}" class="alert alert-error mb-4"><i data-lucide="shield-alert"></i>Sign-in failed. Please check your credentials and try again.</div><div th:if="${oidcError}" class="alert alert-error mb-4"><i data-lucide="shield-alert"></i>Your identity provider signed you in, but no local account matches it. Ask an administrator for access.</div><h2 class="text-lg font-semibold">Welcome back</h2><p class="mt-1 text-sm text-slate-500">Sign in to continue.</p><form th:action="@{/login}" method="post" class="mt-6 grid gap-4"><label><span class="field-label">E-mail</span><input class="input" id="email" name="email" type="email" autocomplete="username" required autofocus/></label><label><span class="field-label">Password</span><input class="input" id="password" name="password" type="password" autocomplete="current-password" required/></label><button type="submit" class="btn-primary w-full"><i data-lucide="log-out" class="rotate-180"></i>Sign in</button></form><div th:if="${oidcEnabled and !#lists.isEmpty(oidcProviders)}"><div class="my-5 flex items-center gap-3 text-xs text-slate-500"><hr class="flex-1"/><span>or</span><hr class="flex-1"/></div><div class="grid gap-3"><a th:each="provider : ${oidcProviders}" th:href="@{${provider.authorizationUrl}}" class="btn-secondary w-full"><i data-lucide="shield-alert"></i><span th:text="'Sign in with ' + ${provider.name}">Sign in</span></a></div></div><p th:if="${oidcRequiredRole != null and !oidcRequiredRole.isEmpty()}" class="mt-5 text-center text-xs text-slate-500">Required role: <code th:text="${oidcRequiredRole}">role</code></p></div></section><div class="mt-4 flex justify-center"><button class="btn-icon" type="button" @click="toggleTheme()" aria-label="Toggle theme"><i :data-lucide="theme === 'dark' ? 'sun' : 'moon'"></i></button></div></main><div th:replace="~{fragments/shell :: scripts}"></div></body></html>
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+  <head th:replace="~{fragments/shell :: head('Sign in')}"></head>
+  <body class="grid min-h-screen place-items-center p-4" x-data="shell">
+    <main class="w-full max-w-md">
+      <div class="mb-7 text-center">
+        <img th:src="@{/img/logo.png}" class="mx-auto h-14 w-14" alt="S3WEBUI logo" />
+        <p class="eyebrow mt-4">Object storage interface</p>
+        <h1 class="page-title">S3WEBUI</h1>
+        <p class="page-copy">A focused workspace for your S3 storage.</p>
+      </div>
+      <section class="panel">
+        <div class="panel-body p-6">
+          <div th:if="${loggedOut}" class="alert alert-success mb-4">
+            <i data-lucide="check-circle-2"></i>
+            You have been signed out successfully.
+          </div>
+          <div th:if="${loginError}" class="alert alert-error mb-4">
+            <i data-lucide="shield-alert"></i>
+            Sign-in failed. Please check your credentials and try again.
+          </div>
+          <div th:if="${oidcError}" class="alert alert-error mb-4">
+            <i data-lucide="shield-alert"></i>
+            Your identity provider signed you in, but no local account matches it. Ask an
+            administrator for access.
+          </div>
+          <h2 class="text-lg font-semibold">Welcome back</h2>
+          <p class="mt-1 text-sm text-slate-500">Sign in to continue.</p>
+          <form th:action="@{/login}" method="post" class="mt-6 grid gap-4">
+            <label>
+              <span class="field-label">E-mail</span>
+              <input
+                class="input"
+                id="email"
+                name="email"
+                type="email"
+                autocomplete="username"
+                required
+                autofocus
+              />
+            </label>
+            <label>
+              <span class="field-label">Password</span>
+              <input
+                class="input"
+                id="password"
+                name="password"
+                type="password"
+                autocomplete="current-password"
+                required
+              />
+            </label>
+            <button type="submit" class="btn-primary w-full">
+              <i data-lucide="log-out" class="rotate-180"></i>
+              Sign in
+            </button>
+          </form>
+          <div th:if="${oidcEnabled and !#lists.isEmpty(oidcProviders)}">
+            <div class="my-5 flex items-center gap-3 text-xs text-slate-500">
+              <hr class="flex-1" />
+              <span>or</span>
+              <hr class="flex-1" />
+            </div>
+            <div class="grid gap-3">
+              <a
+                th:each="provider : ${oidcProviders}"
+                th:href="@{${provider.authorizationUrl}}"
+                class="btn-secondary w-full"
+              >
+                <i data-lucide="shield-alert"></i>
+                <span th:text="'Sign in with ' + ${provider.name}">Sign in</span>
+              </a>
+            </div>
+          </div>
+          <p
+            th:if="${oidcRequiredRole != null and !oidcRequiredRole.isEmpty()}"
+            class="mt-5 text-center text-xs text-slate-500"
+          >
+            Required role:
+            <code th:text="${oidcRequiredRole}">role</code>
+          </p>
+        </div>
+      </section>
+      <div class="mt-4 flex justify-center">
+        <button class="btn-icon" type="button" @click="toggleTheme()" aria-label="Toggle theme">
+          <i :data-lucide="theme === 'dark' ? 'sun' : 'moon'"></i>
+        </button>
+      </div>
+    </main>
+    <div th:replace="~{fragments/shell :: scripts}"></div>
+  </body>
+</html>
