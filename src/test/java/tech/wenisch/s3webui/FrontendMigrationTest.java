@@ -30,15 +30,23 @@ class FrontendMigrationTest {
     String buckets = Files.readString(Path.of("src/main/resources/templates/buckets.html"));
     String bucket = Files.readString(Path.of("src/main/resources/templates/bucket.html"));
     String frontend = Files.readString(Path.of("src/main/frontend/s3webui.js"));
+    String objectSort = Files.readString(Path.of("src/main/frontend/object-sort.mjs"));
 
     assertThat(buckets).contains("bucketCardsView", "bucketPieView", "bucketTableView",
         "createBucketModal", "deleteBucketModal");
     assertThat(bucket).contains("createFolderModal", "uploadModal", "renameModal",
         "deleteObjectModal", "folderNameError",
-        "bucketPolicyModal", "bucketCorsModal", "json-editor").doesNotContain("prompt(");
+        "bucketPolicyModal", "bucketCorsModal", "json-editor",
+        "data-object-sort-header=\"name\"", "data-object-sort-header=\"size\"",
+        "data-object-sort-header=\"lastModified\"", "aria-sort=\"none\"",
+        "id=\"objectTableBody\"", "data-object-name", "data-object-size",
+        "data-object-modified", "data-object-directory").doesNotContain("prompt(");
     assertThat(frontend).contains("data-theme", "openDialog", "closeDialog", "showToast",
-        "createJsonEditor", "hidePageLoading");
-    assertThat(Files.readString(Path.of("package.json"))).contains("@codemirror/lang-json");
+        "createJsonEditor", "createObjectTableSorter", "hidePageLoading");
+    assertThat(objectSort).contains("nextSortDirection", "compareObjectItems",
+        "sortObjectItems", "lastModified", "directory", "aria-sort");
+    assertThat(Files.readString(Path.of("package.json")))
+        .contains("@codemirror/lang-json", "node --test src/test/frontend/*.test.mjs");
   }
 
   @Test
