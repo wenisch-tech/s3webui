@@ -1,7 +1,7 @@
 import Alpine from 'alpinejs';
 import './upload.js';
 import { createJsonEditor } from './editor.js';
-import { createObjectTableFilter, createObjectTableSorter, syncObjectSelectAll,
+import { createObjectTableController, syncObjectSelectAll,
   toggleVisibleObjectSelection } from './object-sort.mjs';
 import { appUrl } from './url.js';
 import { createIcons, Archive, ArrowDownUp, Box, CheckCircle2, ChevronDown, Clock3,
@@ -16,10 +16,14 @@ const icons = { Archive, ArrowDownUp, Box, CheckCircle2, ChevronDown, Clock3, Cl
 
 window.createJsonEditor = createJsonEditor;
 window.appUrl = appUrl;
-window.filterObjectTable = createObjectTableFilter();
-window.sortObjectTable = createObjectTableSorter();
+const objectTable = createObjectTableController();
+window.filterObjectTable = query => objectTable.filter(query);
+window.sortObjectTable = key => objectTable.sort(key);
+window.goToObjectPage = page => objectTable.goToPage(page);
+window.setObjectPageSize = pageSize => objectTable.setPageSize(pageSize);
 window.syncObjectSelectAll = () => syncObjectSelectAll();
 window.toggleSelectAll = box => toggleVisibleObjectSelection(box.checked);
+objectTable.render();
 
 const preferredTheme = (() => { try { return localStorage.getItem('s3webui-theme') || 'light'; } catch { return 'light'; } })();
 function applyTheme(theme) {

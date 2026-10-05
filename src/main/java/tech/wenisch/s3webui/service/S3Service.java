@@ -19,8 +19,10 @@ import java.io.InputStream;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -59,49 +61,66 @@ public class S3Service {
             normalizedPrefix = normalizedPrefix + "/";
         }
 
-        var request = ListObjectsV2Request.builder()
-                .bucket(bucket)
-                .prefix(normalizedPrefix)
-                .delimiter("/")
-                .build();
+        var directories = new ArrayList<S3ObjectDto>();
+        var files = new ArrayList<S3ObjectDto>();
+        Set<String> continuationTokens = new HashSet<>();
+        String continuationToken = null;
 
-        var result = new ArrayList<S3ObjectDto>();
+        do {
+            var request = ListObjectsV2Request.builder()
+                    .bucket(bucket)
+                    .prefix(normalizedPrefix)
+                    .delimiter("/")
+                    .continuationToken(continuationToken)
+                    .build();
+            var response = s3Client.listObjectsV2(request);
 
-        var response = s3Client.listObjectsV2(request);
-
-        // Add "virtual folders" (common prefixes)
-        for (CommonPrefix cp : response.commonPrefixes()) {
-            String fullPrefix = cp.prefix();
-            String folderName = fullPrefix.substring(normalizedPrefix.length());
-            if (folderName.endsWith("/")) {
-                folderName = folderName.substring(0, folderName.length() - 1);
+            // Add "virtual folders" (common prefixes)
+            for (CommonPrefix cp : response.commonPrefixes()) {
+                String fullPrefix = cp.prefix();
+                String folderName = fullPrefix.substring(normalizedPrefix.length());
+                if (folderName.endsWith("/")) {
+                    folderName = folderName.substring(0, folderName.length() - 1);
+                }
+                directories.add(S3ObjectDto.builder()
+                        .key(fullPrefix)
+                        .name(folderName)
+                        .prefix(fullPrefix)
+                        .directory(true)
+                        .build());
             }
-            result.add(S3ObjectDto.builder()
-                    .key(fullPrefix)
-                    .name(folderName)
-                    .prefix(fullPrefix)
-                    .directory(true)
-                    .build());
-        }
 
-        // Add objects
-        for (S3Object obj : response.contents()) {
-            String key = obj.key();
-            if (key.equals(normalizedPrefix)) {
-                continue; // skip the prefix itself
+            // Add objects
+            for (S3Object obj : response.contents()) {
+                String key = obj.key();
+                if (key.equals(normalizedPrefix)) {
+                    continue; // skip the prefix itself
+                }
+                String name = key.substring(normalizedPrefix.length());
+                files.add(S3ObjectDto.builder()
+                        .key(key)
+                        .name(name)
+                        .size(obj.size())
+                        .lastModified(obj.lastModified())
+                        .storageClass(obj.storageClassAsString())
+                        .directory(false)
+                        .build());
             }
-            String name = key.substring(normalizedPrefix.length());
-            result.add(S3ObjectDto.builder()
-                    .key(key)
-                    .name(name)
-                    .size(obj.size())
-                    .lastModified(obj.lastModified())
-                    .storageClass(obj.storageClassAsString())
-                    .directory(false)
-                    .build());
-        }
 
-        return result;
+            if (!Boolean.TRUE.equals(response.isTruncated())) {
+                break;
+            }
+
+            continuationToken = response.nextContinuationToken();
+            if (continuationToken == null || continuationToken.isBlank()
+                    || !continuationTokens.add(continuationToken)) {
+                throw new IllegalStateException("S3 returned an invalid continuation token while listing bucket '"
+                        + bucket + "' with prefix '" + normalizedPrefix + "'");
+            }
+        } while (true);
+
+        directories.addAll(files);
+        return directories;
     }
 
     public ResponseInputStream<GetObjectResponse> getObject(String bucket, String key) {

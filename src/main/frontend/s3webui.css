@@ -59,7 +59,7 @@
   .panel-body { @apply p-4; }.panel-header { @apply flex min-h-12 items-center justify-between border-b px-4 py-3 text-sm font-semibold; }
   .btn { @apply inline-flex min-h-9 items-center justify-center gap-2 rounded-lg border px-3 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50; }
   .btn-primary { @apply inline-flex min-h-9 items-center justify-center gap-2 rounded-lg border border-transparent bg-brand-600 px-3 py-2 text-sm font-semibold text-white shadow-lg shadow-brand-600/15 transition hover:bg-brand-500; }
-  .btn-secondary { @apply inline-flex min-h-9 items-center justify-center gap-2 rounded-lg border border-slate-700/25 bg-white px-3 py-2 text-sm font-semibold text-slate-950 transition hover:border-slate-700/50 hover:bg-slate-800/5; }
+  .btn-secondary { @apply inline-flex min-h-9 items-center justify-center gap-2 rounded-lg border border-slate-700/25 bg-white px-3 py-2 text-sm font-semibold text-slate-950 transition hover:border-slate-700/50 hover:bg-slate-800/5 disabled:cursor-not-allowed disabled:opacity-50; }
   html[data-theme="dark"] .btn-secondary { @apply border-slate-700 bg-slate-850 text-slate-100 hover:bg-slate-800; }
   .btn-danger { @apply inline-flex min-h-9 items-center justify-center gap-2 rounded-lg border border-bad-500/25 bg-bad-500/10 px-3 py-2 text-sm font-semibold text-bad-500 transition hover:bg-bad-500/20; }
   .btn-icon { @apply inline-flex size-9 items-center justify-center rounded-lg border border-slate-700/20 text-slate-500 transition hover:bg-slate-800/8 hover:text-slate-950; }
