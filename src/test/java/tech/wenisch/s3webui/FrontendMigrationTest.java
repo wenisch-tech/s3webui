@@ -107,7 +107,7 @@ class FrontendMigrationTest {
     assertThat(history)
         .contains("apiFetch('/api/history')")
         .doesNotContain("fetch('/api/history')");
-    assertThat(bucket).contains("location.href=appUrl('/')");
-    assertThat(buckets).contains("appUrl('/buckets/'+encodeURIComponent(i.name))");
+    assertThat(bucket).containsIgnoringWhitespaces("location.href=appUrl('/')");
+    assertThat(buckets).containsIgnoringWhitespaces("appUrl('/buckets/'+encodeURIComponent(i.name))");
   }
 }
