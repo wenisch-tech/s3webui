@@ -204,7 +204,8 @@ Open **Settings → IAM** as an administrator and select an S3 key that is autho
 backend's identity-management API. The selected key is used for every IAM request, so changing the
 active S3 key can change both the visible identities and the operations you are allowed to perform.
 For RustFS, use the root credential or a credential with the corresponding `admin:*` actions; its
-built-in `consoleAdmin` policy supplies those permissions. See the official
+built-in `consoleAdmin` policy supplies those permissions. RustFS currently requires the root
+credential when creating a service-account key for a different IAM user. See the official
 [RustFS IAM overview](https://docs.rustfs.com/en/security-compliance/iam) for its identity and policy
 model. All IAM mutations are recorded in **History**.
 

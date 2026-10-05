@@ -146,6 +146,52 @@ class RustFsIamProviderTest {
     }
 
     @Test
+    void officialListShapesMapToTheExistingIamModels() {
+        respond("GET", "/rustfs/admin/v3/list-users", 200,
+                "{\"bob\":{\"status\":\"enabled\"},\"alice\":{\"status\":\"enabled\",\"updatedAt\":\"2026-01-02T03:04:05Z\"}}");
+        respond("GET", "/rustfs/admin/v3/groups", 200, "[\"ops\",\"devs\"]");
+        respond("GET", "/rustfs/admin/v3/list-canned-policies", 200,
+                "{\"readonly\":{\"Version\":\"2012-10-17\"},\"custom\":{\"Version\":\"2012-10-17\"}}");
+        respond("GET", "/rustfs/admin/v3/user-info?accessKey=alice", 200,
+                "{\"status\":\"enabled\",\"policyName\":\"readonly,custom\"}");
+        respond("GET", "/rustfs/admin/v3/group?group=devs", 200,
+                "{\"name\":\"devs\",\"members\":[],\"policy\":\"custom\"}");
+
+        assertEquals(List.of("alice", "bob"), provider.listUsers().stream().map(user -> user.userName()).toList());
+        assertEquals(List.of("devs", "ops"), provider.listGroups().stream().map(group -> group.groupName()).toList());
+        var policies = provider.listPolicies();
+        assertEquals(List.of("custom", "readonly"), policies.stream().map(policy -> policy.name()).toList());
+        assertTrue(policies.get(0).editable());
+        assertFalse(policies.get(1).editable());
+        assertEquals(List.of("custom", "readonly"), provider.listAttachedPolicies(IamTarget.user("alice"))
+                .stream().map(policy -> policy.name()).toList());
+        assertEquals(List.of("custom"), provider.listAttachedPolicies(IamTarget.group("devs"))
+                .stream().map(policy -> policy.name()).toList());
+    }
+
+    @Test
+    void emptyGroupsAndPolicyAttachmentsUseRustFsNativeBodies() {
+        respond("PUT", "/rustfs/admin/v3/update-group-members", 200, "");
+        respond("POST", "/rustfs/admin/v3/idp/builtin/policy/attach", 200, "{}");
+        respond("POST", "/rustfs/admin/v3/idp/builtin/policy/detach", 200, "{}");
+
+        provider.createGroup("devs");
+        provider.attachPolicy(IamTarget.user("alice"), "readonly");
+        provider.detachPolicy(IamTarget.group("devs"), "readonly");
+
+        JsonNode group = jsonNode(request("PUT", "/rustfs/admin/v3/update-group-members").body());
+        assertEquals("devs", group.path("group").asText());
+        assertEquals(0, group.path("members").size());
+        assertFalse(group.path("isRemove").asBoolean());
+        assertEquals("enabled", group.path("groupStatus").asText());
+        List<RecordedRequest> associations = requests.stream()
+                .filter(recorded -> recorded.pathAndQuery().contains("/idp/builtin/policy/"))
+                .toList();
+        assertTrue(associations.get(0).body().contains("\"user\":\"alice\""));
+        assertTrue(associations.get(1).body().contains("\"group\":\"devs\""));
+    }
+
+    @Test
     void accessKeyListingProtectsPrimaryAndIncludesServiceAccounts() {
         respond("GET", "/rustfs/admin/v3/user-info?accessKey=alice", 200,
                 "{\"status\":\"enabled\",\"updatedAt\":\"2026-01-02T03:04:05Z\"}");

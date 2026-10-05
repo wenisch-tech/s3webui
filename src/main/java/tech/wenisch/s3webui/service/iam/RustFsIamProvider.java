@@ -209,7 +209,7 @@ public class RustFsIamProvider implements IamProvider {
 
     private void putPolicy(String name, String document) {
         // The policy endpoint consumes the document itself, not a JSON wrapper.
-        client.put("/add-canned-policy", Map.of("name", name), new RawJson(document));
+        client.putRawJson("/add-canned-policy", Map.of("name", name), document);
     }
 
     private static Map<String, Object> association(IamTarget target, String policyId) {
@@ -346,7 +346,4 @@ public class RustFsIamProvider implements IamProvider {
         return root.getMessage() == null ? root.getClass().getSimpleName() : root.getMessage();
     }
 
-    /** Marker that asks the transport to send an already-validated JSON policy document raw. */
-    public record RawJson(String json) {
-    }
 }
