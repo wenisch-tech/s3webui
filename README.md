@@ -9,14 +9,9 @@
 A modern, clean graphical web interface for S3-compatible object storage, with local and optional OIDC authentication, audit history, administration, and client-side multipart upload. Built with Spring Boot, Tailwind CSS, Alpine.js, and Lucide.
 
 
-> [!IMPORTANT]
-> **By default, the application requires a sign-in.**
-> Earlier versions were open to everyone when `OIDC_ENABLED=false`. On first start a default
-> administrator `admin@s3webui.local` / `admin` is created and a warning is logged; change that
-> password immediately, or set `ADMIN_EMAIL` / `ADMIN_PASSWORD` before the first start.
-> S3 credentials are now managed in the administration panel rather than only through
-> `S3_ACCESS_KEY` / `S3_SECRET_KEY`. Set `DISABLE_AUTHENTICATION=true` only when the deployment is
-> protected by a trusted network boundary; it makes every visitor an administrator.
+
+![S3 Web UI product tour (dark theme)](docs/img/s3webui-tour-dark.gif)
+
 
 ## Table of contents
 
@@ -105,6 +100,7 @@ a real deployment.
 -  **Users & roles** — local accounts in an H2 or PostgreSQL database, with a seeded default administrator
 -  **IAM management** — optional admin section for the storage backend's users, groups, memberships, access keys, managed policies, policy attachments and inline policies
 -  **OIDC** — optional single-sign-on with role-based access control and multiple providers
+
 
 
 ## Upload flow
