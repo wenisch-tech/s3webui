@@ -1,5 +1,39 @@
 # Changelog
 
+## v1.5.0 - 2026-10-06
+
+## [1.5.0](https://github.com/wenisch-tech/s3webui/compare/v1.4.1...v1.5.0) (2026-10-06)
+
+
+### Features
+
+*  ([#50](https://github.com/wenisch-tech/s3webui/issues/50)) Addes search in buckets including virtual paths ([e0757cf](https://github.com/wenisch-tech/s3webui/commit/e0757cf2dc03dff02656b9b0a50b7459a813f39b))
+*  updated display of cards ([1a0f880](https://github.com/wenisch-tech/s3webui/commit/1a0f880aeb67f41cedb12579d6d911d568743c18))
+* added global search ([d1d3573](https://github.com/wenisch-tech/s3webui/commit/d1d3573ea080cc0ace800880c59974cd40454df8))
+* Added IAM Support for RustFS ([f6259bc](https://github.com/wenisch-tech/s3webui/commit/f6259bcd45174c854c696aa265701f34eb7097d4))
+* added sorting support for bucket listings ( ([#51](https://github.com/wenisch-tech/s3webui/issues/51)) ([6863c37](https://github.com/wenisch-tech/s3webui/commit/6863c373f4e1186ef836974e21ba307be58b2f60))
+* initial commit implementing search (only in current bucket / view ( ([#50](https://github.com/wenisch-tech/s3webui/issues/50)) ([747a11f](https://github.com/wenisch-tech/s3webui/commit/747a11f89121c4a3f01eb01edf093d21cb9e4841))
+
+
+### Bug Fixes
+
+* Ensure all files are properly loaded when having more than 1000 files ([#49](https://github.com/wenisch-tech/s3webui/issues/49)) and implemented pagination ([320d9ce](https://github.com/wenisch-tech/s3webui/commit/320d9ce6226f10c37228025c482f2c5cc766d3c7))
+* fixed identification of rustFS Endpoint ([90922b5](https://github.com/wenisch-tech/s3webui/commit/90922b561c02fdf17fe263545b7b674fdc7224a4))
+* minor changes to fonts and overall design ([e396f65](https://github.com/wenisch-tech/s3webui/commit/e396f658a409677f5fb070abe01a4a62ee213bff))
+* re-ordered top-menu ([e4dede7](https://github.com/wenisch-tech/s3webui/commit/e4dede7a47a13adce3ffb20cc1fe4cea314a5b6e))
+* updated GUI Tests regarding used fonts ([f5649f4](https://github.com/wenisch-tech/s3webui/commit/f5649f46d1def9aafd98b0da17847e0de97533b5))
+* updated tests for rustfs. ([3fb1e20](https://github.com/wenisch-tech/s3webui/commit/3fb1e20df7f6407b739fca54d180d9ec70d28653))
+
+
+### Documentation
+
+* updated Readme and replaced minio example with rustfs ([9621aa4](https://github.com/wenisch-tech/s3webui/commit/9621aa4b981a604a943bec79e9522b1d14de13d5))
+
+
+
+Docker image: ghcr.io/wenisch-tech/s3webui:1.5.0
+
+
 ## v1.4.1 - 2026-10-05
 
 ### [1.4.1](https://github.com/wenisch-tech/s3webui/compare/v1.4.0...v1.4.1) (2026-10-05)
