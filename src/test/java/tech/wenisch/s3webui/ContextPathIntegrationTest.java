@@ -61,19 +61,18 @@ class ContextPathIntegrationTest {
                 .andExpect(result -> assertThat(result.getResponse().getContentAsString())
                         .containsIgnoringWhitespaces(
                                 "<meta name=\"s3webui-base-path\" content=\"" + contextPath + "\"/>",
-                                "<link rel=\"icon\" type=\"image/png\" href=\"" + contextPath + "/img/logo.png\"/>",
-                                "href=\"" + contextPath + "/fonts/inter/InterVariable.woff2\""))
+                                "<link rel=\"icon\" type=\"image/png\" href=\"" + contextPath + "/img/logo.png\"/>"))
                 .andExpect(content().string(not(containsString("href=\"/img/logo.png\""))));
     }
 
     @ParameterizedTest
     @ValueSource(strings = {"/s3webui", "/foo/bar"})
     void bundledFontsAreServedUnderTheRuntimeContextPath(String contextPath) throws Exception {
-        mockMvc.perform(get(contextPath + "/fonts/inter/InterVariable.woff2")
+        mockMvc.perform(get(contextPath + "/fonts/jetbrains-mono/JetBrainsMono-Regular.woff2")
                         .contextPath(contextPath))
                 .andExpect(status().isOk())
                 .andExpect(result -> assertThat(result.getResponse().getContentAsByteArray().length)
-                        .isGreaterThan(300_000));
+                        .isGreaterThan(30_000));
     }
 
     @Test
