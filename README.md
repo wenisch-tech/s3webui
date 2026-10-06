@@ -92,6 +92,7 @@ a real deployment.
 
 -  **Browse buckets and folders** — list buckets with creation dates, navigate objects with breadcrumbs, and create virtual prefix-based folders
 -  **Search and sort objects** — filter the current folder's files and folders as you type; sort by name, size, or last modified date
+-  **Global file and folder search** — search names and paths across every bucket available to the selected S3 key, with a five-minute per-session catalog and manual refresh
 -  **File management** — upload with multipart progress and ETA, download objects, rename files without re-uploading, and delete objects or buckets
 -  **Create buckets** — create new buckets directly from the UI
 -  **Bucket policy editor** — read, edit and remove a bucket's IAM policy in a JSON editor with syntax highlighting and inline validation

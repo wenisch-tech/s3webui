@@ -110,4 +110,19 @@ class FrontendMigrationTest {
     assertThat(bucket).containsIgnoringWhitespaces("location.href=appUrl('/')");
     assertThat(buckets).containsIgnoringWhitespaces("appUrl('/buckets/'+encodeURIComponent(i.name))");
   }
+
+  @Test
+  void globalSearchIsWiredToTheLandingBucketAndResultsViews() throws IOException {
+    String buckets = Files.readString(Path.of("src/main/resources/templates/buckets.html"));
+    String bucket = Files.readString(Path.of("src/main/resources/templates/bucket.html"));
+    String search = Files.readString(Path.of("src/main/resources/templates/search.html"));
+    String frontend = Files.readString(Path.of("src/main/frontend/s3webui.js"));
+
+    assertThat(buckets).contains("data-global-search", "globalSearchInput", "globalSearchSuggestions");
+    assertThat(bucket).contains("data-object-key", "object-search-highlight", "HIGHLIGHT_OBJECT_KEY");
+    assertThat(search).contains("Refresh index", "searchResults.results", "pageCount",
+        "highlight=${result.key}");
+    assertThat(frontend).contains("initGlobalSearch", "globalSearchResultPath", "data-search-selectable",
+        "setTimeout(() => search(query), 300)", "globalSearchPagePath(query)");
+  }
 }

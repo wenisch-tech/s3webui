@@ -69,6 +69,39 @@
           </button>
         </div>
       </header>
+      <section
+        class="global-search-shell"
+        data-global-search
+        th:if="${activeCredentialName != null}"
+        aria-label="Global file and folder search"
+      >
+        <form class="global-search-form" th:action="@{/search}" method="get" role="search">
+          <label class="sr-only" for="globalSearchInput">Search all buckets</label>
+          <i data-lucide="search" class="global-search-leading-icon" aria-hidden="true"></i>
+          <input
+            id="globalSearchInput"
+            class="global-search-input"
+            name="q"
+            type="search"
+            minlength="2"
+            maxlength="200"
+            autocomplete="off"
+            placeholder="Search files and folders in all buckets…"
+            role="combobox"
+            aria-autocomplete="list"
+            aria-controls="globalSearchSuggestions"
+            aria-expanded="false"
+          />
+          <span class="global-search-hint">Enter</span>
+        </form>
+        <div
+          id="globalSearchSuggestions"
+          class="global-search-suggestions hidden"
+          role="listbox"
+          aria-label="Search suggestions"
+        ></div>
+        <p class="sr-only" data-global-search-live aria-live="polite" aria-atomic="true"></p>
+      </section>
       <section id="bucketPieView" class="hidden" th:if="${!#lists.isEmpty(buckets)}">
         <div class="grid gap-4 xl:grid-cols-[minmax(0,1fr)_20rem]">
           <div class="panel flex min-h-80 items-center justify-center p-4">

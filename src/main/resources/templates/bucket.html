@@ -144,7 +144,8 @@
             <tbody id="objectTableBody">
               <tr
                 th:each="obj : ${objects}"
-                th:attr="data-object-name=${obj.name},data-object-size=${obj.size},data-object-modified=${obj.lastModified != null ? obj.lastModified.toEpochMilli() : ''},data-object-directory=${obj.directory}"
+                th:classappend="${obj.key == highlight} ? 'object-search-highlight'"
+                th:attr="data-object-name=${obj.name},data-object-key=${obj.key},data-object-size=${obj.size},data-object-modified=${obj.lastModified != null ? obj.lastModified.toEpochMilli() : ''},data-object-directory=${obj.directory}"
               >
                 <td>
                   <input
@@ -533,10 +534,25 @@
     <script th:inline="javascript">
       window.BUCKET = /*[[${bucket}]]*/ '';
       window.PREFIX = /*[[${prefix}]]*/ '';
+      window.HIGHLIGHT_OBJECT_KEY = /*[[${highlight}]]*/ '';
     </script>
     <div th:replace="~{fragments/shell :: scripts}"></div>
     <script>
-      document.addEventListener('DOMContentLoaded', () => ensureS3ConfigDialog());
+      document.addEventListener('DOMContentLoaded', () => {
+        ensureS3ConfigDialog();
+        if (window.HIGHLIGHT_OBJECT_KEY) {
+          const highlighted = document.querySelector('.object-search-highlight');
+          if (highlighted) {
+            const name = highlighted.dataset.objectName || '';
+            const searchInput = document.getElementById('objectSearch');
+            if (searchInput && name) {
+              searchInput.value = name;
+              filterObjectTable(name);
+            }
+            requestAnimationFrame(() => highlighted.scrollIntoView({ block: 'center' }));
+          }
+        }
+      });
       let deleteKey = null,
         renameKey = null;
       function confirmDeleteCurrentBucket() {

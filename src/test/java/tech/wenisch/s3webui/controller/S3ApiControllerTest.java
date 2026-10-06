@@ -6,6 +6,7 @@ import org.springframework.mock.web.MockHttpServletRequest;
 import tech.wenisch.s3webui.model.CorsRuleDto;
 import tech.wenisch.s3webui.service.AuditHistoryService;
 import tech.wenisch.s3webui.service.S3Service;
+import tech.wenisch.s3webui.service.GlobalSearchService;
 import tools.jackson.databind.json.JsonMapper;
 
 import java.nio.charset.StandardCharsets;
@@ -26,6 +27,19 @@ import static org.mockito.Mockito.when;
 class S3ApiControllerTest {
 
     private final JsonMapper jsonMapper = JsonMapper.builder().build();
+
+    @Test
+    void successfulObjectMutationInvalidatesTheSessionSearchCatalog() {
+        S3Service s3Service = mock(S3Service.class);
+        AuditHistoryService auditHistoryService = mock(AuditHistoryService.class);
+        GlobalSearchService searchService = mock(GlobalSearchService.class);
+        S3ApiController controller = new S3ApiController(s3Service, auditHistoryService, jsonMapper);
+        controller.setGlobalSearchService(searchService);
+
+        controller.deleteObject("bucket-a", "folder/file.txt", null);
+
+        verify(searchService).invalidate();
+    }
 
     @Test
     void createBucketRecordsFailureInAuditHistory() {

@@ -5,11 +5,13 @@ import tech.wenisch.s3webui.model.CompleteMultipartRequest;
 import tech.wenisch.s3webui.model.CorsRuleDto;
 import tech.wenisch.s3webui.model.S3ObjectDto;
 import tech.wenisch.s3webui.service.AuditHistoryService;
+import tech.wenisch.s3webui.service.GlobalSearchService;
 import tech.wenisch.s3webui.service.S3Service;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -38,6 +40,12 @@ public class S3ApiController {
     private final S3Service s3Service;
     private final AuditHistoryService auditHistoryService;
     private final JsonMapper jsonMapper;
+    private GlobalSearchService globalSearchService;
+
+    @Autowired
+    void setGlobalSearchService(GlobalSearchService globalSearchService) {
+        this.globalSearchService = globalSearchService;
+    }
 
     // ── Buckets ────────────────────────────────────────────────────────────
 
@@ -45,6 +53,7 @@ public class S3ApiController {
     public ResponseEntity<Void> createBucket(@RequestParam String name, Principal principal) {
         try {
             s3Service.createBucket(name);
+            invalidateSearchCatalog();
             auditHistoryService.record(username(principal), "CREATE", "BUCKET", name, null, "Created bucket");
         } catch (Exception ex) {
             recordFailure(principal, "CREATE", "BUCKET", name, null, ex);
@@ -57,6 +66,7 @@ public class S3ApiController {
     public ResponseEntity<Void> deleteBucket(@PathVariable String bucket, Principal principal) {
         try {
             s3Service.deleteBucket(bucket);
+            invalidateSearchCatalog();
             auditHistoryService.record(username(principal), "DELETE", "BUCKET", bucket, null, "Deleted bucket");
         } catch (Exception ex) {
             recordFailure(principal, "DELETE", "BUCKET", bucket, null, ex);
@@ -81,6 +91,7 @@ public class S3ApiController {
             Principal principal) {
         try {
             s3Service.deleteObject(bucket, key);
+            invalidateSearchCatalog();
             auditHistoryService.record(username(principal), "DELETE", "OBJECT", bucket, key, "Deleted object");
         } catch (Exception ex) {
             recordFailure(principal, "DELETE", "OBJECT", bucket, key, ex);
@@ -97,6 +108,7 @@ public class S3ApiController {
             Principal principal) {
         try {
             s3Service.renameObject(bucket, oldKey, newKey);
+            invalidateSearchCatalog();
             auditHistoryService.record(username(principal), "EDIT", "OBJECT", bucket, newKey,
                     "Renamed object from '" + oldKey + "' to '" + newKey + "'");
         } catch (Exception ex) {
@@ -139,6 +151,7 @@ public class S3ApiController {
         try {
             s3Service.putObject(bucket, key, file.getInputStream(),
                 file.getSize(), file.getContentType());
+            invalidateSearchCatalog();
             auditHistoryService.record(username(principal), "CREATE", "OBJECT", bucket, key, "Uploaded object");
         } catch (Exception ex) {
             recordFailure(principal, "CREATE", "OBJECT", bucket, key, ex);
@@ -202,6 +215,7 @@ public class S3ApiController {
         request.setKey(key);
         try {
             s3Service.completeMultipartUpload(bucket, key, request.getUploadId(), request.getParts());
+            invalidateSearchCatalog();
             auditHistoryService.record(username(principal), "CREATE", "OBJECT", bucket, key,
                     "Completed multipart upload");
         } catch (Exception ex) {
@@ -325,6 +339,12 @@ public class S3ApiController {
 
     private String username(Principal principal) {
         return principal == null ? null : principal.getName();
+    }
+
+    private void invalidateSearchCatalog() {
+        if (globalSearchService != null) {
+            globalSearchService.invalidate();
+        }
     }
 
     private void recordFailure(
