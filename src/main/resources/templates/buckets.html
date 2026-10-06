@@ -212,10 +212,30 @@
           <table class="data-table">
             <thead>
               <tr>
-                <th><button onclick="sortBucketTable('name')">Name</button></th>
-                <th><button onclick="sortBucketTable('created')">Created</button></th>
-                <th><button onclick="sortBucketTable('size')">Size</button></th>
-                <th><button onclick="sortBucketTable('count')">Objects</button></th>
+                <th data-bucket-sort-header="name" aria-sort="ascending">
+                  <button class="table-sort-button" aria-label="Sort by Name descending" onclick="sortBucketTable('name')">
+                    Name
+                    <i data-lucide="arrow-up" data-bucket-sort-indicator aria-hidden="true"></i>
+                  </button>
+                </th>
+                <th data-bucket-sort-header="created" aria-sort="none">
+                  <button class="table-sort-button" aria-label="Sort by Created ascending" onclick="sortBucketTable('created')">
+                    Created
+                    <i data-lucide="arrow-down-up" data-bucket-sort-indicator aria-hidden="true"></i>
+                  </button>
+                </th>
+                <th data-bucket-sort-header="size" aria-sort="none">
+                  <button class="table-sort-button" aria-label="Sort by Size ascending" onclick="sortBucketTable('size')">
+                    Size
+                    <i data-lucide="arrow-down-up" data-bucket-sort-indicator aria-hidden="true"></i>
+                  </button>
+                </th>
+                <th data-bucket-sort-header="count" aria-sort="none">
+                  <button class="table-sort-button" aria-label="Sort by Objects ascending" onclick="sortBucketTable('count')">
+                    Objects
+                    <i data-lucide="arrow-down-up" data-bucket-sort-indicator aria-hidden="true"></i>
+                  </button>
+                </th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -226,7 +246,7 @@
               >
                 <td>
                   <a
-                    class="font-semibold hover:text-brand-600"
+                    class="font-medium hover:text-brand-700"
                     th:href="@{/buckets/{b}(b=${bucket.name})}"
                     th:text="${bucket.name}"
                   >
@@ -266,7 +286,7 @@
         >
           <i data-lucide="archive"></i>
         </div>
-        <h2 class="mt-4 text-lg font-semibold">No buckets found</h2>
+        <h2 class="empty-title mt-4">No buckets found</h2>
         <p class="mt-1 text-sm text-slate-500">Create a bucket to start storing objects.</p>
         <button class="btn-primary mt-5" onclick="openDialog('createBucketModal')">
           <i data-lucide="plus"></i>
@@ -285,8 +305,8 @@
     >
       <div class="modal-card">
         <div class="modal-header">
-          <h2 id="createBucketTitle" class="font-semibold">New bucket</h2>
-          <button class="btn-icon" onclick="closeDialog('createBucketModal')">
+          <h2 id="createBucketTitle" class="modal-title">New bucket</h2>
+          <button class="btn-icon" onclick="closeDialog('createBucketModal')" aria-label="Close">
             <i data-lucide="x"></i>
           </button>
         </div>
@@ -317,8 +337,8 @@
     >
       <div class="modal-card">
         <div class="modal-header">
-          <h2 id="deleteBucketTitle" class="font-semibold text-bad-500">Delete bucket</h2>
-          <button class="btn-icon" onclick="closeDialog('deleteBucketModal')">
+          <h2 id="deleteBucketTitle" class="modal-title text-bad-500">Delete bucket</h2>
+          <button class="btn-icon" onclick="closeDialog('deleteBucketModal')" aria-label="Close">
             <i data-lucide="x"></i>
           </button>
         </div>
@@ -456,6 +476,24 @@
             return (x > y ? 1 : x < y ? -1 : 0) * (_bucketSort.dir === 'asc' ? 1 : -1);
           })
           .forEach((r) => body.append(r));
+        document.querySelectorAll('[data-bucket-sort-header]').forEach((header) => {
+          const active = header.dataset.bucketSortHeader === key;
+          header.setAttribute('aria-sort', active ? `${_bucketSort.dir}ending` : 'none');
+          const button = header.querySelector('button');
+          const label = button?.textContent.trim().replace(/[↕↑↓]/g, '').trim();
+          if (button) {
+            const next = active && _bucketSort.dir === 'asc' ? 'descending' : 'ascending';
+            button.setAttribute('aria-label', `Sort by ${label} ${next}`);
+          }
+          const indicator = header.querySelector('[data-bucket-sort-indicator]');
+          if (indicator) {
+            indicator.setAttribute(
+              'data-lucide',
+              active ? (_bucketSort.dir === 'asc' ? 'arrow-up' : 'arrow-down') : 'arrow-down-up',
+            );
+          }
+        });
+        refreshIcons();
       }
       function renderBucketPieChart() {
         const chart = document.getElementById('bucketPieChart'),

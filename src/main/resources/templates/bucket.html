@@ -12,19 +12,15 @@
         <i data-lucide="shield-alert"></i>
         <span th:text="${error}">Error</span>
       </div>
-      <nav
-        class="mb-5 flex flex-wrap items-center gap-2 text-sm text-slate-500"
-        aria-label="Breadcrumb"
-      >
-        <a class="hover:text-brand-600" th:href="@{/}" th:text="${s3BreadcrumbLabel}">S3</a>
-        <span>/</span>
-        <a class="hover:text-brand-600" th:href="@{/buckets/{b}(b=${bucket})}" th:text="${bucket}">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a th:href="@{/}" th:text="${s3BreadcrumbLabel}">S3</a>
+        <i data-lucide="chevron-right" aria-hidden="true"></i>
+        <a th:href="@{/buckets/{b}(b=${bucket})}" th:text="${bucket}">
           bucket
         </a>
         <th:block th:each="crumb : ${breadcrumbs}">
-          <span>/</span>
+          <i data-lucide="chevron-right" aria-hidden="true"></i>
           <a
-            class="hover:text-brand-600"
             th:href="@{/buckets/{b}(b=${bucket}, prefix=${crumb.prefix})}"
             th:text="${crumb.name}"
           >
@@ -176,7 +172,7 @@
                 <td>
                   <a
                     th:if="${obj.directory}"
-                    class="flex items-center gap-2 font-semibold hover:text-brand-600"
+                    class="flex items-center gap-2 font-medium hover:text-brand-700"
                     th:href="@{/buckets/{b}(b=${bucket}, prefix=${obj.prefix})}"
                   >
                     <i data-lucide="folder"></i>
@@ -204,6 +200,7 @@
                     <a
                       class="btn-icon"
                       title="Download"
+                      th:attr="aria-label='Download ' + ${obj.name}"
                       th:href="@{/api/buckets/{b}/objects/download(b=${bucket}, key=${obj.key})}"
                     >
                       <i data-lucide="download"></i>
@@ -211,7 +208,7 @@
                     <button
                       class="btn-icon"
                       title="Rename"
-                      th:attr="data-key=${obj.key},data-name=${obj.name}"
+                      th:attr="data-key=${obj.key},data-name=${obj.name},aria-label='Rename ' + ${obj.name}"
                       onclick="openRenameModal(this.dataset.key, this.dataset.name)"
                     >
                       <i data-lucide="pencil"></i>
@@ -219,7 +216,7 @@
                     <button
                       class="btn-icon text-bad-500"
                       title="Delete"
-                      th:attr="data-key=${obj.key}"
+                      th:attr="data-key=${obj.key},aria-label='Delete ' + ${obj.name}"
                       onclick="confirmDeleteObject(this.dataset.key)"
                     >
                       <i data-lucide="trash-2"></i>
@@ -274,7 +271,7 @@
         >
           <i data-lucide="folder-open"></i>
         </div>
-        <h2 class="mt-4 text-lg font-semibold">This bucket is empty</h2>
+        <h2 class="empty-title mt-4">This bucket is empty</h2>
         <p class="mt-1 text-sm text-slate-500">Upload files or create a folder to get started.</p>
         <button
           class="btn-primary mt-5"
@@ -298,8 +295,8 @@
     >
       <div class="modal-card">
         <div class="modal-header">
-          <h2 class="font-semibold">New folder</h2>
-          <button class="btn-icon" onclick="closeDialog('createFolderModal')">
+          <h2 class="modal-title">New folder</h2>
+          <button class="btn-icon" onclick="closeDialog('createFolderModal')" aria-label="Close">
             <i data-lucide="x"></i>
           </button>
         </div>
@@ -323,8 +320,8 @@
     >
       <div class="modal-card max-w-2xl">
         <div class="modal-header">
-          <h2 class="font-semibold">Upload files</h2>
-          <button id="uploadCloseBtn" class="btn-icon" onclick="closeDialog('uploadModal')">
+          <h2 class="modal-title">Upload files</h2>
+          <button id="uploadCloseBtn" class="btn-icon" onclick="closeDialog('uploadModal')" aria-label="Close">
             <i data-lucide="x"></i>
           </button>
         </div>
@@ -390,8 +387,8 @@
     >
       <div class="modal-card">
         <div class="modal-header">
-          <h2 class="font-semibold">Rename object</h2>
-          <button class="btn-icon" onclick="closeDialog('renameModal')">
+          <h2 class="modal-title">Rename object</h2>
+          <button class="btn-icon" onclick="closeDialog('renameModal')" aria-label="Close">
             <i data-lucide="x"></i>
           </button>
         </div>
@@ -414,8 +411,8 @@
     >
       <div class="modal-card">
         <div class="modal-header">
-          <h2 class="font-semibold text-bad-500">Delete object</h2>
-          <button class="btn-icon" onclick="closeDialog('deleteObjectModal')">
+          <h2 class="modal-title text-bad-500">Delete object</h2>
+          <button class="btn-icon" onclick="closeDialog('deleteObjectModal')" aria-label="Close">
             <i data-lucide="x"></i>
           </button>
         </div>
@@ -442,8 +439,8 @@
     >
       <div class="modal-card">
         <div class="modal-header">
-          <h2 class="font-semibold text-bad-500">Delete bucket</h2>
-          <button class="btn-icon" onclick="closeDialog('deleteBucketModal')">
+          <h2 class="modal-title text-bad-500">Delete bucket</h2>
+          <button class="btn-icon" onclick="closeDialog('deleteBucketModal')" aria-label="Close">
             <i data-lucide="x"></i>
           </button>
         </div>
@@ -472,11 +469,11 @@
     >
       <div class="modal-card max-w-3xl">
         <div class="modal-header">
-          <h2 class="font-semibold">
+          <h2 class="modal-title">
             <i data-lucide="scroll-text"></i>
             Bucket policy
           </h2>
-          <button class="btn-icon" onclick="closeDialog('bucketPolicyModal')">
+          <button class="btn-icon" onclick="closeDialog('bucketPolicyModal')" aria-label="Close">
             <i data-lucide="x"></i>
           </button>
         </div>
@@ -515,11 +512,11 @@
     >
       <div class="modal-card max-w-3xl">
         <div class="modal-header">
-          <h2 class="font-semibold">
+          <h2 class="modal-title">
             <i data-lucide="globe"></i>
             CORS configuration
           </h2>
-          <button class="btn-icon" onclick="closeDialog('bucketCorsModal')">
+          <button class="btn-icon" onclick="closeDialog('bucketCorsModal')" aria-label="Close">
             <i data-lucide="x"></i>
           </button>
         </div>

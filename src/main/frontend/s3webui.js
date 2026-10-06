@@ -7,15 +7,25 @@ import { appUrl } from './url.js';
 import { globalSearchPagePath, globalSearchResultPath } from './global-search.mjs';
 import { bucketSearchApiPath, formatObjectSize, relativeBucketResultParent,
   relativeBucketResultPath } from './bucket-search.mjs';
-import { createIcons, Archive, ArrowDownUp, ArrowUpRight, Box, CheckCircle2, ChevronDown, Clock3,
-  CloudUpload, Copy, Download, Eye, File, Folder, FolderOpen, FolderPlus, Globe, History, Info, LayoutGrid, LogOut,
+import { createIcons, Archive, ArrowDown, ArrowDownUp, ArrowUp, ArrowUpRight, Box, CalendarDays, CheckCircle2,
+  ChevronDown, ChevronLeft, ChevronRight, Clock3, CloudUpload, Copy, Download, Eye, File, Folder, FolderOpen,
+  FolderPlus, Globe, History, Info, LayoutGrid, LogIn, LogOut,
   Key, KeyRound, Link2, Menu, Moon, MoreHorizontal, Network, Pencil, PieChart, Plus, RefreshCw, Search, SearchX, ScrollText, Settings,
   ShieldAlert, ShieldCheck, Sun, Table2, Trash2, Unlink2, Upload, UserCircle, UserPlus, Users, X } from 'lucide';
 
-const icons = { Archive, ArrowDownUp, ArrowUpRight, Box, CheckCircle2, ChevronDown, Clock3, CloudUpload, Copy, Eye,
+const icons = { Archive, ArrowDown, ArrowDownUp, ArrowUp, ArrowUpRight, Box, CalendarDays, CheckCircle2,
+  ChevronDown, ChevronLeft, ChevronRight, Clock3, CloudUpload, Copy, Eye,
   Download, File, Folder, FolderOpen, FolderPlus, Globe, History, Info, Key, KeyRound, Link2, LayoutGrid, LogOut,
-  Menu, Moon, MoreHorizontal, Network, Pencil, PieChart, Plus, RefreshCw, Search, SearchX, ScrollText, Settings, ShieldAlert, ShieldCheck,
+  LogIn, Menu, Moon, MoreHorizontal, Network, Pencil, PieChart, Plus, RefreshCw, Search, SearchX, ScrollText, Settings, ShieldAlert, ShieldCheck,
   Sun, Table2, Trash2, Unlink2, Upload, UserCircle, UserPlus, Users, X };
+
+function renderIcons() {
+  createIcons({ icons });
+  document.querySelectorAll('svg[data-lucide]').forEach(icon => icon.setAttribute('aria-hidden', 'true'));
+  document.querySelectorAll('.btn-icon[title]:not([aria-label])').forEach(button => {
+    button.setAttribute('aria-label', button.title);
+  });
+}
 
 window.createJsonEditor = createJsonEditor;
 window.appUrl = appUrl;
@@ -37,12 +47,12 @@ applyTheme(preferredTheme);
 
 Alpine.data('shell', () => ({ mobileOpen: false, menuOpen: false, theme: preferredTheme,
   toggleTheme() { this.theme = this.theme === 'dark' ? 'light' : 'dark'; applyTheme(this.theme); try { localStorage.setItem('s3webui-theme', this.theme); } catch {} },
-  init() { document.addEventListener('s3webui:themechange', () => this.$nextTick(() => createIcons({ icons }))); }
+  init() { document.addEventListener('s3webui:themechange', () => this.$nextTick(renderIcons)); }
 }));
 window.Alpine = Alpine;
-document.addEventListener('alpine:initialized', () => createIcons({ icons }));
+document.addEventListener('alpine:initialized', renderIcons);
 Alpine.start();
-window.refreshIcons = () => createIcons({ icons });
+window.refreshIcons = renderIcons;
 
 window.showPageLoading = () => {
   const loader = document.getElementById('pageLoader');
@@ -146,7 +156,7 @@ function createBucketSearchResultRow(result) {
   const nameCell = document.createElement('td');
   const content = isFolder ? document.createElement('a') : document.createElement('div');
   content.className = isFolder
-    ? 'flex min-w-0 items-center gap-2 font-semibold hover:text-brand-600'
+    ? 'flex min-w-0 items-center gap-2 font-medium hover:text-brand-700'
     : 'flex min-w-0 items-center gap-2';
   if (isFolder) content.href = appUrl(globalSearchResultPath(result));
   const icon = document.createElement('i');
@@ -494,4 +504,4 @@ function initGlobalSearch() {
 }
 document.addEventListener('DOMContentLoaded', initGlobalSearch);
 
-window.showToast = (message, type = 'info') => { const container = document.getElementById('toastContainer'); if (!container) return; const toast = document.createElement('div'); toast.className = `toast ${type}`; toast.setAttribute('role', 'status'); toast.innerHTML = `<span>${String(message || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}</span><button class="btn-icon shrink-0" aria-label="Dismiss"><i data-lucide="x"></i></button>`; toast.querySelector('button').onclick = () => toast.remove(); container.appendChild(toast); createIcons({ icons, attrs: { width: 16, height: 16 } }); setTimeout(() => toast.remove(), 4500); };
+window.showToast = (message, type = 'info') => { const container = document.getElementById('toastContainer'); if (!container) return; const toast = document.createElement('div'); toast.className = `toast ${type}`; toast.setAttribute('role', 'status'); toast.innerHTML = `<span>${String(message || '').replace(/[<>"'&]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}</span><button class="btn-icon shrink-0" aria-label="Dismiss"><i data-lucide="x"></i></button>`; toast.querySelector('button').onclick = () => toast.remove(); container.appendChild(toast); renderIcons(); setTimeout(() => toast.remove(), 4500); };

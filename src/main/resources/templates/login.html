@@ -24,7 +24,7 @@
             Your identity provider signed you in, but no local account matches it. Ask an
             administrator for access.
           </div>
-          <h2 class="text-lg font-semibold">Welcome back</h2>
+          <h2 class="section-title">Welcome back</h2>
           <p class="mt-1 text-sm text-slate-500">Sign in to continue.</p>
           <form th:action="@{/login}" method="post" class="mt-6 grid gap-4">
             <label>
@@ -51,7 +51,7 @@
               />
             </label>
             <button type="submit" class="btn-primary w-full">
-              <i data-lucide="log-out" class="rotate-180"></i>
+              <i data-lucide="log-in" aria-hidden="true"></i>
               Sign in
             </button>
           </form>
