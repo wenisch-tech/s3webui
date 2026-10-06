@@ -12,6 +12,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.CacheControl;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -82,6 +83,16 @@ public class S3ApiController {
             @PathVariable String bucket,
             @RequestParam(required = false, defaultValue = "") String prefix) {
         return ResponseEntity.ok(s3Service.listObjects(bucket, prefix));
+    }
+
+    @GetMapping("/buckets/{bucket}/objects/search")
+    public ResponseEntity<GlobalSearchService.BucketSearchPage> searchObjects(
+            @PathVariable String bucket,
+            @RequestParam(name = "q") String query,
+            @RequestParam(required = false, defaultValue = "") String prefix) {
+        return ResponseEntity.ok()
+                .cacheControl(CacheControl.noStore())
+                .body(globalSearchService.searchBucket(bucket, prefix, query));
     }
 
     @DeleteMapping("/buckets/{bucket}/objects")

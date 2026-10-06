@@ -68,7 +68,7 @@
         </div>
       </header>
       <section class="panel" th:if="${!#lists.isEmpty(objects)}">
-        <div class="panel-header gap-3">
+        <div class="panel-header flex-wrap gap-3">
           <label class="relative block min-w-0 flex-1" for="objectSearch">
             <span class="sr-only">Search files and folders</span>
             <i
@@ -80,9 +80,19 @@
               class="input pl-9"
               type="search"
               autocomplete="off"
+              maxlength="200"
+              aria-describedby="objectSubfolderSearchStatus"
               placeholder="Search files and folders…"
               oninput="filterObjectTable(this.value)"
             />
+          </label>
+          <label
+            class="object-subfolder-toggle"
+            for="searchSubfolders"
+            title="Include matching files and folders from nested paths"
+          >
+            <input id="searchSubfolders" type="checkbox" />
+            Search subfolders
           </label>
           <span
             id="objectSearchStatus"
@@ -94,6 +104,13 @@
             0 items
           </span>
         </div>
+        <div
+          id="objectSubfolderSearchStatus"
+          class="hidden border-b px-4 py-2 text-xs text-slate-500"
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+        ></div>
         <div class="table-wrap">
           <table class="data-table">
             <thead>

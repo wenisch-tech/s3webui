@@ -312,6 +312,21 @@
   .object-search-highlight td:first-child {
     box-shadow: inset 3px 0 0 var(--color-brand-500);
   }
+  .object-subfolder-toggle {
+    @apply flex cursor-pointer items-center gap-2 whitespace-nowrap text-sm font-medium text-slate-600;
+  }
+  html[data-theme='dark'] .object-subfolder-toggle {
+    @apply text-slate-300;
+  }
+  .object-subfolder-result {
+    @apply bg-brand-500/3;
+  }
+  html[data-theme='dark'] .object-subfolder-result {
+    @apply bg-brand-500/5;
+  }
+  .object-subfolder-path {
+    @apply mr-0.5 text-slate-500;
+  }
   .bucket-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr));

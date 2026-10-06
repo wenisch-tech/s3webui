@@ -42,6 +42,7 @@ class FrontendMigrationTest {
         "id=\"objectTableBody\"", "data-object-name", "data-object-size",
         "data-object-modified", "data-object-directory", "id=\"objectSearch\"",
         "filterObjectTable(this.value)", "id=\"objectSearchStatus\"",
+        "id=\"searchSubfolders\"", "Search subfolders", "id=\"objectSubfolderSearchStatus\"",
         "id=\"objectSearchEmpty\"", "syncObjectSelectAll()",
         "id=\"objectPagination\"", "id=\"objectPageSize\"", "value=\"all\"",
         "setObjectPageSize(this.value)", "id=\"objectPagePrevious\"",
@@ -49,11 +50,12 @@ class FrontendMigrationTest {
         "id=\"objectPageRange\"", "id=\"objectPageSummary\"").doesNotContain("prompt(");
     assertThat(frontend).contains("data-theme", "openDialog", "closeDialog", "showToast",
         "createJsonEditor", "createObjectTableController", "setObjectPageSize", "goToObjectPage",
-        "hidePageLoading");
+        "hidePageLoading", "initBucketSubfolderSearch", "bucketSearchApiPath",
+        "data-subfolder-search-result");
     assertThat(objectSort).contains("nextSortDirection", "compareObjectItems",
         "sortObjectItems", "filterObjectItems", "matchesObjectSearch", "lastModified",
         "paginateObjectItems", "objectPaginationEntries", "DEFAULT_OBJECT_PAGE_SIZE",
-        "directory", "aria-sort", "tr:not([hidden])");
+        "directory", "aria-sort", "tr:not([hidden])", "syncRows");
     assertThat(Files.readString(Path.of("package.json")))
         .contains("@codemirror/lang-json", "node --test src/test/frontend/*.test.mjs");
   }

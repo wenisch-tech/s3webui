@@ -5,6 +5,8 @@ import { createObjectTableController, syncObjectSelectAll,
   toggleVisibleObjectSelection } from './object-sort.mjs';
 import { appUrl } from './url.js';
 import { globalSearchPagePath, globalSearchResultPath } from './global-search.mjs';
+import { bucketSearchApiPath, formatObjectSize, relativeBucketResultParent,
+  relativeBucketResultPath } from './bucket-search.mjs';
 import { createIcons, Archive, ArrowDownUp, ArrowUpRight, Box, CheckCircle2, ChevronDown, Clock3,
   CloudUpload, Copy, Download, Eye, File, Folder, FolderOpen, FolderPlus, Globe, History, Info, LayoutGrid, LogOut,
   Key, KeyRound, Link2, Menu, Moon, MoreHorizontal, Network, Pencil, PieChart, Plus, RefreshCw, Search, SearchX, ScrollText, Settings,
@@ -115,6 +117,186 @@ function showS3SessionError(message){const error=document.getElementById('s3Sess
 function hideS3SessionError(){const error=document.getElementById('s3SessionError');if(error){error.textContent='';error.classList.add('hidden')}}
 function escapeMarkup(value){return String(value||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 window.getResponseErrorMessage = async (response, fallback = 'Request failed') => { const text = await response.text(); if (!text) return fallback; try { const data = JSON.parse(text); return data.message || data.error || text; } catch { return text; } };
+
+function createBucketSearchResultRow(result) {
+  const row = document.createElement('tr');
+  const relativePath = relativeBucketResultPath(result.key, window.PREFIX);
+  const relativeParent = relativeBucketResultParent(result.key, window.PREFIX);
+  const isFolder = result.type === 'FOLDER';
+  row.dataset.subfolderSearchResult = 'true';
+  row.dataset.objectName = relativePath;
+  row.dataset.objectKey = result.key;
+  row.dataset.objectSize = isFolder ? '0' : String(result.size ?? 0);
+  row.dataset.objectModified = isFolder || !result.lastModified
+    ? ''
+    : String(new Date(result.lastModified).getTime());
+  row.dataset.objectDirectory = String(isFolder);
+  row.className = 'object-subfolder-result';
+
+  const selectionCell = document.createElement('td');
+  if (!isFolder) {
+    const checkbox = document.createElement('input');
+    checkbox.className = 'obj-check';
+    checkbox.type = 'checkbox';
+    checkbox.value = result.key;
+    checkbox.addEventListener('change', () => syncObjectSelectAll());
+    selectionCell.appendChild(checkbox);
+  }
+
+  const nameCell = document.createElement('td');
+  const content = isFolder ? document.createElement('a') : document.createElement('div');
+  content.className = isFolder
+    ? 'flex min-w-0 items-center gap-2 font-semibold hover:text-brand-600'
+    : 'flex min-w-0 items-center gap-2';
+  if (isFolder) content.href = appUrl(globalSearchResultPath(result));
+  const icon = document.createElement('i');
+  icon.setAttribute('data-lucide', isFolder ? 'folder' : 'file');
+  if (!isFolder) icon.className = 'shrink-0 text-brand-600';
+  const label = document.createElement('span');
+  label.className = 'min-w-0 break-all';
+  if (relativeParent) {
+    const path = document.createElement('span');
+    path.className = 'object-subfolder-path';
+    path.textContent = relativeParent;
+    label.appendChild(path);
+  }
+  const name = document.createElement('span');
+  name.textContent = result.name;
+  label.appendChild(name);
+  content.append(icon, label);
+  nameCell.appendChild(content);
+
+  const sizeCell = document.createElement('td');
+  sizeCell.className = 'text-slate-500';
+  sizeCell.textContent = isFolder ? '' : formatObjectSize(result.size);
+  const modifiedCell = document.createElement('td');
+  modifiedCell.className = 'text-slate-500';
+  modifiedCell.textContent = isFolder
+    ? ''
+    : result.lastModified
+      ? new Date(result.lastModified).toLocaleString([], {
+          year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit'
+        })
+      : '-';
+
+  const actionsCell = document.createElement('td');
+  if (!isFolder) {
+    const actions = document.createElement('div');
+    actions.className = 'flex gap-1';
+    const download = document.createElement('a');
+    download.className = 'btn-icon';
+    download.title = 'Download';
+    download.setAttribute('aria-label', `Download ${result.name}`);
+    download.href = appUrl(`/api/buckets/${encodeURIComponent(result.bucket)}/objects/download?${new URLSearchParams({ key: result.key })}`);
+    const downloadIcon = document.createElement('i');
+    downloadIcon.setAttribute('data-lucide', 'download');
+    download.appendChild(downloadIcon);
+
+    const rename = document.createElement('button');
+    rename.type = 'button';
+    rename.className = 'btn-icon';
+    rename.title = 'Rename';
+    rename.setAttribute('aria-label', `Rename ${result.name}`);
+    rename.addEventListener('click', () => window.openRenameModal(result.key, result.name));
+    const renameIcon = document.createElement('i');
+    renameIcon.setAttribute('data-lucide', 'pencil');
+    rename.appendChild(renameIcon);
+
+    const remove = document.createElement('button');
+    remove.type = 'button';
+    remove.className = 'btn-icon text-bad-500';
+    remove.title = 'Delete';
+    remove.setAttribute('aria-label', `Delete ${result.name}`);
+    remove.addEventListener('click', () => window.confirmDeleteObject(result.key));
+    const removeIcon = document.createElement('i');
+    removeIcon.setAttribute('data-lucide', 'trash-2');
+    remove.appendChild(removeIcon);
+    actions.append(download, rename, remove);
+    actionsCell.appendChild(actions);
+  }
+
+  row.append(selectionCell, nameCell, sizeCell, modifiedCell, actionsCell);
+  return row;
+}
+
+function initBucketSubfolderSearch() {
+  const input = document.getElementById('objectSearch');
+  const checkbox = document.getElementById('searchSubfolders');
+  const status = document.getElementById('objectSubfolderSearchStatus');
+  const body = document.getElementById('objectTableBody');
+  if (!input || !checkbox || !status || !body || !window.BUCKET) return;
+  let debounceTimer = null;
+  let requestController = null;
+
+  const setStatus = (message, isError = false) => {
+    status.textContent = message;
+    status.classList.toggle('hidden', !message);
+    status.classList.toggle('text-bad-500', isError);
+    status.classList.toggle('text-slate-500', !isError);
+  };
+  const removeTemporaryRows = () => {
+    const rows = [...body.querySelectorAll('[data-subfolder-search-result]')];
+    rows.forEach(row => row.remove());
+    if (rows.length) objectTable.syncRows();
+  };
+  const stopPendingSearch = () => {
+    clearTimeout(debounceTimer);
+    requestController?.abort();
+    requestController = null;
+  };
+  const renderResults = data => {
+    const existingKeys = new Set([...body.rows]
+      .filter(row => !row.dataset.subfolderSearchResult)
+      .map(row => row.dataset.objectKey));
+    const fragment = document.createDocumentFragment();
+    let added = 0;
+    data.results.forEach(result => {
+      if (existingKeys.has(result.key)) return;
+      existingKeys.add(result.key);
+      fragment.appendChild(createBucketSearchResultRow(result));
+      added += 1;
+    });
+    body.appendChild(fragment);
+    objectTable.syncRows();
+    refreshIcons();
+    setStatus(`${added} subfolder result${added === 1 ? '' : 's'} added`);
+  };
+  const search = async query => {
+    requestController = new AbortController();
+    const activeController = requestController;
+    setStatus('Searching subfolders…');
+    try {
+      const response = await apiFetch(bucketSearchApiPath(window.BUCKET, window.PREFIX, query), {
+        headers: { Accept: 'application/json' },
+        signal: activeController.signal,
+      });
+      if (!response.ok) throw new Error(await getResponseErrorMessage(response, 'Subfolder search failed'));
+      const data = await response.json();
+      if (activeController !== requestController || !checkbox.checked || input.value.trim() !== query) return;
+      renderResults(data);
+    } catch (error) {
+      if (error.name !== 'AbortError') setStatus(error.message || 'Subfolder search failed.', true);
+    }
+  };
+  const scheduleSearch = () => {
+    stopPendingSearch();
+    removeTemporaryRows();
+    const query = input.value.trim();
+    if (!checkbox.checked) {
+      setStatus('');
+      return;
+    }
+    if (query.length < 2) {
+      setStatus(query.length ? 'Type one more character to search subfolders.' : 'Type at least 2 characters to search subfolders.');
+      return;
+    }
+    debounceTimer = setTimeout(() => search(query), 300);
+  };
+
+  input.addEventListener('input', scheduleSearch);
+  checkbox.addEventListener('change', scheduleSearch);
+}
+document.addEventListener('DOMContentLoaded', initBucketSubfolderSearch);
 
 function initGlobalSearch() {
   const root = document.querySelector('[data-global-search]');

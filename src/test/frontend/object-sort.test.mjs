@@ -246,6 +246,34 @@ test('table controller resets pages for filtering and preserves selections outsi
   assert.equal(root.elements.objectPageNext.disabled, true);
 });
 
+test('table controller synchronizes dynamically added and removed search rows', () => {
+  const root = objectTableRoot(2);
+  const controller = createObjectTableController(root);
+  controller.filter('nested');
+  assert.equal(root.rows.filter(row => !row.hidden).length, 0);
+
+  const nestedRow = {
+    dataset: {
+      objectName: 'reports/nested-file.txt',
+      objectSize: '42',
+      objectModified: '100',
+      objectDirectory: 'false'
+    },
+    hidden: false,
+    checkbox: { checked: false }
+  };
+  root.rows.push(nestedRow);
+  controller.syncRows();
+
+  assert.equal(root.rows.filter(row => !row.hidden).length, 1);
+  assert.equal(root.elements.objectSearchStatus.textContent, '1 of 3 items');
+
+  root.rows.splice(root.rows.indexOf(nestedRow), 1);
+  controller.syncRows();
+  assert.equal(root.rows.filter(row => !row.hidden).length, 0);
+  assert.equal(root.elements.objectSearchStatus.textContent, '0 of 2 items');
+});
+
 test('select-all changes visible files only and reports partial visible selection', () => {
   const visible = [{ checked: false }, { checked: false }];
   const hidden = { checked: false };

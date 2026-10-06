@@ -18,6 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -129,6 +130,81 @@ class GlobalSearchServiceTest {
         assertThrows(IllegalArgumentException.class, () -> GlobalSearchService.normalizeQuery("x"));
         assertThrows(IllegalArgumentException.class,
                 () -> GlobalSearchService.normalizeQuery("x".repeat(GlobalSearchService.MAX_QUERY_LENGTH + 1)));
+    }
+
+    @Test
+    void searchesOnlyNestedEntriesInTheRequestedBucketAndMatchesRelativePaths() {
+        when(s3Service.listAllObjects("bucket-a")).thenReturn(List.of(
+                object("root.txt", 1),
+                object("docs/a.txt", 2),
+                object("docs/nested/", 0),
+                object("docs/nested/b.txt", 3)));
+
+        var page = searchService.searchBucket("bucket-a", "", "docs");
+
+        assertEquals(List.of("docs/a.txt", "docs/nested/", "docs/nested/b.txt"),
+                page.results().stream().map(GlobalSearchResult::key).toList());
+        assertEquals(3, page.total());
+        assertEquals(clock.instant(), page.indexedAt());
+        verify(s3Service).listAllObjects("bucket-a");
+        verify(s3Service, never()).listBuckets();
+    }
+
+    @Test
+    void scopesNestedSearchToTheCurrentPrefixAndExcludesItsImmediateChildren() {
+        when(s3Service.listAllObjects("bucket-a")).thenReturn(List.of(
+                object("docs/direct-report.txt", 1),
+                object("docs/deep/report.txt", 2),
+                object("docs/deep/more/report.csv", 3),
+                object("other/deep/report.txt", 4)));
+
+        var page = searchService.searchBucket("bucket-a", "docs", "report");
+
+        assertEquals(List.of("docs/deep/more/report.csv", "docs/deep/report.txt"),
+                page.results().stream().map(GlobalSearchResult::key).toList());
+    }
+
+    @Test
+    void bucketAndGlobalSearchesReuseTheSameFreshCatalog() {
+        when(s3Service.listAllObjects("bucket-a")).thenReturn(List.of(object("docs/match.txt", 1)));
+        when(s3Service.listBuckets()).thenReturn(List.of(bucket("bucket-a")));
+
+        searchService.searchBucket("bucket-a", "", "match");
+        searchService.search("match", 0, 5, false);
+
+        verify(s3Service).listAllObjects("bucket-a");
+        verify(s3Service).listBuckets();
+    }
+
+    @Test
+    void reusingABucketCatalogDoesNotExtendItsFiveMinuteLifetime() {
+        when(s3Service.listAllObjects("bucket-a")).thenReturn(List.of(object("docs/match.txt", 1)));
+        when(s3Service.listBuckets()).thenReturn(List.of(bucket("bucket-a")));
+
+        searchService.searchBucket("bucket-a", "", "match");
+        clock.advance(Duration.ofMinutes(4));
+        searchService.search("match", 0, 5, false);
+        clock.advance(Duration.ofMinutes(1));
+        searchService.search("match", 0, 5, false);
+
+        verify(s3Service, times(2)).listBuckets();
+        verify(s3Service, times(2)).listAllObjects("bucket-a");
+    }
+
+    @Test
+    void scopedCatalogExpiresAndDoesNotCrossCredentialChangesOrInvalidation() {
+        when(s3Service.listAllObjects("bucket-a")).thenReturn(List.of(object("docs/match.txt", 1)));
+
+        searchService.searchBucket("bucket-a", "", "match");
+        searchService.searchBucket("bucket-a", "", "match");
+        clock.advance(GlobalSearchService.CATALOG_TTL);
+        searchService.searchBucket("bucket-a", "", "match");
+        when(settingsService.getEffectiveSettingsOrThrow()).thenReturn(settings("access-b", "secret-b"));
+        searchService.searchBucket("bucket-a", "", "match");
+        searchService.invalidate();
+        searchService.searchBucket("bucket-a", "", "match");
+
+        verify(s3Service, times(4)).listAllObjects("bucket-a");
     }
 
     private static BucketDto bucket(String name) {
