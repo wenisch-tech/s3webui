@@ -10,6 +10,7 @@ import tech.wenisch.s3webui.service.GlobalSearchService;
 import tools.jackson.databind.json.JsonMapper;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -39,6 +40,23 @@ class S3ApiControllerTest {
         controller.deleteObject("bucket-a", "folder/file.txt", null);
 
         verify(searchService).invalidate();
+    }
+
+    @Test
+    void bucketObjectSearchReturnsMetadataWithoutAllowingResponseCaching() {
+        S3Service s3Service = mock(S3Service.class);
+        GlobalSearchService searchService = mock(GlobalSearchService.class);
+        var page = new GlobalSearchService.BucketSearchPage(
+                List.of(), 0, Instant.parse("2026-10-06T09:00:00Z"));
+        when(searchService.searchBucket("bucket-a", "docs/", "report")).thenReturn(page);
+        S3ApiController controller = new S3ApiController(s3Service, mock(AuditHistoryService.class), jsonMapper);
+        controller.setGlobalSearchService(searchService);
+
+        var response = controller.searchObjects("bucket-a", "report", "docs/");
+
+        assertEquals(page, response.getBody());
+        org.junit.jupiter.api.Assertions.assertTrue(response.getHeaders().getCacheControl().contains("no-store"));
+        verify(searchService).searchBucket("bucket-a", "docs/", "report");
     }
 
     @Test

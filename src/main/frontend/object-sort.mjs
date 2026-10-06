@@ -167,7 +167,7 @@ function updatePaginationButtons(root, pageData, goToPage) {
 
 export function createObjectTableController(root = document) {
   const body = root.getElementById('objectTableBody');
-  const allItems = body ? [...body.rows].map(rowToItem) : [];
+  let allItems = body ? [...body.rows].map(rowToItem) : [];
   let orderedItems = [...allItems];
   const state = {
     query: '',
@@ -240,5 +240,15 @@ export function createObjectTableController(root = document) {
     render();
   };
 
-  return { filter, sort, goToPage, setPageSize, render };
+  const syncRows = () => {
+    allItems = body ? [...body.rows].map(rowToItem) : [];
+    orderedItems = state.sortKey
+      ? sortObjectItems(allItems, state.sortKey, state.sortDirection)
+      : [...allItems];
+    orderedItems.forEach(item => body?.append(item.row));
+    state.page = 1;
+    render();
+  };
+
+  return { filter, sort, goToPage, setPageSize, syncRows, render };
 }

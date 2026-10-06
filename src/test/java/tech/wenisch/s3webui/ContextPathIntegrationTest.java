@@ -107,7 +107,22 @@ class ContextPathIntegrationTest {
                 .andExpect(jsonPath("$.results[0].bucket").value("bucket-a"))
                 .andExpect(jsonPath("$.results[0].key").value("docs/report.pdf"));
 
+        mockMvc.perform(get("/api/buckets/bucket-a/objects/search")
+                        .session(session)
+                        .param("q", "report")
+                        .param("prefix", ""))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.total").value(1))
+                .andExpect(jsonPath("$.results[0].type").value("FILE"))
+                .andExpect(jsonPath("$.results[0].key").value("docs/report.pdf"));
+
         mockMvc.perform(get("/api/search").session(session).param("q", "x"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value(containsString("at least 2")));
+
+        mockMvc.perform(get("/api/buckets/bucket-a/objects/search")
+                        .session(session)
+                        .param("q", "x"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value(containsString("at least 2")));
 

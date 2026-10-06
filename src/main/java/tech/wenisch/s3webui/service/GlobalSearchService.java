@@ -15,6 +15,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -39,6 +40,7 @@ public class GlobalSearchService {
     private List<String> failedBuckets = List.of();
     private Instant indexedAt;
     private String credentialFingerprint;
+    private final Map<String, BucketCatalog> bucketCatalogs = new HashMap<>();
 
     public GlobalSearchService(
             S3Service s3Service,
@@ -57,8 +59,9 @@ public class GlobalSearchService {
         String currentFingerprint = fingerprint(settingsService.getEffectiveSettingsOrThrow());
         Instant now = clock.instant();
 
-        if (forceRefresh || catalogExpired(now) || !currentFingerprint.equals(credentialFingerprint)) {
-            rebuild(currentFingerprint, now);
+        ensureCredentialFingerprint(currentFingerprint);
+        if (forceRefresh || catalogExpired(indexedAt, now)) {
+            rebuild(now, forceRefresh);
         }
 
         String foldedQuery = query.toLowerCase(Locale.ROOT);
@@ -84,11 +87,36 @@ public class GlobalSearchService {
                 failedBuckets);
     }
 
+    /** Search one bucket without forcing the session to enumerate every available bucket. */
+    public synchronized BucketSearchPage searchBucket(String bucket, String rawPrefix, String rawQuery) {
+        if (bucket == null || bucket.isBlank()) {
+            throw new IllegalArgumentException("Bucket is required");
+        }
+        String query = normalizeQuery(rawQuery);
+        String prefix = normalizePrefix(rawPrefix);
+        String currentFingerprint = fingerprint(settingsService.getEffectiveSettingsOrThrow());
+        Instant now = clock.instant();
+
+        ensureCredentialFingerprint(currentFingerprint);
+        BucketCatalog bucketCatalog = loadBucketCatalog(bucket, now, false);
+        String foldedQuery = query.toLowerCase(Locale.ROOT);
+        List<GlobalSearchResult> results = bucketCatalog.entries().stream()
+                .filter(result -> isNestedBelow(result, prefix))
+                .map(result -> score(result, foldedQuery, result.key().substring(prefix.length())))
+                .filter(scored -> scored.score() >= 0)
+                .sorted(RESULT_ORDER)
+                .map(ScoredResult::result)
+                .toList();
+
+        return new BucketSearchPage(results, results.size(), bucketCatalog.indexedAt());
+    }
+
     public synchronized void invalidate() {
         catalog = List.of();
         failedBuckets = List.of();
         indexedAt = null;
         credentialFingerprint = null;
+        bucketCatalogs.clear();
     }
 
     public static String normalizeQuery(String rawQuery) {
@@ -102,21 +130,23 @@ public class GlobalSearchService {
         return query;
     }
 
-    private boolean catalogExpired(Instant now) {
-        return indexedAt == null
-                || now.isBefore(indexedAt)
-                || !now.isBefore(indexedAt.plus(CATALOG_TTL));
+    private boolean catalogExpired(Instant catalogIndexedAt, Instant now) {
+        return catalogIndexedAt == null
+                || now.isBefore(catalogIndexedAt)
+                || !now.isBefore(catalogIndexedAt.plus(CATALOG_TTL));
     }
 
-    private void rebuild(String currentFingerprint, Instant now) {
-        List<GlobalSearchResult> files = new ArrayList<>();
-        Map<String, GlobalSearchResult> folders = new LinkedHashMap<>();
+    private void rebuild(Instant now, boolean forceRefresh) {
+        List<GlobalSearchResult> rebuilt = new ArrayList<>();
         List<String> failures = new ArrayList<>();
+        Instant oldestCatalogTime = null;
 
         for (var bucket : s3Service.listBuckets()) {
             try {
-                for (S3ObjectDto object : s3Service.listAllObjects(bucket.getName())) {
-                    addObject(bucket.getName(), object, files, folders);
+                BucketCatalog bucketCatalog = loadBucketCatalog(bucket.getName(), now, forceRefresh);
+                rebuilt.addAll(bucketCatalog.entries());
+                if (oldestCatalogTime == null || bucketCatalog.indexedAt().isBefore(oldestCatalogTime)) {
+                    oldestCatalogTime = bucketCatalog.indexedAt();
                 }
             } catch (RuntimeException exception) {
                 failures.add(bucket.getName());
@@ -125,11 +155,42 @@ public class GlobalSearchService {
             }
         }
 
-        List<GlobalSearchResult> rebuilt = new ArrayList<>(folders.values());
-        rebuilt.addAll(files);
         catalog = List.copyOf(rebuilt);
         failedBuckets = failures.stream().sorted(String.CASE_INSENSITIVE_ORDER).toList();
-        indexedAt = now;
+        indexedAt = oldestCatalogTime == null ? now : oldestCatalogTime;
+    }
+
+    private BucketCatalog loadBucketCatalog(String bucket, Instant now, boolean forceRefresh) {
+        BucketCatalog existing = bucketCatalogs.get(bucket);
+        if (!forceRefresh && existing != null && !catalogExpired(existing.indexedAt(), now)) {
+            return existing;
+        }
+
+        try {
+            List<GlobalSearchResult> files = new ArrayList<>();
+            Map<String, GlobalSearchResult> folders = new LinkedHashMap<>();
+            for (S3ObjectDto object : s3Service.listAllObjects(bucket)) {
+                addObject(bucket, object, files, folders);
+            }
+            List<GlobalSearchResult> entries = new ArrayList<>(folders.values());
+            entries.addAll(files);
+            BucketCatalog rebuilt = new BucketCatalog(List.copyOf(entries), now);
+            bucketCatalogs.put(bucket, rebuilt);
+            return rebuilt;
+        } catch (RuntimeException exception) {
+            bucketCatalogs.remove(bucket);
+            throw exception;
+        }
+    }
+
+    private void ensureCredentialFingerprint(String currentFingerprint) {
+        if (currentFingerprint.equals(credentialFingerprint)) {
+            return;
+        }
+        catalog = List.of();
+        failedBuckets = List.of();
+        indexedAt = null;
+        bucketCatalogs.clear();
         credentialFingerprint = currentFingerprint;
     }
 
@@ -184,7 +245,27 @@ public class GlobalSearchService {
         return separator < 0 ? "" : withoutTrailingSlash.substring(0, separator + 1);
     }
 
+    private static String normalizePrefix(String rawPrefix) {
+        String prefix = rawPrefix == null ? "" : rawPrefix;
+        return prefix.isEmpty() || prefix.endsWith("/") ? prefix : prefix + "/";
+    }
+
+    private static boolean isNestedBelow(GlobalSearchResult result, String prefix) {
+        if (!result.key().startsWith(prefix) || result.key().length() <= prefix.length()) {
+            return false;
+        }
+        String relativeKey = result.key().substring(prefix.length());
+        String withoutTrailingSlash = relativeKey.endsWith("/")
+                ? relativeKey.substring(0, relativeKey.length() - 1)
+                : relativeKey;
+        return withoutTrailingSlash.contains("/");
+    }
+
     private static ScoredResult score(GlobalSearchResult result, String foldedQuery) {
+        return score(result, foldedQuery, result.key());
+    }
+
+    private static ScoredResult score(GlobalSearchResult result, String foldedQuery, String searchablePath) {
         String name = result.name().toLowerCase(Locale.ROOT);
         if (name.equals(foldedQuery)) {
             return new ScoredResult(result, 0);
@@ -195,7 +276,7 @@ public class GlobalSearchService {
         if (name.contains(foldedQuery)) {
             return new ScoredResult(result, 2);
         }
-        if (result.key().toLowerCase(Locale.ROOT).contains(foldedQuery)) {
+        if (searchablePath.toLowerCase(Locale.ROOT).contains(foldedQuery)) {
             return new ScoredResult(result, 3);
         }
         return new ScoredResult(result, -1);
@@ -233,6 +314,9 @@ public class GlobalSearchService {
     private record ScoredResult(GlobalSearchResult result, int score) {
     }
 
+    private record BucketCatalog(List<GlobalSearchResult> entries, Instant indexedAt) {
+    }
+
     public record SearchPage(
             List<GlobalSearchResult> results,
             int total,
@@ -240,6 +324,13 @@ public class GlobalSearchService {
             Instant indexedAt,
             boolean incomplete,
             List<String> failedBuckets
+    ) {
+    }
+
+    public record BucketSearchPage(
+            List<GlobalSearchResult> results,
+            int total,
+            Instant indexedAt
     ) {
     }
 }
