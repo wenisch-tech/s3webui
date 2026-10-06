@@ -58,8 +58,8 @@
         title="S3 key used in this session"
       >
         <i data-lucide="key"></i>
-        <span th:text="${activeCredentialName}">S3 key</span>
-        <i data-lucide="chevron-down"></i>
+        <span class="topbar-credential-name" th:text="${activeCredentialName}">S3 key</span>
+        <i data-lucide="chevron-down" aria-hidden="true"></i>
       </button>
       <form th:if="${!authenticationDisabled}" th:action="@{/logout}" method="post">
         <button class="btn-secondary" type="submit">
@@ -72,14 +72,14 @@
         @click="toggleTheme()"
         :aria-label="theme === 'dark' ? 'Use light theme' : 'Use dark theme'"
       >
-        <i :data-lucide="theme === 'dark' ? 'sun' : 'moon'"></i>
+        <i :data-lucide="theme === 'dark' ? 'sun' : 'moon'" aria-hidden="true"></i>
       </button>
       <button
         class="btn-icon sm:hidden"
         @click="mobileOpen = !mobileOpen"
         aria-label="Toggle navigation"
       >
-        <i data-lucide="menu"></i>
+        <i data-lucide="menu" aria-hidden="true"></i>
       </button>
     </div>
   </div>
@@ -129,7 +129,7 @@
       <div class="modal-header">
         <div>
           <p class="eyebrow">Storage session</p>
-          <h2 id="s3SessionTitle" class="font-semibold">Choose an S3 key</h2>
+          <h2 id="s3SessionTitle" class="modal-title">Choose an S3 key</h2>
         </div>
         <button
           id="s3SessionClose"
@@ -152,7 +152,7 @@
           <p class="mt-2 text-sm">No stored S3 keys are available to this account.</p>
         </div>
         <div id="s3SessionOwn" class="mt-5 border-t pt-5">
-          <h3 class="mb-3 text-sm font-semibold">Use your own credentials</h3>
+          <h3 class="mb-3 text-base font-semibold">Use your own credentials</h3>
           <div class="grid gap-3 sm:grid-cols-2">
             <label>
               <span class="field-label">Access key</span>
@@ -182,7 +182,7 @@
             <span>Skip TLS certificate verification (not for production)</span>
           </label>
           <button class="btn-primary mt-4 w-full" type="button" onclick="useOwnCredentials()">
-            <i data-lucide="log-out" class="rotate-180"></i>
+            <i data-lucide="link-2" aria-hidden="true"></i>
             Connect with these credentials
           </button>
         </div>
@@ -203,7 +203,7 @@
       <div class="modal-header">
         <div>
           <p class="eyebrow">Assigned S3 key</p>
-          <h2 id="s3RevealKeyTitle" class="font-semibold">Key details</h2>
+          <h2 id="s3RevealKeyTitle" class="modal-title">Key details</h2>
         </div>
         <button
           class="btn-icon"

@@ -554,4 +554,8 @@ Pull requests welcomed.
 
 AGPL-3.0 — see [LICENSE](LICENSE) for details.
 
+The bundled Inter and JetBrains Mono webfonts are licensed under the SIL Open Font License 1.1.
+See [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md) for versions, sources, and bundled license
+files.
+
 Copyright (C) 2026 Jean-Fabian Wenisch / wenisch.tech

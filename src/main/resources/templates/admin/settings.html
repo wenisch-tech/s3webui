@@ -100,7 +100,7 @@
               here once their owner has signed in for the first time.
             </p>
             <button class="btn-primary" onclick="openUserModal()">
-              <i data-lucide="users"></i>
+              <i data-lucide="user-plus"></i>
               New user
             </button>
           </div>
@@ -174,10 +174,10 @@
       <div class="modal-card max-w-3xl">
         <div class="">
           <div class="modal-header">
-            <h5 class="font-semibold" id="credentialModalTitle">
+            <h2 class="modal-title" id="credentialModalTitle">
               <i data-lucide="key"></i>
               New S3 key
-            </h5>
+            </h2>
             <button
               type="button"
               class="btn-icon"
@@ -253,10 +253,10 @@
 
             <div class="mb-2 flex flex-wrap items-center justify-between gap-3">
               <div>
-                <h6 class="mb-0">Who may use this key</h6>
-                <small class="text-muted">
+                <h3 class="text-base font-semibold">Who may use this key</h3>
+                <p class="field-help">
                   Roles and groups come from the claims your identity provider sends.
-                </small>
+                </p>
               </div>
               <button class="btn-secondary" type="button" onclick="addGrantRow()">
                 <i data-lucide="plus"></i>
@@ -295,10 +295,10 @@
       <div class="modal-card">
         <div class="">
           <div class="modal-header">
-            <h5 class="font-semibold">
-              <i data-lucide="users"></i>
+            <h2 class="modal-title">
+              <i data-lucide="user-plus"></i>
               New user
-            </h5>
+            </h2>
             <button
               type="button"
               class="btn-icon"
@@ -318,7 +318,7 @@
               <label for="userPassword" class="field-label">Password</label>
               <input type="password" class="input" id="userPassword" autocomplete="new-password" />
             </div>
-            <div class="mb-0">
+            <div>
               <label for="userRole" class="field-label">Role</label>
               <select class="input" id="userRole">
                 <option th:each="role : ${userRoles}" th:value="${role}" th:text="${role}">
@@ -407,7 +407,7 @@
         _credentials.forEach((credential) => {
           const row = document.createElement('tr');
           row.innerHTML = `
-                <td class="font-semibold">${escapeHtml(credential.name)}</td>
+                <td class="font-medium">${escapeHtml(credential.name)}</td>
                 <td class="text-sm text-slate-500">${escapeHtml(credential.endpointUrl)}</td>
                 <td class="text-sm text-slate-500">${escapeHtml(credential.region)}</td>
                 <td class="font-mono text-xs text-slate-500">${escapeHtml(credential.accessKey)}</td>
@@ -418,11 +418,11 @@
                     : '<span class="badge">Disabled</span>'
                 }</td>
                 <td class="whitespace-nowrap text-right">
-                    <button class="btn-icon" data-id="${credential.id}"
+                    <button class="btn-icon" title="Edit S3 key" aria-label="Edit ${escapeHtml(credential.name)}" data-id="${credential.id}"
                             onclick="openCredentialModal(Number(this.getAttribute('data-id')))">
                         <i data-lucide="pencil"></i>
                     </button>
-                    <button class="btn-icon text-bad-500" data-id="${credential.id}"
+                    <button class="btn-icon text-bad-500" title="Delete S3 key" aria-label="Delete ${escapeHtml(credential.name)}" data-id="${credential.id}"
                             onclick="deleteCredential(Number(this.getAttribute('data-id')))">
                         <i data-lucide="trash-2"></i>
                     </button>
@@ -513,7 +513,7 @@
                        value="${escapeHtml(grantValue || '')}"/>
             </div>
             <div class="text-right">
-                <button class="btn-icon text-bad-500" type="button"
+                <button class="btn-icon text-bad-500" type="button" title="Remove grant" aria-label="Remove grant"
                         onclick="this.closest('.grant-row').remove(); updateGrantHint();">
                     <i data-lucide="x"></i>
                 </button>
@@ -616,7 +616,7 @@
 
           const row = document.createElement('tr');
           row.innerHTML = `
-                <td class="font-semibold">${escapeHtml(user.email)}</td>
+                <td class="font-medium">${escapeHtml(user.email)}</td>
                 <td><span class="badge">${user.provider}</span></td>
                 <td>
                     <select class="input" data-id="${user.id}"
@@ -633,12 +633,12 @@
                 </td>
                 <td class="text-sm text-slate-500">${user.lastLoginAt ? escapeHtml(user.lastLoginAt.replace('T', ' ').substring(0, 16)) : '—'}</td>
                 <td class="whitespace-nowrap text-right">
-                    <button class="btn-icon" data-id="${user.id}"
-                            ${user.provider === 'LOCAL' ? '' : 'disabled title="Password is managed by the identity provider"'}
+                    <button class="btn-icon" data-id="${user.id}" aria-label="Reset password for ${escapeHtml(user.email)}"
+                            ${user.provider === 'LOCAL' ? 'title="Reset password"' : 'disabled title="Password is managed by the identity provider"'}
                             onclick="resetPassword(Number(this.getAttribute('data-id')))">
                         <i data-lucide="key"></i>
                     </button>
-                    <button class="btn-icon text-bad-500" data-id="${user.id}"
+                    <button class="btn-icon text-bad-500" title="Delete user" aria-label="Delete ${escapeHtml(user.email)}" data-id="${user.id}"
                             onclick="deleteUser(Number(this.getAttribute('data-id')))">
                         <i data-lucide="trash-2"></i>
                     </button>

@@ -8,10 +8,10 @@
   <body>
     <nav th:replace="~{fragments/shell :: topbar('buckets')}"></nav>
     <main class="page">
-      <nav class="mb-5 flex items-center gap-2 text-sm text-slate-500" aria-label="Breadcrumb">
-        <a class="hover:text-brand-600" th:href="@{/}">Buckets</a>
-        <span>/</span>
-        <span>Search</span>
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a th:href="@{/}">Buckets</a>
+        <i data-lucide="chevron-right" aria-hidden="true"></i>
+        <span aria-current="page">Search</span>
       </nav>
 
       <header class="page-header">
@@ -51,7 +51,10 @@
           th:value="${query}"
           placeholder="Search files and folders in all buckets…"
         />
-        <button class="btn-primary mr-2" type="submit">Search</button>
+        <button class="btn-primary mr-2" type="submit">
+          <i data-lucide="search" aria-hidden="true"></i>
+          Search
+        </button>
       </form>
 
       <div th:if="${error}" class="alert alert-error mb-5">
@@ -133,6 +136,7 @@
               th:attr="aria-disabled=${currentPage <= 1}"
               th:href="${currentPage > 1} ? @{/search(q=${query},page=${currentPage - 1})} : '#'"
             >
+              <i data-lucide="chevron-left" aria-hidden="true"></i>
               Previous
             </a>
             <a
@@ -142,6 +146,7 @@
               th:href="${currentPage < pageCount} ? @{/search(q=${query},page=${currentPage + 1})} : '#'"
             >
               Next
+              <i data-lucide="chevron-right" aria-hidden="true"></i>
             </a>
           </nav>
         </footer>
@@ -154,7 +159,7 @@
         <div class="mx-auto grid size-14 place-items-center rounded-full bg-brand-500/10 text-brand-700">
           <i data-lucide="search-x"></i>
         </div>
-        <h2 class="mt-4 text-lg font-semibold">No files or folders found</h2>
+        <h2 class="empty-title mt-4">No files or folders found</h2>
         <p class="mt-1 text-sm text-slate-500">
           Try another name or a part of the full object path.
         </p>
