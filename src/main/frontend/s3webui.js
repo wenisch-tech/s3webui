@@ -4,14 +4,15 @@ import { createJsonEditor } from './editor.js';
 import { createObjectTableController, syncObjectSelectAll,
   toggleVisibleObjectSelection } from './object-sort.mjs';
 import { appUrl } from './url.js';
-import { createIcons, Archive, ArrowDownUp, Box, CheckCircle2, ChevronDown, Clock3,
+import { globalSearchPagePath, globalSearchResultPath } from './global-search.mjs';
+import { createIcons, Archive, ArrowDownUp, ArrowUpRight, Box, CheckCircle2, ChevronDown, Clock3,
   CloudUpload, Copy, Download, Eye, File, Folder, FolderOpen, FolderPlus, Globe, History, Info, LayoutGrid, LogOut,
-  Key, KeyRound, Link2, Menu, Moon, MoreHorizontal, Network, Pencil, PieChart, Plus, Search, ScrollText, Settings,
+  Key, KeyRound, Link2, Menu, Moon, MoreHorizontal, Network, Pencil, PieChart, Plus, RefreshCw, Search, SearchX, ScrollText, Settings,
   ShieldAlert, ShieldCheck, Sun, Table2, Trash2, Unlink2, Upload, UserCircle, UserPlus, Users, X } from 'lucide';
 
-const icons = { Archive, ArrowDownUp, Box, CheckCircle2, ChevronDown, Clock3, CloudUpload, Copy, Eye,
+const icons = { Archive, ArrowDownUp, ArrowUpRight, Box, CheckCircle2, ChevronDown, Clock3, CloudUpload, Copy, Eye,
   Download, File, Folder, FolderOpen, FolderPlus, Globe, History, Info, Key, KeyRound, Link2, LayoutGrid, LogOut,
-  Menu, Moon, MoreHorizontal, Network, Pencil, PieChart, Plus, Search, ScrollText, Settings, ShieldAlert, ShieldCheck,
+  Menu, Moon, MoreHorizontal, Network, Pencil, PieChart, Plus, RefreshCw, Search, SearchX, ScrollText, Settings, ShieldAlert, ShieldCheck,
   Sun, Table2, Trash2, Unlink2, Upload, UserCircle, UserPlus, Users, X };
 
 window.createJsonEditor = createJsonEditor;
@@ -114,4 +115,201 @@ function showS3SessionError(message){const error=document.getElementById('s3Sess
 function hideS3SessionError(){const error=document.getElementById('s3SessionError');if(error){error.textContent='';error.classList.add('hidden')}}
 function escapeMarkup(value){return String(value||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 window.getResponseErrorMessage = async (response, fallback = 'Request failed') => { const text = await response.text(); if (!text) return fallback; try { const data = JSON.parse(text); return data.message || data.error || text; } catch { return text; } };
+
+function initGlobalSearch() {
+  const root = document.querySelector('[data-global-search]');
+  if (!root) return;
+  const form = root.querySelector('form');
+  const input = root.querySelector('[role="combobox"]');
+  const suggestions = root.querySelector('[role="listbox"]');
+  const live = root.querySelector('[data-global-search-live]');
+  let debounceTimer = null;
+  let requestController = null;
+  let activeIndex = -1;
+
+  const selectableItems = () => [...suggestions.querySelectorAll('[data-search-selectable]')];
+  const announce = message => { live.textContent = message; };
+  const open = () => {
+    suggestions.classList.remove('hidden');
+    input.setAttribute('aria-expanded', 'true');
+  };
+  const close = () => {
+    suggestions.classList.add('hidden');
+    input.setAttribute('aria-expanded', 'false');
+    input.removeAttribute('aria-activedescendant');
+    activeIndex = -1;
+  };
+  const clear = () => {
+    suggestions.replaceChildren();
+    activeIndex = -1;
+  };
+  const renderMessage = (message, className = '') => {
+    clear();
+    const row = document.createElement('div');
+    row.className = `global-search-message ${className}`.trim();
+    row.setAttribute('role', 'status');
+    row.textContent = message;
+    suggestions.appendChild(row);
+    open();
+    announce(message);
+  };
+  const resultUrl = result => appUrl(globalSearchResultPath(result));
+  const appendHighlighted = (element, value, query) => {
+    const index = value.toLocaleLowerCase().indexOf(query.toLocaleLowerCase());
+    if (index < 0) {
+      element.textContent = value;
+      return;
+    }
+    element.append(
+      document.createTextNode(value.slice(0, index)),
+      Object.assign(document.createElement('mark'), { textContent: value.slice(index, index + query.length) }),
+      document.createTextNode(value.slice(index + query.length)),
+    );
+  };
+  const updateActiveItem = nextIndex => {
+    const items = selectableItems();
+    if (!items.length) return;
+    activeIndex = (nextIndex + items.length) % items.length;
+    items.forEach((item, index) => {
+      const active = index === activeIndex;
+      item.classList.toggle('active', active);
+      item.setAttribute('aria-selected', String(active));
+    });
+    input.setAttribute('aria-activedescendant', items[activeIndex].id);
+    items[activeIndex].scrollIntoView({ block: 'nearest' });
+  };
+  const addResult = (result, query, index) => {
+    const link = document.createElement('a');
+    link.id = `globalSearchOption${index}`;
+    link.className = 'global-search-option';
+    link.href = resultUrl(result);
+    link.setAttribute('role', 'option');
+    link.setAttribute('aria-selected', 'false');
+    link.dataset.searchSelectable = 'true';
+
+    const iconWrap = document.createElement('span');
+    iconWrap.className = 'global-search-option-icon';
+    const icon = document.createElement('i');
+    icon.setAttribute('data-lucide', result.type === 'FOLDER' ? 'folder' : 'file');
+    iconWrap.appendChild(icon);
+
+    const content = document.createElement('span');
+    content.className = 'min-w-0 flex-1';
+    const name = document.createElement('span');
+    name.className = 'global-search-option-name';
+    appendHighlighted(name, result.name, query);
+    const path = document.createElement('span');
+    path.className = 'global-search-option-path';
+    path.textContent = result.parentPrefix ? `${result.bucket} / ${result.parentPrefix}` : result.bucket;
+    content.append(name, path);
+
+    const arrow = document.createElement('i');
+    arrow.setAttribute('data-lucide', 'arrow-up-right');
+    arrow.className = 'size-4 shrink-0 text-slate-500';
+    link.append(iconWrap, content, arrow);
+    link.addEventListener('mouseenter', () => updateActiveItem(selectableItems().indexOf(link)));
+    suggestions.appendChild(link);
+  };
+  const renderResults = (data, query) => {
+    clear();
+    if (data.incomplete) {
+      const warning = document.createElement('div');
+      warning.className = 'global-search-warning';
+      warning.textContent = `${data.failedBuckets.length} bucket${data.failedBuckets.length === 1 ? '' : 's'} could not be searched.`;
+      suggestions.appendChild(warning);
+    }
+    if (!data.results.length) {
+      const empty = document.createElement('div');
+      empty.className = 'global-search-message';
+      empty.textContent = 'No matching files or folders.';
+      suggestions.appendChild(empty);
+    } else {
+      data.results.forEach((result, index) => addResult(result, query, index));
+    }
+    if (data.hasMore) {
+      const more = document.createElement('a');
+      more.id = 'globalSearchMoreResults';
+      more.className = 'global-search-more';
+      more.href = appUrl(globalSearchPagePath(query));
+      more.setAttribute('role', 'option');
+      more.setAttribute('aria-selected', 'false');
+      more.dataset.searchSelectable = 'true';
+      const label = document.createElement('span');
+      label.textContent = `More results (${data.total})`;
+      const icon = document.createElement('i');
+      icon.setAttribute('data-lucide', 'arrow-up-right');
+      more.append(label, icon);
+      more.addEventListener('mouseenter', () => updateActiveItem(selectableItems().indexOf(more)));
+      suggestions.appendChild(more);
+    }
+    open();
+    announce(`${data.total} result${data.total === 1 ? '' : 's'} found.`);
+    refreshIcons();
+  };
+  const search = async query => {
+    requestController?.abort();
+    requestController = new AbortController();
+    renderMessage('Searching all buckets…', 'is-loading');
+    try {
+      const response = await apiFetch(`/api/search?${new URLSearchParams({ q: query, limit: '5' })}`, {
+        headers: { Accept: 'application/json' },
+        signal: requestController.signal,
+      });
+      if (!response.ok) throw new Error(await getResponseErrorMessage(response, 'Search failed'));
+      renderResults(await response.json(), query);
+    } catch (error) {
+      if (error.name !== 'AbortError') renderMessage(error.message || 'Search failed.', 'is-error');
+    }
+  };
+
+  input.addEventListener('input', () => {
+    input.setCustomValidity('');
+    clearTimeout(debounceTimer);
+    requestController?.abort();
+    const query = input.value.trim();
+    if (query.length < 2) {
+      close();
+      announce(query.length ? 'Type one more character to search.' : '');
+      return;
+    }
+    debounceTimer = setTimeout(() => search(query), 300);
+  });
+  input.addEventListener('focus', () => {
+    if (suggestions.childElementCount && input.value.trim().length >= 2) open();
+  });
+  input.addEventListener('keydown', event => {
+    if (event.key === 'Escape') {
+      close();
+      return;
+    }
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      const items = selectableItems();
+      if (!items.length) return;
+      event.preventDefault();
+      updateActiveItem(activeIndex + (event.key === 'ArrowDown' ? 1 : -1));
+      return;
+    }
+    if (event.key === 'Enter' && activeIndex >= 0) {
+      const target = selectableItems()[activeIndex];
+      if (target) {
+        event.preventDefault();
+        window.location.href = target.href;
+      }
+    }
+  });
+  form.addEventListener('submit', event => {
+    if (input.value.trim().length < 2) {
+      event.preventDefault();
+      input.setCustomValidity('Enter at least 2 characters.');
+      input.reportValidity();
+    } else {
+      input.setCustomValidity('');
+    }
+  });
+  document.addEventListener('click', event => {
+    if (!root.contains(event.target)) close();
+  });
+}
+document.addEventListener('DOMContentLoaded', initGlobalSearch);
+
 window.showToast = (message, type = 'info') => { const container = document.getElementById('toastContainer'); if (!container) return; const toast = document.createElement('div'); toast.className = `toast ${type}`; toast.setAttribute('role', 'status'); toast.innerHTML = `<span>${String(message || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}</span><button class="btn-icon shrink-0" aria-label="Dismiss"><i data-lucide="x"></i></button>`; toast.querySelector('button').onclick = () => toast.remove(); container.appendChild(toast); createIcons({ icons, attrs: { width: 16, height: 16 } }); setTimeout(() => toast.remove(), 4500); };

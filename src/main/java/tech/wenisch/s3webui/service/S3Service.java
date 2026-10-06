@@ -123,6 +123,59 @@ public class S3Service {
         return directories;
     }
 
+    /**
+     * Lists every object key in a bucket without applying a delimiter. This is intentionally
+     * separate from {@link #listObjects(String, String)}, whose delimiter-based response powers
+     * one folder at a time in the browser.
+     */
+    public List<S3ObjectDto> listAllObjects(String bucket) {
+        var objects = new ArrayList<S3ObjectDto>();
+        Set<String> continuationTokens = new HashSet<>();
+        String continuationToken = null;
+
+        do {
+            var request = ListObjectsV2Request.builder()
+                    .bucket(bucket)
+                    .continuationToken(continuationToken)
+                    .build();
+            var response = s3Client.listObjectsV2(request);
+
+            for (S3Object object : response.contents()) {
+                String key = object.key();
+                objects.add(S3ObjectDto.builder()
+                        .key(key)
+                        .name(fileName(key))
+                        .size(object.size())
+                        .lastModified(object.lastModified())
+                        .storageClass(object.storageClassAsString())
+                        .directory(key != null && key.endsWith("/"))
+                        .build());
+            }
+
+            if (!Boolean.TRUE.equals(response.isTruncated())) {
+                break;
+            }
+
+            continuationToken = response.nextContinuationToken();
+            if (continuationToken == null || continuationToken.isBlank()
+                    || !continuationTokens.add(continuationToken)) {
+                throw new IllegalStateException("S3 returned an invalid continuation token while indexing bucket '"
+                        + bucket + "'");
+            }
+        } while (true);
+
+        return objects;
+    }
+
+    private String fileName(String key) {
+        if (key == null || key.isEmpty()) {
+            return "";
+        }
+        String withoutTrailingSlash = key.endsWith("/") ? key.substring(0, key.length() - 1) : key;
+        int separator = withoutTrailingSlash.lastIndexOf('/');
+        return withoutTrailingSlash.substring(separator + 1);
+    }
+
     public ResponseInputStream<GetObjectResponse> getObject(String bucket, String key) {
         return s3Client.getObject(GetObjectRequest.builder()
                 .bucket(bucket)

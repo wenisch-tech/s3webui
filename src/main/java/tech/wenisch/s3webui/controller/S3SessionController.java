@@ -1,6 +1,7 @@
 package tech.wenisch.s3webui.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.CacheControl;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -11,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import tech.wenisch.s3webui.model.S3CredentialView;
 import tech.wenisch.s3webui.service.S3ConnectionSettingsService;
+import tech.wenisch.s3webui.service.GlobalSearchService;
 
 import java.util.List;
 
@@ -23,6 +25,12 @@ import java.util.List;
 public class S3SessionController {
 
     private final S3ConnectionSettingsService s3ConnectionSettingsService;
+    private GlobalSearchService globalSearchService;
+
+    @Autowired
+    void setGlobalSearchService(GlobalSearchService globalSearchService) {
+        this.globalSearchService = globalSearchService;
+    }
 
     @GetMapping
     public SessionStatusResponse getStatus() {
@@ -56,6 +64,9 @@ public class S3SessionController {
                             request.endpointUrl(),
                             request.region(),
                             Boolean.TRUE.equals(request.insecureSkipTlsVerify())));
+        }
+        if (globalSearchService != null) {
+            globalSearchService.invalidate();
         }
         return ResponseEntity.ok().build();
     }

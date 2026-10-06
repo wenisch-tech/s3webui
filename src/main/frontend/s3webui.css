@@ -208,6 +208,110 @@
   html[data-theme='dark'] .table-sort-button {
     @apply hover:text-white;
   }
+  .global-search-shell {
+    @apply relative z-20 mx-auto mb-8 max-w-4xl;
+  }
+  .global-search-form {
+    @apply relative mx-auto flex max-w-4xl items-center rounded-2xl border border-slate-700/20 bg-white shadow-lg shadow-slate-950/5 transition focus-within:border-brand-500 focus-within:ring-4 focus-within:ring-brand-500/10;
+  }
+  html[data-theme='dark'] .global-search-form {
+    @apply border-slate-700 bg-slate-900 shadow-black/20;
+  }
+  .global-search-leading-icon {
+    @apply pointer-events-none absolute left-4 z-10 size-5 text-slate-500;
+  }
+  .global-search-input {
+    @apply min-h-14 min-w-0 flex-1 rounded-2xl bg-transparent py-3 pl-12 pr-20 text-base text-slate-950 placeholder:text-slate-500 focus:outline-none;
+  }
+  html[data-theme='dark'] .global-search-input {
+    @apply text-slate-100;
+  }
+  .global-search-hint {
+    @apply pointer-events-none absolute right-4 rounded-md border border-slate-700/20 bg-slate-800/5 px-2 py-1 text-[.65rem] font-semibold uppercase tracking-wide text-slate-500;
+  }
+  .global-search-suggestions {
+    @apply absolute left-0 right-0 top-[calc(100%+.5rem)] max-h-[28rem] overflow-y-auto rounded-xl border border-slate-700/20 bg-white p-2 shadow-2xl;
+  }
+  html[data-theme='dark'] .global-search-suggestions {
+    @apply border-slate-700 bg-slate-900;
+  }
+  .global-search-option {
+    @apply flex items-center gap-3 rounded-lg px-3 py-2.5 text-left transition hover:bg-brand-500/8;
+  }
+  .global-search-option.active {
+    @apply bg-brand-500/10;
+  }
+  .global-search-option-icon,
+  .search-result-icon {
+    @apply grid size-9 shrink-0 place-items-center rounded-lg bg-brand-500/10 text-brand-700;
+  }
+  html[data-theme='dark'] .global-search-option-icon,
+  html[data-theme='dark'] .search-result-icon {
+    @apply text-brand-400;
+  }
+  .global-search-option-name,
+  .global-search-option-path {
+    @apply block truncate;
+  }
+  .global-search-option-name {
+    @apply font-semibold text-slate-950;
+  }
+  html[data-theme='dark'] .global-search-option-name {
+    @apply text-slate-100;
+  }
+  .global-search-option-name mark {
+    @apply bg-transparent font-bold text-brand-700;
+  }
+  html[data-theme='dark'] .global-search-option-name mark {
+    @apply text-brand-400;
+  }
+  .global-search-option-path {
+    @apply mt-0.5 text-xs text-slate-500;
+  }
+  .global-search-message,
+  .global-search-warning {
+    @apply px-3 py-4 text-sm text-slate-500;
+  }
+  .global-search-message.is-loading {
+    @apply animate-pulse;
+  }
+  .global-search-message.is-error {
+    @apply text-bad-500;
+  }
+  .global-search-warning {
+    @apply rounded-lg bg-warn-500/10 py-2 text-warn-500;
+  }
+  .global-search-more {
+    @apply mt-1 flex items-center justify-between rounded-lg border-t px-3 py-3 font-semibold text-brand-700 hover:bg-brand-500/8;
+  }
+  .global-search-more.active {
+    @apply bg-brand-500/10;
+  }
+  html[data-theme='dark'] .global-search-more {
+    @apply text-brand-400;
+  }
+  .search-result-row {
+    @apply flex items-center gap-3 px-4 py-4 transition hover:bg-brand-500/5;
+  }
+  .search-result-name,
+  .search-result-path {
+    @apply block;
+  }
+  .search-result-name {
+    @apply break-all font-semibold text-slate-950;
+  }
+  html[data-theme='dark'] .search-result-name {
+    @apply text-slate-100;
+  }
+  .search-result-path {
+    @apply mt-1 break-all text-xs text-slate-500;
+  }
+  .object-search-highlight td {
+    @apply bg-brand-500/12;
+  }
+  .object-search-highlight td:first-child {
+    box-shadow: inset 3px 0 0 var(--color-brand-500);
+  }
   .bucket-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr));

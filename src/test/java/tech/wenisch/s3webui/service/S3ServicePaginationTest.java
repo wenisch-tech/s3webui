@@ -84,4 +84,46 @@ class S3ServicePaginationTest {
 
         assertThrows(IllegalStateException.class, () -> s3Service.listObjects("bucket-a", ""));
     }
+
+    @Test
+    void listAllObjectsUsesDelimiterFreePaginationAndPreservesFolderMarkers() {
+        S3Client s3Client = mock(S3Client.class);
+        S3Service s3Service = new S3Service(s3Client, mock(S3Presigner.class));
+        when(s3Client.listObjectsV2(any(ListObjectsV2Request.class)))
+                .thenReturn(ListObjectsV2Response.builder()
+                                .isTruncated(true)
+                                .nextContinuationToken("page-2")
+                                .contents(S3Object.builder().key("docs/").size(0L).build())
+                                .build(),
+                        ListObjectsV2Response.builder()
+                                .isTruncated(false)
+                                .contents(S3Object.builder().key("docs/report.pdf").size(42L).build())
+                                .build());
+
+        List<S3ObjectDto> objects = s3Service.listAllObjects("bucket-a");
+
+        assertEquals(List.of("docs", "report.pdf"), objects.stream().map(S3ObjectDto::getName).toList());
+        assertEquals(List.of(true, false), objects.stream().map(S3ObjectDto::isDirectory).toList());
+        ArgumentCaptor<ListObjectsV2Request> captor = ArgumentCaptor.forClass(ListObjectsV2Request.class);
+        verify(s3Client, times(2)).listObjectsV2(captor.capture());
+        assertNull(captor.getAllValues().get(0).delimiter());
+        assertEquals("page-2", captor.getAllValues().get(1).continuationToken());
+    }
+
+    @Test
+    void listAllObjectsRejectsRepeatedContinuationToken() {
+        S3Client s3Client = mock(S3Client.class);
+        S3Service s3Service = new S3Service(s3Client, mock(S3Presigner.class));
+        when(s3Client.listObjectsV2(any(ListObjectsV2Request.class)))
+                .thenReturn(ListObjectsV2Response.builder()
+                                .isTruncated(true)
+                                .nextContinuationToken("same-token")
+                                .build(),
+                        ListObjectsV2Response.builder()
+                                .isTruncated(true)
+                                .nextContinuationToken("same-token")
+                                .build());
+
+        assertThrows(IllegalStateException.class, () -> s3Service.listAllObjects("bucket-a"));
+    }
 }

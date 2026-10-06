@@ -1,0 +1,167 @@
+<!doctype html>
+<html
+  lang="en"
+  xmlns:th="http://www.thymeleaf.org"
+  xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+>
+  <head th:replace="~{fragments/shell :: head('Search')}"></head>
+  <body>
+    <nav th:replace="~{fragments/shell :: topbar('buckets')}"></nav>
+    <main class="page">
+      <nav class="mb-5 flex items-center gap-2 text-sm text-slate-500" aria-label="Breadcrumb">
+        <a class="hover:text-brand-600" th:href="@{/}">Buckets</a>
+        <span>/</span>
+        <span>Search</span>
+      </nav>
+
+      <header class="page-header">
+        <div>
+          <p class="eyebrow">All buckets</p>
+          <h1 class="page-title">Search results</h1>
+          <p
+            class="page-copy"
+            th:if="${searchResults != null}"
+            th:text="${searchResults.total} + (${searchResults.total == 1} ? ' result' : ' results') + ' for “' + ${query} + '”'"
+          >
+            Results
+          </p>
+        </div>
+        <a
+          class="btn-secondary"
+          th:if="${searchResults != null}"
+          th:href="@{/search(q=${query},refresh=true)}"
+        >
+          <i data-lucide="refresh-cw"></i>
+          Refresh index
+        </a>
+      </header>
+
+      <form class="global-search-form mb-6" th:action="@{/search}" method="get" role="search">
+        <label class="sr-only" for="resultsSearchInput">Search all buckets</label>
+        <i data-lucide="search" class="global-search-leading-icon" aria-hidden="true"></i>
+        <input
+          id="resultsSearchInput"
+          class="global-search-input"
+          name="q"
+          type="search"
+          minlength="2"
+          maxlength="200"
+          required
+          autofocus
+          th:value="${query}"
+          placeholder="Search files and folders in all buckets…"
+        />
+        <button class="btn-primary mr-2" type="submit">Search</button>
+      </form>
+
+      <div th:if="${error}" class="alert alert-error mb-5">
+        <i data-lucide="shield-alert"></i>
+        <span th:text="${error}">Search failed</span>
+      </div>
+
+      <div
+        th:if="${searchResults != null and searchResults.incomplete}"
+        class="alert alert-warn mb-5"
+      >
+        <i data-lucide="info"></i>
+        <span>
+          Some buckets could not be searched:
+          <strong th:text="${#strings.listJoin(searchResults.failedBuckets, ', ')}">bucket</strong>.
+          Results may be incomplete.
+        </span>
+      </div>
+
+      <section
+        class="panel"
+        th:if="${searchResults != null and !#lists.isEmpty(searchResults.results)}"
+        aria-label="Global search results"
+      >
+        <div class="divide-y">
+          <a
+            class="search-result-row"
+            th:each="result : ${searchResults.results}"
+            th:href="${result.type.name() == 'FOLDER'}
+              ? @{/buckets/{b}(b=${result.bucket},prefix=${result.key})}
+              : @{/buckets/{b}(b=${result.bucket},prefix=${result.parentPrefix},highlight=${result.key})}"
+          >
+            <span class="search-result-icon">
+              <i
+                th:attr="data-lucide=${result.type.name() == 'FOLDER' ? 'folder' : 'file'}"
+                aria-hidden="true"
+              ></i>
+            </span>
+            <span class="min-w-0 flex-1">
+              <span class="search-result-name" th:text="${result.name}">name</span>
+              <span class="search-result-path">
+                <strong th:text="${result.bucket}">bucket</strong>
+                <span th:if="${!#strings.isEmpty(result.parentPrefix)}">
+                  / <span th:text="${result.parentPrefix}">path/</span>
+                </span>
+              </span>
+            </span>
+            <span class="hidden shrink-0 text-right text-xs text-slate-500 sm:block">
+              <span
+                class="block"
+                th:if="${result.type.name() == 'FILE'}"
+                th:text="${@fileSizeFormatter.format(result.size)}"
+              >
+                size
+              </span>
+              <time
+                class="block"
+                th:if="${result.lastModified != null}"
+                th:attr="datetime=${result.lastModified}"
+                th:text="${#temporals.format(result.lastModified, 'yyyy-MM-dd HH:mm')}"
+              >
+                date
+              </time>
+            </span>
+            <i data-lucide="arrow-up-right" class="size-4 shrink-0 text-slate-500"></i>
+          </a>
+        </div>
+        <footer class="flex flex-wrap items-center justify-between gap-3 border-t px-4 py-3">
+          <span
+            class="text-sm text-slate-500"
+            th:text="'Page ' + ${currentPage} + ' of ' + ${pageCount}"
+          >
+            Page 1 of 1
+          </span>
+          <nav class="flex items-center gap-2" aria-label="Search result pages">
+            <a
+              class="btn-secondary"
+              th:classappend="${currentPage <= 1} ? ' pointer-events-none opacity-50'"
+              th:attr="aria-disabled=${currentPage <= 1}"
+              th:href="${currentPage > 1} ? @{/search(q=${query},page=${currentPage - 1})} : '#'"
+            >
+              Previous
+            </a>
+            <a
+              class="btn-secondary"
+              th:classappend="${currentPage >= pageCount} ? ' pointer-events-none opacity-50'"
+              th:attr="aria-disabled=${currentPage >= pageCount}"
+              th:href="${currentPage < pageCount} ? @{/search(q=${query},page=${currentPage + 1})} : '#'"
+            >
+              Next
+            </a>
+          </nav>
+        </footer>
+      </section>
+
+      <section
+        class="empty-state"
+        th:if="${searchResults != null and #lists.isEmpty(searchResults.results)}"
+      >
+        <div class="mx-auto grid size-14 place-items-center rounded-full bg-brand-500/10 text-brand-700">
+          <i data-lucide="search-x"></i>
+        </div>
+        <h2 class="mt-4 text-lg font-semibold">No files or folders found</h2>
+        <p class="mt-1 text-sm text-slate-500">
+          Try another name or a part of the full object path.
+        </p>
+      </section>
+    </main>
+    <div th:replace="~{fragments/shell :: s3ConfigDialog}"></div>
+    <div th:replace="~{fragments/shell :: footer}"></div>
+    <div th:replace="~{fragments/shell :: scripts}"></div>
+  </body>
+</html>
