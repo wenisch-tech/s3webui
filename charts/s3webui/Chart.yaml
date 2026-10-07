@@ -16,6 +16,8 @@ maintainers:
   - name: Jean-Fabian Wenisch
     url: https://github.com/JFWenisch
 annotations:
+  # Makes the GHCR OCI package display wenisch-tech/s3webui as its source repository.
+  org.opencontainers.image.source: https://github.com/wenisch-tech/s3webui
   artifacthub.io/category: storage
   artifacthub.io/license: AGPL-3.0
   artifacthub.io/prerelease: "false"
