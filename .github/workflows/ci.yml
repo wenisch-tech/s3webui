@@ -100,7 +100,7 @@ jobs:
       - docker
     permissions:
       contents: write
-      packages: read
+      packages: write
       id-token: write
     uses: ./.github/workflows/_release.yml
     with:
