@@ -1,5 +1,20 @@
 # Changelog
 
+## v1.5.4 - 2026-10-07
+
+### [1.5.4](https://github.com/wenisch-tech/s3webui/compare/v1.5.3...v1.5.4) (2026-10-07)
+
+
+### Bug Fixes
+
+* fixed deployment of helm charts due to restructuring and added support for helm chart as OCI Package ([bfaf97c](https://github.com/wenisch-tech/s3webui/commit/bfaf97c19025f98586926099a04565f30cabb520))
+* fixed permissions required to generate oci package during CI ([6f359e4](https://github.com/wenisch-tech/s3webui/commit/6f359e4b5dc3bd633ffb3aca296cb54a9585ed43))
+
+
+
+Docker image: ghcr.io/wenisch-tech/s3webui:1.5.4
+
+
 ## v1.5.3 - 2026-10-06
 
 ### [1.5.3](https://github.com/wenisch-tech/s3webui/compare/v1.5.2...v1.5.3) (2026-10-06)
