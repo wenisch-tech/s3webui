@@ -15,3 +15,4 @@ S3WEBUI bundles the following fonts so the user interface does not depend on an 
 - Source: https://github.com/JetBrains/JetBrainsMono/releases/tag/v2.304
 - License: SIL Open Font License 1.1
 - Bundled files: `JetBrainsMono-Regular.woff2`, `OFL.txt`
+
