@@ -1,4 +1,4 @@
-# syntax=docker/dockerfile:1.27
+# syntax=docker/dockerfile:1.28
 
 FROM cgr.dev/chainguard/jre:latest
 WORKDIR /app
