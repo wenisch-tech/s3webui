@@ -10,7 +10,7 @@ A modern, clean graphical web interface for S3-compatible object storage, with l
 
 
 
-![S3 Web UI product tour (dark theme)](docs/img/s3webui-tour-dark.gif)
+![S3 Web UI product tour (dark theme)](docs/.img/s3webui-tour-dark.gif)
 
 
 ## Table of contents
@@ -32,6 +32,14 @@ A modern, clean graphical web interface for S3-compatible object storage, with l
 - [Contributing](#contributing)
 - [License](#license)
 
+## Documentation
+
+The extended documentation lives in [docs/README.md](docs/README.md):
+
+- [Installation](docs/Installation/README.md)
+- [Usage](docs/Usage/README.md)
+- [Administration](docs/Administration/README.md)
+
 ## How access works
 
 1. A user signs in — with e-mail and password, or through an OIDC provider.
@@ -47,7 +55,7 @@ immediately.
 
 Set `DISABLE_AUTHENTICATION=true` to skip sign-in entirely. Every visitor then runs as a virtual
 administrator, while local user management and OIDC are disabled; IAM management continues to work.
-See [Authentication](docs/Authentication.md) for the complete configuration and security guidance.
+See [Authentication](docs/Administration/Authentication.md) for the complete configuration and security guidance.
 
 ## Quick start with RustFS
 
@@ -159,7 +167,7 @@ table is empty; changing `ADMIN_PASSWORD` later has no effect.
 When `DISABLE_AUTHENTICATION=true`, local sign-in, OIDC and local-user management are disabled.
 Every request is handled as an administrator, including IAM management. Use this mode only behind a
 trusted network boundary; no application-level access control remains. Full instructions for local
-accounts, OIDC and disabled authentication are in [Authentication](docs/Authentication.md).
+accounts, OIDC and disabled authentication are in [Authentication](docs/Administration/Authentication.md).
 
 ### S3 connection
 

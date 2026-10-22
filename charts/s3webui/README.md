@@ -224,7 +224,7 @@ grants under **Settings → S3 keys** before making a generated key available to
 By default, S3 Web UI requires a local or OIDC sign-in. Set `env.DISABLE_AUTHENTICATION` to
 `"true"` only when a trusted network boundary protects the application: every visitor becomes a
 virtual administrator, local user management is unavailable, and OIDC configuration is ignored.
-IAM management remains available. See the [authentication guide](../../docs/Authentication.md) for
+IAM management remains available. See the [authentication guide](../../docs/Administration/Authentication.md) for
 the local, OIDC, and disabled-authentication modes.
 
 | Parameter | Description | Default | Required |
