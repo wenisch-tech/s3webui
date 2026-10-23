@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.6.3 - 2026-10-23
+
+### [1.6.3](https://github.com/wenisch-tech/s3webui/compare/v1.6.2...v1.6.3) (2026-10-23)
+
+
+### Bug Fixes
+
+* allow install of helm plugins without verification ([3f6c8e0](https://github.com/wenisch-tech/s3webui/commit/3f6c8e00c5a0d592126497e94d535d965299bfa2))
+
+
+
+Docker image: ghcr.io/wenisch-tech/s3webui:1.6.3
+
+
 ## v1.6.1 - 2026-10-19
 
 ### [1.6.1](https://github.com/wenisch-tech/s3webui/compare/v1.6.0...v1.6.1) (2026-10-19)
