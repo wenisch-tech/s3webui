@@ -90,7 +90,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          helm plugin install https://github.com/karuppiah7890/helm-schema-gen.git --version 0.0.4
+          helm plugin install https://github.com/karuppiah7890/helm-schema-gen.git --version 0.0.4 --verify=false
           generated_schema="$(mktemp)"
           helm schema-gen charts/s3webui/values.yaml \
             | jq --indent 4 '.properties.existingSecrets.items = {"type": "string"}' \
