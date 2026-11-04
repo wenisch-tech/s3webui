@@ -927,7 +927,8 @@
         /** Buckets offered by every identity-policy editor; fetched once per page. */
         function iamLoadBucketSubjects() {
           if (!_iamBucketSubjects) {
-            _iamBucketSubjects = apiFetch('/api/buckets').then(async (response) => {
+            // Every bucket, even ones the admin's own key cannot browse: this picker grants access.
+            _iamBucketSubjects = apiFetch('/api/buckets?includeUnbrowsable=true').then(async (response) => {
               if (!response.ok) {
                 _iamBucketSubjects = null;
                 throw new Error(await getResponseErrorMessage(response, 'Could not load buckets'));

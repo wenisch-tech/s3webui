@@ -3,8 +3,10 @@ package tech.wenisch.s3webui.controller;
 import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
+import tech.wenisch.s3webui.model.BucketDto;
 import tech.wenisch.s3webui.model.CorsRuleDto;
 import tech.wenisch.s3webui.service.AuditHistoryService;
+import tech.wenisch.s3webui.service.BucketVisibilityService;
 import tech.wenisch.s3webui.service.S3Service;
 import tech.wenisch.s3webui.service.GlobalSearchService;
 import tools.jackson.databind.json.JsonMapper;
@@ -13,6 +15,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.List;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -40,6 +43,33 @@ class S3ApiControllerTest {
         controller.deleteObject("bucket-a", "folder/file.txt", null);
 
         verify(searchService).invalidate();
+    }
+
+    @Test
+    void bucketListIsFilteredUnlessEveryBucketIsRequested() {
+        S3Service s3Service = mock(S3Service.class);
+        BucketVisibilityService visibility = mock(BucketVisibilityService.class);
+        var all = List.of(BucketDto.builder().name("open").build(), BucketDto.builder().name("locked").build());
+        when(s3Service.listBuckets()).thenReturn(all);
+        when(visibility.filter(all)).thenReturn(List.of(all.get(0)));
+        S3ApiController controller = new S3ApiController(s3Service, mock(AuditHistoryService.class), jsonMapper);
+        controller.setBucketVisibilityService(visibility);
+
+        assertThat(controller.listBuckets(false).getBody()).extracting(BucketDto::getName).containsExactly("open");
+        assertThat(controller.listBuckets(true).getBody()).extracting(BucketDto::getName)
+                .containsExactly("open", "locked");
+    }
+
+    @Test
+    void changingABucketPolicyForgetsCachedBucketVisibility() {
+        BucketVisibilityService visibility = mock(BucketVisibilityService.class);
+        S3ApiController controller = new S3ApiController(mock(S3Service.class), mock(AuditHistoryService.class), jsonMapper);
+        controller.setBucketVisibilityService(visibility);
+
+        controller.updateBucketPolicy("b", "{\"Statement\": []}", null);
+        controller.deleteBucketPolicy("b", null);
+
+        verify(visibility, org.mockito.Mockito.times(2)).invalidate();
     }
 
     @Test

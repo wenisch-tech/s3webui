@@ -88,7 +88,8 @@ class FrontendMigrationTest {
     assertThat(shell)
         .contains("@{/admin/settings}")
         .doesNotContain("@{/admin}");
-    assertThat(settings).contains("renderCredentials", "renderUsers", "refreshIcons();");
+    assertThat(settings).contains("renderCredentials", "renderUsers", "refreshIcons();",
+        "id=\"hideUnbrowsableBuckets\"", "hideUnbrowsableBuckets,");
   }
 
   @Test

@@ -1,6 +1,7 @@
 package tech.wenisch.s3webui.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -16,6 +17,7 @@ import tech.wenisch.s3webui.model.iam.IamGroup;
 import tech.wenisch.s3webui.model.iam.IamPolicySummary;
 import tech.wenisch.s3webui.model.iam.IamTarget;
 import tech.wenisch.s3webui.model.iam.IamUser;
+import tech.wenisch.s3webui.service.BucketVisibilityService;
 import tech.wenisch.s3webui.service.IamService;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.json.JsonMapper;
@@ -45,6 +47,19 @@ public class IamApiController {
     private final IamService iamService;
     private final AuditSupport audit;
     private final JsonMapper jsonMapper;
+    private BucketVisibilityService bucketVisibilityService;
+
+    @Autowired
+    void setBucketVisibilityService(BucketVisibilityService bucketVisibilityService) {
+        this.bucketVisibilityService = bucketVisibilityService;
+    }
+
+    /** Policy and membership changes can change which buckets a key may browse. */
+    private void accessChanged() {
+        if (bucketVisibilityService != null) {
+            bucketVisibilityService.invalidate();
+        }
+    }
 
     @GetMapping("/capabilities")
     public IamCapabilities capabilities() {
@@ -130,6 +145,7 @@ public class IamApiController {
                                Principal principal) {
         audit.audited(principal, "EDIT", GROUP, groupName, "Added " + userName + " to the group",
                 () -> iamService.provider().addUserToGroup(userName, groupName));
+        accessChanged();
     }
 
     @DeleteMapping("/groups/{groupName}/members/{userName}")
@@ -137,6 +153,7 @@ public class IamApiController {
                                   Principal principal) {
         audit.audited(principal, "EDIT", GROUP, groupName, "Removed " + userName + " from the group",
                 () -> iamService.provider().removeUserFromGroup(userName, groupName));
+        accessChanged();
     }
 
     // ── Policies ─────────────────────────────────────────────────────────
@@ -171,12 +188,14 @@ public class IamApiController {
         requireValidJson(document);
         audit.audited(principal, "EDIT", POLICY, id, "Updated IAM policy",
                 () -> iamService.provider().updatePolicy(id, document));
+        accessChanged();
     }
 
     @DeleteMapping("/policy")
     public void deletePolicy(@RequestParam String id, Principal principal) {
         audit.audited(principal, "DELETE", POLICY, id, "Deleted IAM policy",
                 () -> iamService.provider().deletePolicy(id));
+        accessChanged();
     }
 
     // ── Policy attachments ───────────────────────────────────────────────
@@ -275,6 +294,7 @@ public class IamApiController {
         requireValidJson(document);
         audit.audited(principal, "EDIT", resourceType, target.name(), "Set inline policy " + name,
                 () -> iamService.provider().putInlinePolicy(target, name, document));
+        accessChanged();
     }
 
     private void deleteInline(IamTarget target, String resourceType, String policyName,
@@ -282,6 +302,7 @@ public class IamApiController {
         String name = requireText(policyName, "Policy name");
         audit.audited(principal, "EDIT", resourceType, target.name(), "Removed inline policy " + name,
                 () -> iamService.provider().deleteInlinePolicy(target, name));
+        accessChanged();
     }
 
     private void attach(IamTarget target, String resourceType, PolicyRefRequest request,
@@ -289,11 +310,13 @@ public class IamApiController {
         String policyId = requireText(request == null ? null : request.policyId(), "Policy");
         audit.audited(principal, "EDIT", resourceType, target.name(), "Attached policy " + policyId,
                 () -> iamService.provider().attachPolicy(target, policyId));
+        accessChanged();
     }
 
     private void detach(IamTarget target, String resourceType, String policyId, Principal principal) {
         audit.audited(principal, "EDIT", resourceType, target.name(), "Detached policy " + policyId,
                 () -> iamService.provider().detachPolicy(target, policyId));
+        accessChanged();
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────

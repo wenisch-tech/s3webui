@@ -42,6 +42,14 @@ public class GlobalSearchService {
     private String credentialFingerprint;
     private final Map<String, BucketCatalog> bucketCatalogs = new HashMap<>();
 
+    private BucketVisibilityService bucketVisibilityService;
+
+    /** Optional: hidden buckets are skipped instead of being reported as search failures. */
+    @org.springframework.beans.factory.annotation.Autowired
+    void setBucketVisibilityService(BucketVisibilityService bucketVisibilityService) {
+        this.bucketVisibilityService = bucketVisibilityService;
+    }
+
     public GlobalSearchService(
             S3Service s3Service,
             S3ConnectionSettingsService settingsService,
@@ -141,7 +149,11 @@ public class GlobalSearchService {
         List<String> failures = new ArrayList<>();
         Instant oldestCatalogTime = null;
 
-        for (var bucket : s3Service.listBuckets()) {
+        var buckets = s3Service.listBuckets();
+        if (bucketVisibilityService != null) {
+            buckets = bucketVisibilityService.filter(buckets);
+        }
+        for (var bucket : buckets) {
             try {
                 BucketCatalog bucketCatalog = loadBucketCatalog(bucket.getName(), now, forceRefresh);
                 rebuilt.addAll(bucketCatalog.entries());

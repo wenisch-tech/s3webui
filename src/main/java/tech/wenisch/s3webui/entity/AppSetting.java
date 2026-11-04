@@ -22,6 +22,7 @@ public class AppSetting {
 
     /** Whether a user may view the secret for a stored S3 key they are allowed to use. */
     public static final String ALLOW_USERS_TO_REVEAL_KEYS = "allowUsersToRevealKeys";
+    public static final String HIDE_UNBROWSABLE_BUCKETS = "hideUnbrowsableBuckets";
 
     @Id
     @Column(name = "setting_key")

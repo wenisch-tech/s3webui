@@ -16,6 +16,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -158,6 +159,35 @@ class AdminApiControllerTest {
         mockMvc.perform(get("/api/admin/settings"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.allowUserSuppliedCredentials").value(true))
-                .andExpect(jsonPath("$.allowUsersToRevealKeys").value(false));
+                .andExpect(jsonPath("$.allowUsersToRevealKeys").value(false))
+                .andExpect(jsonPath("$.hideUnbrowsableBuckets").value(false));
+    }
+
+    @Test
+    @WithMockUser(username = "admin@s3webui.local", roles = "ADMIN")
+    void hidingUnbrowsableBucketsSurvivesClientsThatDoNotSendTheFlag() throws Exception {
+        try {
+            mockMvc.perform(put("/api/admin/settings").with(csrf())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("""
+                                    {"allowUserSuppliedCredentials": true, "allowUsersToRevealKeys": false,
+                                     "hideUnbrowsableBuckets": true}"""))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.hideUnbrowsableBuckets").value(true));
+
+            // An older client that knows nothing about the flag must not switch it off.
+            mockMvc.perform(put("/api/admin/settings").with(csrf())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("""
+                                    {"allowUserSuppliedCredentials": true, "allowUsersToRevealKeys": false}"""))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.hideUnbrowsableBuckets").value(true));
+        } finally {
+            mockMvc.perform(put("/api/admin/settings").with(csrf())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""
+                            {"allowUserSuppliedCredentials": true, "allowUsersToRevealKeys": false,
+                             "hideUnbrowsableBuckets": false}"""));
+        }
     }
 }

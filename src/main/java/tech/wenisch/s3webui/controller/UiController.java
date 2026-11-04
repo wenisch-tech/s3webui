@@ -2,6 +2,7 @@ package tech.wenisch.s3webui.controller;
 
 import tech.wenisch.s3webui.service.S3Service;
 import tech.wenisch.s3webui.service.S3ConnectionSettingsService;
+import tech.wenisch.s3webui.service.BucketVisibilityService;
 import tech.wenisch.s3webui.service.GlobalSearchService;
 import tech.wenisch.s3webui.config.AuthenticationProperties;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +22,7 @@ public class UiController {
     private final S3ConnectionSettingsService s3ConnectionSettingsService;
     private final AuthenticationProperties authenticationProperties;
     private final GlobalSearchService globalSearchService;
+    private final BucketVisibilityService bucketVisibilityService;
 
     @GetMapping("/")
     public String buckets(Model model) {
@@ -31,7 +33,7 @@ public class UiController {
         }
 
         try {
-            model.addAttribute("buckets", s3Service.listBuckets());
+            model.addAttribute("buckets", bucketVisibilityService.filter(s3Service.listBuckets()));
             model.addAttribute("error", null);
         } catch (Exception e) {
             log.error("Failed to list buckets", e);

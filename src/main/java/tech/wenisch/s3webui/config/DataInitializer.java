@@ -53,5 +53,6 @@ public class DataInitializer implements ApplicationRunner {
     private void initDefaultSettings() {
         appSettingsService.seedDefault(AppSetting.ALLOW_USER_SUPPLIED_CREDENTIALS, Boolean.TRUE.toString());
         appSettingsService.seedDefault(AppSetting.ALLOW_USERS_TO_REVEAL_KEYS, Boolean.FALSE.toString());
+        appSettingsService.seedDefault(AppSetting.HIDE_UNBROWSABLE_BUCKETS, Boolean.FALSE.toString());
     }
 }

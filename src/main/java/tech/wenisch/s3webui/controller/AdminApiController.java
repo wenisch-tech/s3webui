@@ -18,6 +18,7 @@ import tech.wenisch.s3webui.entity.S3Credential;
 import tech.wenisch.s3webui.entity.S3CredentialGrant;
 import tech.wenisch.s3webui.entity.UserRole;
 import tech.wenisch.s3webui.service.AppSettingsService;
+import tech.wenisch.s3webui.service.BucketVisibilityService;
 import tech.wenisch.s3webui.service.AuthenticationIdentity;
 import tech.wenisch.s3webui.service.S3CredentialService;
 import tech.wenisch.s3webui.service.UserService;
@@ -37,6 +38,7 @@ public class AdminApiController {
     private final S3CredentialService credentialService;
     private final UserService userService;
     private final AppSettingsService appSettingsService;
+    private final BucketVisibilityService bucketVisibilityService;
 
     // ── S3 keys ──────────────────────────────────────────────────────────────
 
@@ -104,13 +106,19 @@ public class AdminApiController {
     public SettingsResponse getSettings() {
         return new SettingsResponse(
                 appSettingsService.isUserSuppliedCredentialsAllowed(),
-                appSettingsService.areUsersAllowedToRevealKeys());
+                appSettingsService.areUsersAllowedToRevealKeys(),
+                appSettingsService.areUnbrowsableBucketsHidden());
     }
 
     @PutMapping("/settings")
     public SettingsResponse updateSettings(@RequestBody SettingsResponse request) {
         appSettingsService.setUserSuppliedCredentialsAllowed(Boolean.TRUE.equals(request.allowUserSuppliedCredentials()));
         appSettingsService.setUsersAllowedToRevealKeys(Boolean.TRUE.equals(request.allowUsersToRevealKeys()));
+        // Absent from older clients: keep the stored value rather than silently switching it off.
+        if (request.hideUnbrowsableBuckets() != null) {
+            appSettingsService.setUnbrowsableBucketsHidden(request.hideUnbrowsableBuckets());
+            bucketVisibilityService.invalidate();
+        }
         return getSettings();
     }
 
@@ -225,6 +233,7 @@ public class AdminApiController {
     ) {
     }
 
-    public record SettingsResponse(Boolean allowUserSuppliedCredentials, Boolean allowUsersToRevealKeys) {
+    public record SettingsResponse(Boolean allowUserSuppliedCredentials, Boolean allowUsersToRevealKeys,
+                                   Boolean hideUnbrowsableBuckets) {
     }
 }

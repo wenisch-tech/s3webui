@@ -7,6 +7,7 @@ import tech.wenisch.s3webui.model.CorsRuleDto;
 import tech.wenisch.s3webui.model.MoveObjectsRequest;
 import tech.wenisch.s3webui.model.S3ObjectDto;
 import tech.wenisch.s3webui.service.AuditHistoryService;
+import tech.wenisch.s3webui.service.BucketVisibilityService;
 import tech.wenisch.s3webui.service.GlobalSearchService;
 import tech.wenisch.s3webui.service.S3Service;
 import jakarta.servlet.http.HttpServletRequest;
@@ -48,6 +49,13 @@ public class S3ApiController {
     @Autowired
     void setGlobalSearchService(GlobalSearchService globalSearchService) {
         this.globalSearchService = globalSearchService;
+    }
+
+    private BucketVisibilityService bucketVisibilityService;
+
+    @Autowired
+    void setBucketVisibilityService(BucketVisibilityService bucketVisibilityService) {
+        this.bucketVisibilityService = bucketVisibilityService;
     }
 
     // ── Buckets ────────────────────────────────────────────────────────────
@@ -172,9 +180,19 @@ public class S3ApiController {
         return ResponseEntity.ok().build();
     }
 
+    /**
+     * The session's buckets. Filtered like the bucket page when an admin hides unbrowsable buckets;
+     * {@code includeUnbrowsable=true} returns the backend's full list (the IAM bucket-access picker
+     * needs every bucket to grant access to).
+     */
     @GetMapping("/buckets")
-    public ResponseEntity<List<BucketDto>> listBuckets() {
-        return ResponseEntity.ok(s3Service.listBuckets());
+    public ResponseEntity<List<BucketDto>> listBuckets(
+            @RequestParam(required = false, defaultValue = "false") boolean includeUnbrowsable) {
+        List<BucketDto> buckets = s3Service.listBuckets();
+        if (!includeUnbrowsable && bucketVisibilityService != null) {
+            buckets = bucketVisibilityService.filter(buckets);
+        }
+        return ResponseEntity.ok(buckets);
     }
 
     @PostMapping("/buckets/{bucket}/objects/rename")
@@ -341,6 +359,7 @@ public class S3ApiController {
         requireValidJson(policyJson, "Bucket policy");
         try {
             s3Service.putBucketPolicy(bucket, policyJson);
+            invalidateBucketVisibility();
             auditHistoryService.record(username(principal), "EDIT", "BUCKET", bucket, null, "Updated bucket policy");
         } catch (Exception ex) {
             recordFailure(principal, "EDIT", "BUCKET", bucket, null, ex);
@@ -353,6 +372,7 @@ public class S3ApiController {
     public ResponseEntity<Void> deleteBucketPolicy(@PathVariable String bucket, Principal principal) {
         try {
             s3Service.deleteBucketPolicy(bucket);
+            invalidateBucketVisibility();
             auditHistoryService.record(username(principal), "DELETE", "BUCKET", bucket, null, "Removed bucket policy");
         } catch (Exception ex) {
             recordFailure(principal, "DELETE", "BUCKET", bucket, null, ex);
@@ -416,6 +436,12 @@ public class S3ApiController {
 
     private String username(Principal principal) {
         return principal == null ? null : principal.getName();
+    }
+
+    private void invalidateBucketVisibility() {
+        if (bucketVisibilityService != null) {
+            bucketVisibilityService.invalidate();
+        }
     }
 
     private void invalidateSearchCatalog() {

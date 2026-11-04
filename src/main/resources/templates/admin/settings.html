@@ -153,6 +153,25 @@
               currently assigned to them. Disabled by default. Individual keys can also opt in from their edit panel.
             </p>
           </div>
+          <div class="mt-5 border-t border-slate-700/15 pt-5">
+            <div class="mb-2 flex items-center gap-2">
+              <input
+                class="form-check-input"
+                type="checkbox"
+                id="hideUnbrowsableBuckets"
+                onchange="saveGeneralSettings()"
+              />
+              <label class="text-sm" for="hideUnbrowsableBuckets">
+                Hide buckets that can't be browsed
+              </label>
+            </div>
+            <p class="text-sm text-slate-500">
+              Only shows buckets the selected S3 key may list (<code>s3:ListBucket</code>),
+              instead of every bucket the backend returns. Each bucket is checked once and the
+              result is cached for a few minutes. Applies to every user and key, including
+              administrators.
+            </p>
+          </div>
         </div>
 
         <!-- ── IAM ───────────────────────────────────────────── -->
@@ -770,16 +789,24 @@
           settings.allowUserSuppliedCredentials;
         document.getElementById('allowUsersToRevealKeys').checked = settings.allowUsersToRevealKeys;
         globalRevealEnabled = Boolean(settings.allowUsersToRevealKeys);
+        document.getElementById('hideUnbrowsableBuckets').checked = Boolean(
+          settings.hideUnbrowsableBuckets,
+        );
       }
 
       async function saveGeneralSettings() {
         const allowUserSuppliedCredentials = document.getElementById('allowOwnCredentials').checked;
         const allowUsersToRevealKeys = document.getElementById('allowUsersToRevealKeys').checked;
         globalRevealEnabled = allowUsersToRevealKeys;
+        const hideUnbrowsableBuckets = document.getElementById('hideUnbrowsableBuckets').checked;
         const response = await apiFetch('/api/admin/settings', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ allowUserSuppliedCredentials, allowUsersToRevealKeys }),
+          body: JSON.stringify({
+            allowUserSuppliedCredentials,
+            allowUsersToRevealKeys,
+            hideUnbrowsableBuckets,
+          }),
         });
 
         showToast(

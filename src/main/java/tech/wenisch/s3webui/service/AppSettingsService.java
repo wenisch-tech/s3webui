@@ -36,6 +36,16 @@ public class AppSettingsService {
     }
 
     @Transactional(readOnly = true)
+    public boolean areUnbrowsableBucketsHidden() {
+        return getBoolean(AppSetting.HIDE_UNBROWSABLE_BUCKETS, false);
+    }
+
+    @Transactional
+    public void setUnbrowsableBucketsHidden(boolean hidden) {
+        setValue(AppSetting.HIDE_UNBROWSABLE_BUCKETS, Boolean.toString(hidden));
+    }
+
+    @Transactional(readOnly = true)
     public boolean getBoolean(String key, boolean defaultValue) {
         return settingRepository.findById(key)
                 .map(AppSetting::getSettingValue)
