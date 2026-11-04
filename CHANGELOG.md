@@ -1,5 +1,21 @@
 # Changelog
 
+## v1.7.1 - 2026-11-04
+
+### [1.7.1](https://github.com/wenisch-tech/s3webui/compare/v1.7.0...v1.7.1) (2026-11-04)
+
+
+### Bug Fixes
+
+* add cors and permissions to card context menu ([4d36971](https://github.com/wenisch-tech/s3webui/commit/4d36971c24ac9f2ebf5b948ab6f9f4b9ebe863e3))
+* ensure bucket view is refreshed after upload completed ([09d5e94](https://github.com/wenisch-tech/s3webui/commit/09d5e947eeb99d200f29929afde007fc7fb70eb0))
+* several minor UI changes and switch to heroicons ([cf702e4](https://github.com/wenisch-tech/s3webui/commit/cf702e40eb3e4d6a36ca50014090a873d0b21f47))
+
+
+
+Docker image: ghcr.io/wenisch-tech/s3webui:1.7.1
+
+
 ## v1.7.0 - 2026-11-04
 
 ## [1.7.0](https://github.com/wenisch-tech/s3webui/compare/v1.6.6...v1.7.0) (2026-11-04)
