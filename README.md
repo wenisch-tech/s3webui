@@ -98,7 +98,7 @@ a real deployment.
 -  **Global search across buckets** — search file and folder names and paths across every bucket available to the selected S3 key, with five top suggestions, a complete results page, and a five-minute per-session catalog
 -  **File management** — upload with multipart progress and ETA, download objects, rename files without re-uploading, and delete objects or buckets
 -  **Create buckets** — create new buckets directly from the UI
--  **Bucket policy editor** — read, edit and remove a bucket's IAM policy in a JSON editor with syntax highlighting and inline validation
+-  **Visual permission editor** — grant users (or everyone) List / Read / Write / Delete / Full control on a bucket, or give an IAM user or group access to buckets, with toggle chips; switch to the JSON policy editor (syntax highlighting, inline validation) at any time
 -  **CORS editor** — edit a bucket's CORS rules in the same editor, in the `aws s3api` JSON shape
 -  **Audit history** — per-session activity log (uploads, downloads, deletes, renames) with user and action filters
 -  **Light / Dark theme** — toggle stored in `localStorage`, light is the default

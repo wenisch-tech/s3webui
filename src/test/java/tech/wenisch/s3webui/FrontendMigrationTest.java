@@ -36,7 +36,8 @@ class FrontendMigrationTest {
         "createBucketModal", "deleteBucketModal");
     assertThat(bucket).contains("createFolderModal", "uploadModal", "renameModal",
         "deleteObjectModal", "folderNameError",
-        "bucketPolicyModal", "bucketCorsModal", "json-editor",
+        "bucketPolicyModal", "bucketPolicyVisual", "createPolicyView", "bucketCorsModal",
+        "json-editor",
         "data-object-sort-header=\"name\"", "data-object-sort-header=\"size\"",
         "data-object-sort-header=\"lastModified\"", "aria-sort=\"none\"",
         "id=\"objectTableBody\"", "data-object-name", "data-object-size",
@@ -49,7 +50,7 @@ class FrontendMigrationTest {
         "id=\"objectPageNumbers\"", "id=\"objectPageNext\"",
         "id=\"objectPageRange\"", "id=\"objectPageSummary\"").doesNotContain("prompt(");
     assertThat(frontend).contains("data-theme", "openDialog", "closeDialog", "showToast",
-        "createJsonEditor", "createObjectTableController", "setObjectPageSize", "goToObjectPage",
+        "createJsonEditor", "createPolicyView", "createObjectTableController", "setObjectPageSize", "goToObjectPage",
         "hidePageLoading", "initBucketSubfolderSearch", "bucketSearchApiPath",
         "data-subfolder-search-result");
     assertThat(objectSort).contains("nextSortDirection", "compareObjectItems",
@@ -73,7 +74,8 @@ class FrontendMigrationTest {
     assertThat(iam)
         .contains("iamUserModal", "iamGroupModal", "iamPolicyModal", "iamAttachModal",
             "iamMembersModal", "iamKeysModal", "iamInlinePolicyModal", "is-disabled",
-            "json-editor", "refreshIcons();", "key.primary", "key.deletable === false",
+            "createPolicyView", "iamBucketAccess", "saveIamBucketAccess", "iamAdvancedSection",
+            "refreshIcons();", "key.primary", "key.deletable === false",
             "protected", "Delete the IAM user to remove its primary key")
         .doesNotContain("prompt(", "confirm(");
   }

@@ -219,8 +219,7 @@
               <label class="field-label" for="iamPolicyName">Policy name</label>
               <input class="input mb-3" id="iamPolicyName" type="text" autocomplete="off" />
             </div>
-            <p class="field-help mb-2">An IAM-style JSON policy document.</p>
-            <div id="iamPolicyEditor" class="json-editor"></div>
+            <div id="iamPolicyView"></div>
           </div>
           <div class="modal-footer">
             <button type="button" class="btn-secondary" onclick="closeDialog('iamPolicyModal')">
@@ -235,7 +234,7 @@
               <i data-lucide="trash-2"></i>
               Remove
             </button>
-            <button type="button" class="btn-primary" onclick="saveIamPolicy()">
+            <button type="button" class="btn-primary" id="iamPolicySave" onclick="saveIamPolicy()">
               <i data-lucide="check-circle-2"></i>
               Save
             </button>
@@ -251,7 +250,7 @@
         role="dialog"
         aria-modal="true"
       >
-        <div class="modal-card max-w-2xl">
+        <div class="modal-card max-w-3xl">
           <div class="modal-header">
             <h2 class="modal-title" id="iamAttachTitle">
               <i data-lucide="shield-check"></i>
@@ -261,46 +260,75 @@
               <i data-lucide="x"></i>
             </button>
           </div>
-          <div class="modal-body">
+          <div class="modal-body modal-body-scroll">
             <div id="iamAttachError" class="alert alert-error mb-3 hidden"></div>
 
-            <h3 class="field-label">Attached policies</h3>
-            <div id="iamAttachList" class="mb-3"></div>
-            <label class="field-label" for="iamAttachSelect">Attach a policy</label>
-            <div class="flex gap-2">
-              <select class="input" id="iamAttachSelect"></select>
-              <button
-                type="button"
-                class="btn-secondary whitespace-nowrap"
-                onclick="attachIamPolicy()"
-              >
-                <i data-lucide="link-2"></i>
-                Attach
-              </button>
-            </div>
-
-            <div id="iamInlineSection" class="mt-5 border-t border-slate-700/15 pt-4">
-              <div class="mb-2 flex items-center justify-between gap-3">
-                <h3 class="field-label">Inline policies</h3>
-                <button
-                  type="button"
-                  class="btn-secondary"
-                  onclick="openIamInlinePolicyModal(null)"
-                >
-                  <i data-lucide="plus"></i>
-                  Add inline policy
-                </button>
+            <section id="iamBucketAccessSection" class="mb-5">
+              <div class="mb-3">
+                <h3 class="section-heading">Bucket access</h3>
+                <p class="field-help" id="iamBucketAccessHelp">
+                  Pick a bucket, then choose what this identity may do with it.
+                </p>
               </div>
-              <p class="field-help mb-2">
-                A policy document that lives on this identity only - the way to express a
-                fine-grained, per-bucket grant.
-              </p>
-              <div id="iamInlineList"></div>
-            </div>
+              <div id="iamBucketAccessError" class="alert alert-error mb-3 hidden"></div>
+              <div id="iamBucketAccess"></div>
+            </section>
+
+            <details class="advanced-section" id="iamAdvancedSection">
+              <summary>
+                <i data-lucide="chevron-right"></i>
+                Advanced: policies &amp; JSON
+              </summary>
+              <div class="advanced-section-body">
+                <h3 class="field-label">Attached policies</h3>
+                <div id="iamAttachList" class="mb-3"></div>
+                <label class="field-label" for="iamAttachSelect">Attach a policy</label>
+                <div class="flex gap-2">
+                  <select class="input" id="iamAttachSelect"></select>
+                  <button
+                    type="button"
+                    class="btn-secondary whitespace-nowrap"
+                    onclick="attachIamPolicy()"
+                  >
+                    <i data-lucide="link-2"></i>
+                    Attach
+                  </button>
+                </div>
+
+                <div id="iamInlineSection" class="mt-5 border-t border-slate-700/15 pt-4">
+                  <div class="mb-2 flex items-center justify-between gap-3">
+                    <h3 class="field-label">Inline policies</h3>
+                    <button
+                      type="button"
+                      class="btn-secondary"
+                      onclick="openIamInlinePolicyModal(null)"
+                    >
+                      <i data-lucide="plus"></i>
+                      Add inline policy
+                    </button>
+                  </div>
+                  <p class="field-help mb-2">
+                    A document that lives on this identity only, for rules the visual editor above
+                    cannot express (conditions, prefixes, denies).
+                  </p>
+                  <div id="iamInlineList"></div>
+                </div>
+              </div>
+            </details>
           </div>
           <div class="modal-footer">
             <button type="button" class="btn-secondary" onclick="closeDialog('iamAttachModal')">
               Close
+            </button>
+            <button
+              type="button"
+              class="btn-primary"
+              id="iamBucketAccessSave"
+              onclick="saveIamBucketAccess()"
+              disabled
+            >
+              <i data-lucide="check-circle-2"></i>
+              Save access
             </button>
           </div>
         </div>
@@ -328,8 +356,7 @@
             <div id="iamInlineError" class="alert alert-error mb-3 hidden"></div>
             <label class="field-label" for="iamInlineName">Policy name</label>
             <input class="input mb-3" id="iamInlineName" type="text" autocomplete="off" />
-            <p class="field-help mb-2">An IAM-style JSON policy document.</p>
-            <div id="iamInlineEditor" class="json-editor"></div>
+            <div id="iamInlineView"></div>
           </div>
           <div class="modal-footer">
             <button
@@ -348,7 +375,7 @@
               <i data-lucide="trash-2"></i>
               Remove
             </button>
-            <button type="button" class="btn-primary" onclick="saveIamInlinePolicy()">
+            <button type="button" class="btn-primary" id="iamInlineSave" onclick="saveIamInlinePolicy()">
               <i data-lucide="check-circle-2"></i>
               Save
             </button>
@@ -504,13 +531,19 @@
     <div th:fragment="script">
       <script>
         const IAM_BASE = '/api/admin/iam';
-        const IAM_POLICY_TEMPLATE =
-          '{\n  "Version": "2012-10-17",\n  "Statement": [\n    {\n      "Effect": "Allow",\n      "Action": ["s3:GetObject"],\n      "Resource": ["arn:aws:s3:::example-bucket/*"]\n    }\n  ]\n}';
+        // The visual editor's grants for a user or group live in one document of this name: an
+        // inline policy where the provider supports them, otherwise a managed policy that is
+        // created and attached on first save (see iamAccessStrategy).
+        const IAM_ACCESS_POLICY = 's3webui-bucket-access';
 
         let _iamInitialised = false;
         let _iamCapabilities = {};
-        let _iamPolicyEditor = null;
-        let _iamInlineEditor = null;
+        let _iamPolicyView = null;
+        let _iamInlineView = null;
+        let _iamAccessView = null;
+        let _iamAccessSource = null; // {strategy, exists, policyId, attached}
+        let _iamAttached = [];
+        let _iamBucketSubjects = null;
         let _iamInlineOriginalName = null;
         let _iamPolicies = [];
         let _iamUsers = [];
@@ -634,7 +667,7 @@
                     <td class="font-mono text-xs text-slate-500">${iamEscape(user.arn)}</td>
                     <td class="text-sm text-slate-500">${iamEscape(iamDate(user.createdAt))}</td>
                     <td class="whitespace-nowrap text-right">
-                        <button class="btn-icon" title="Attached policies" data-name="${iamEscape(user.userName)}" onclick="openIamAttachModal('users', this.getAttribute('data-name'))"><i data-lucide="shield-check"></i></button>
+                        <button class="btn-icon" title="Permissions" data-name="${iamEscape(user.userName)}" onclick="openIamAttachModal('users', this.getAttribute('data-name'))"><i data-lucide="shield-check"></i></button>
                         <button class="btn-icon" title="Access keys" data-name="${iamEscape(user.userName)}" onclick="openIamKeysModal(this.getAttribute('data-name'))"><i data-lucide="key-round"></i></button>
                         <button class="btn-icon text-bad-500" title="Delete user" data-name="${iamEscape(user.userName)}" onclick="deleteIamUser(this)"><i data-lucide="trash-2"></i></button>
                     </td>`;
@@ -722,7 +755,7 @@
                     <td class="font-mono text-xs text-slate-500">${iamEscape(group.arn)}</td>
                     <td class="whitespace-nowrap text-right">
                         <button class="btn-icon" title="Members" data-name="${iamEscape(group.groupName)}" onclick="openIamMembersModal(this.getAttribute('data-name'))"><i data-lucide="users"></i></button>
-                        <button class="btn-icon" title="Attached policies" data-name="${iamEscape(group.groupName)}" onclick="openIamAttachModal('groups', this.getAttribute('data-name'))"><i data-lucide="shield-check"></i></button>
+                        <button class="btn-icon" title="Permissions" data-name="${iamEscape(group.groupName)}" onclick="openIamAttachModal('groups', this.getAttribute('data-name'))"><i data-lucide="shield-check"></i></button>
                         <button class="btn-icon text-bad-500" title="Delete group" data-name="${iamEscape(group.groupName)}" onclick="deleteIamGroup(this)"><i data-lucide="trash-2"></i></button>
                     </td>`;
             body.appendChild(row);
@@ -891,11 +924,54 @@
           refreshIcons();
         }
 
+        /** Buckets offered by every identity-policy editor; fetched once per page. */
+        function iamLoadBucketSubjects() {
+          if (!_iamBucketSubjects) {
+            _iamBucketSubjects = apiFetch('/api/buckets').then(async (response) => {
+              if (!response.ok) {
+                _iamBucketSubjects = null;
+                throw new Error(await getResponseErrorMessage(response, 'Could not load buckets'));
+              }
+              return (await response.json()).map((bucket) => ({
+                value: bucket.name,
+                label: bucket.name,
+                sublabel: 'Bucket',
+              }));
+            });
+          }
+          return _iamBucketSubjects;
+        }
+
+        function iamCreateIdentityView(hostId, onChange, onValidity) {
+          const view = createPolicyView(document.getElementById(hostId), {
+            kind: 'identity',
+            loadSubjects: iamLoadBucketSubjects,
+            onChange,
+            onValidity,
+          });
+          view.reloadSubjects();
+          return view;
+        }
+
+        /** Policy-view result → error text for the dialog, or null when it can be saved. */
+        function iamPolicyProblem(result, emptyMessage) {
+          if (result.errors.length)
+            return 'Fix the errors in the policy before saving: ' + result.errors[0].message;
+          if (!result.doc) return emptyMessage;
+          return null;
+        }
+
         async function openIamPolicyModal(policyId) {
           cfgClearError('iamPolicyError');
           cfgResetRemove('iamPolicyRemove');
           _iamEditingPolicyId = policyId;
-          _iamPolicyEditor = cfgEnsureEditor('iamPolicyEditor', _iamPolicyEditor);
+          _iamPolicyView =
+            _iamPolicyView ||
+            iamCreateIdentityView(
+              'iamPolicyView',
+              () => cfgClearError('iamPolicyError'),
+              (valid) => (document.getElementById('iamPolicySave').disabled = !valid),
+            );
 
           const policy = policyId
             ? _iamPolicies.find((candidate) => candidate.id === policyId)
@@ -924,21 +1000,24 @@
               return;
             }
             const data = await response.json();
-            _iamPolicyEditor.setValue(cfgPretty(data.document));
+            _iamPolicyView.setDocument(data.document);
           } else {
-            _iamPolicyEditor.setValue(IAM_POLICY_TEMPLATE);
+            _iamPolicyView.setDocument(null);
           }
+          _iamPolicyView.setReadOnly(!editable);
+          document.getElementById('iamPolicySave').classList.toggle('hidden', !editable);
           openDialog('iamPolicyModal');
           refreshIcons();
         }
 
         async function saveIamPolicy() {
-          const document_ = _iamPolicyEditor.getValue();
-          try {
-            JSON.parse(document_);
-          } catch (error) {
-            return cfgError('iamPolicyError', 'Not valid JSON: ' + error.message);
-          }
+          const result = _iamPolicyView.getResult();
+          const problem = iamPolicyProblem(
+            result,
+            'Grant at least one permission. To get rid of the policy, use Remove instead.',
+          );
+          if (problem) return cfgError('iamPolicyError', problem);
+          const document_ = result.text;
           cfgClearError('iamPolicyError');
 
           let response;
@@ -967,7 +1046,8 @@
             );
           closeDialog('iamPolicyModal');
           showToast('Policy saved', 'success');
-          loadIamPolicies();
+          await loadIamPolicies();
+          iamRefreshAccessIfOpen();
         }
 
         async function removeIamPolicy(button) {
@@ -987,7 +1067,8 @@
             );
           closeDialog('iamPolicyModal');
           showToast('Policy deleted', 'success');
-          loadIamPolicies();
+          await loadIamPolicies();
+          iamRefreshAccessIfOpen();
         }
 
         // ── Attached policies ────────────────────────────────────────────
@@ -1003,8 +1084,193 @@
           if (!_iamPolicies.length) await loadIamPolicies();
           await renderIamAttachments();
           if (_iamCapabilities.inlinePolicies !== false) await renderIamInlinePolicies();
+          await loadIamBucketAccess();
           openDialog('iamAttachModal');
           refreshIcons();
+        }
+
+        // ── Bucket access (visual editor) ────────────────────────────────
+
+        function iamAccessStrategy() {
+          if (_iamCapabilities.inlinePolicies) return 'inline';
+          if (_iamCapabilities.managedPolicies) return 'managed';
+          return null;
+        }
+
+        function iamManagedAccessName() {
+          const { kind, name } = _iamAttachTarget;
+          return `s3webui-${kind === 'groups' ? 'group' : 'user'}-${name}`;
+        }
+
+        // Saving needs a change worth saving (or a detached policy to re-attach) and a valid document.
+        let _iamAccessPending = false;
+        let _iamAccessValid = true;
+        function iamAccessSaveButton(pending) {
+          if (pending !== undefined) _iamAccessPending = pending;
+          document.getElementById('iamBucketAccessSave').disabled =
+            !(_iamAccessPending && _iamAccessValid);
+        }
+
+        /** Finds the identity's access document and loads it into the visual editor. */
+        async function loadIamBucketAccess() {
+          const section = document.getElementById('iamBucketAccessSection');
+          const strategy = iamAccessStrategy();
+          cfgClearError('iamBucketAccessError');
+          section.classList.toggle('hidden', !strategy);
+          document.getElementById('iamBucketAccessSave').classList.toggle('hidden', !strategy);
+          // With nothing to show above it, the advanced section is the whole dialog: open it.
+          document.getElementById('iamAdvancedSection').open = !strategy;
+          if (!strategy) return;
+
+          _iamAccessView =
+            _iamAccessView ||
+            iamCreateIdentityView(
+              'iamBucketAccess',
+              () => {
+                cfgClearError('iamBucketAccessError');
+                iamAccessSaveButton(true);
+              },
+              (valid) => {
+                _iamAccessValid = valid;
+                iamAccessSaveButton();
+              },
+            );
+          document.getElementById('iamBucketAccessHelp').textContent =
+            strategy === 'inline'
+              ? `Pick a bucket, then choose what this identity may do with it. Saved as the inline policy "${IAM_ACCESS_POLICY}".`
+              : `Pick a bucket, then choose what this identity may do with it. Saved as the policy "${iamManagedAccessName()}", attached to this identity.`;
+
+          let text = null;
+          _iamAccessSource = { strategy, exists: false, policyId: null, attached: false };
+          try {
+            if (strategy === 'inline') {
+              const names = await apiFetch(iamInlineUrl('inline-policies')).then((r) =>
+                r.ok ? r.json() : [],
+              );
+              if (names.includes(IAM_ACCESS_POLICY)) {
+                const response = await apiFetch(iamInlineUrl('inline-policy', IAM_ACCESS_POLICY));
+                if (!response.ok)
+                  throw new Error(
+                    await getResponseErrorMessage(response, 'Failed to load bucket access'),
+                  );
+                text = (await response.json()).document;
+                _iamAccessSource.exists = true;
+              }
+            } else {
+              const policy = _iamPolicies.find((p) => p.name === iamManagedAccessName());
+              if (policy) {
+                const response = await apiFetch(
+                  `${IAM_BASE}/policy?id=${encodeURIComponent(policy.id)}`,
+                );
+                if (!response.ok)
+                  throw new Error(
+                    await getResponseErrorMessage(response, 'Failed to load bucket access'),
+                  );
+                text = (await response.json()).document;
+                _iamAccessSource = {
+                  strategy,
+                  exists: true,
+                  policyId: policy.id,
+                  attached: _iamAttached.some((attached) => attached.id === policy.id),
+                };
+              }
+            }
+          } catch (error) {
+            cfgError('iamBucketAccessError', error.message);
+          }
+          _iamAccessView.setDocument(text);
+          // A policy that exists but is detached grants nothing yet: saving re-attaches it.
+          iamAccessSaveButton(_iamAccessSource.exists && strategy === 'managed' && !_iamAccessSource.attached);
+        }
+
+        async function iamAccessRequest(url, options, fallback) {
+          const response = await apiFetch(url, options);
+          if (!response.ok) throw new Error(await getResponseErrorMessage(response, fallback));
+          return response;
+        }
+
+        async function saveIamBucketAccess() {
+          const result = _iamAccessView.getResult();
+          if (result.errors.length)
+            return cfgError(
+              'iamBucketAccessError',
+              'Fix the errors in the policy before saving: ' + result.errors[0].message,
+            );
+          cfgClearError('iamBucketAccessError');
+          iamAccessSaveButton(false);
+          const { kind, name } = _iamAttachTarget;
+          const source = _iamAccessSource;
+          const json = { 'Content-Type': 'application/json' };
+          try {
+            if (source.strategy === 'inline') {
+              if (result.doc)
+                await iamAccessRequest(
+                  iamInlineUrl('inline-policy', IAM_ACCESS_POLICY),
+                  { method: 'PUT', headers: json, body: result.text },
+                  'Failed to save bucket access',
+                );
+              else if (source.exists)
+                await iamAccessRequest(
+                  iamInlineUrl('inline-policy', IAM_ACCESS_POLICY),
+                  { method: 'DELETE' },
+                  'Failed to remove bucket access',
+                );
+            } else if (result.doc) {
+              let policyId = source.policyId;
+              if (policyId) {
+                await iamAccessRequest(
+                  `${IAM_BASE}/policy?id=${encodeURIComponent(policyId)}`,
+                  { method: 'PUT', headers: json, body: result.text },
+                  'Failed to save bucket access',
+                );
+              } else {
+                const created = await iamAccessRequest(
+                  `${IAM_BASE}/policies`,
+                  {
+                    method: 'POST',
+                    headers: json,
+                    body: JSON.stringify({ name: iamManagedAccessName(), document: result.text }),
+                  },
+                  'Failed to create the bucket access policy',
+                );
+                policyId = (await created.json()).id;
+              }
+              if (!source.attached)
+                await iamAccessRequest(
+                  `${IAM_BASE}/${kind}/${encodeURIComponent(name)}/policies`,
+                  { method: 'POST', headers: json, body: JSON.stringify({ policyId }) },
+                  'Failed to attach the bucket access policy',
+                );
+            } else if (source.policyId) {
+              // Nothing granted any more: detach and delete the generated policy.
+              if (source.attached)
+                await iamAccessRequest(
+                  `${IAM_BASE}/${kind}/${encodeURIComponent(name)}/policies?policyId=${encodeURIComponent(source.policyId)}`,
+                  { method: 'DELETE' },
+                  'Failed to detach the bucket access policy',
+                );
+              await iamAccessRequest(
+                `${IAM_BASE}/policy?id=${encodeURIComponent(source.policyId)}`,
+                { method: 'DELETE' },
+                'Failed to delete the bucket access policy',
+              );
+            }
+          } catch (error) {
+            iamAccessSaveButton(true);
+            return cfgError('iamBucketAccessError', error.message);
+          }
+
+          showToast(`Bucket access for ${name} saved`, 'success');
+          if (source.strategy === 'managed') await loadIamPolicies();
+          await renderIamAttachments();
+          if (_iamCapabilities.inlinePolicies !== false) await renderIamInlinePolicies();
+          await loadIamBucketAccess();
+        }
+
+        /** The advanced editors can change the access document too; keep the visual one current. */
+        function iamRefreshAccessIfOpen() {
+          const modal = document.getElementById('iamAttachModal');
+          if (_iamAttachTarget && !modal.classList.contains('hidden')) loadIamBucketAccess();
         }
 
         async function renderIamAttachments() {
@@ -1021,13 +1287,15 @@
             return;
           }
           const attached = await response.json();
+          _iamAttached = attached;
+          const accessName = iamManagedAccessName();
           list.innerHTML = attached.length
             ? attached
                 .map(
                   (
                     policy,
                   ) => `<div class="flex items-center justify-between border-b border-slate-700/10 py-1">
-                        <span class="text-sm">${iamEscape(policy.name)}</span>
+                        <span class="text-sm">${iamEscape(policy.name)}${policy.name === accessName ? ' <span class="badge ml-1">Bucket access</span>' : ''}</span>
                         <button type="button" class="btn-icon text-bad-500" title="Detach" data-id="${iamEscape(policy.id)}" onclick="detachIamPolicy(this.getAttribute('data-id'))"><i data-lucide="unlink-2"></i></button>
                     </div>`,
                 )
@@ -1066,7 +1334,8 @@
               await getResponseErrorMessage(response, 'Failed to attach the policy'),
             );
           cfgClearError('iamAttachError');
-          renderIamAttachments();
+          await renderIamAttachments();
+          iamRefreshAccessIfOpen();
         }
 
         async function detachIamPolicy(policyId) {
@@ -1081,7 +1350,8 @@
               await getResponseErrorMessage(response, 'Failed to detach the policy'),
             );
           cfgClearError('iamAttachError');
-          renderIamAttachments();
+          await renderIamAttachments();
+          iamRefreshAccessIfOpen();
         }
 
         // ── Access keys ──────────────────────────────────────────────────
@@ -1226,7 +1496,7 @@
                   (
                     policyName,
                   ) => `<div class="flex items-center justify-between border-b border-slate-700/10 py-1">
-                        <span class="text-sm">${iamEscape(policyName)}</span>
+                        <span class="text-sm">${iamEscape(policyName)}${policyName === IAM_ACCESS_POLICY ? ' <span class="badge ml-1">Bucket access</span>' : ''}</span>
                         <button type="button" class="btn-icon" title="View or edit" data-name="${iamEscape(policyName)}" onclick="openIamInlinePolicyModal(this.getAttribute('data-name'))"><i data-lucide="pencil"></i></button>
                     </div>`,
                 )
@@ -1239,7 +1509,13 @@
           cfgClearError('iamInlineError');
           cfgResetRemove('iamInlineRemove');
           _iamInlineOriginalName = policyName;
-          _iamInlineEditor = cfgEnsureEditor('iamInlineEditor', _iamInlineEditor);
+          _iamInlineView =
+            _iamInlineView ||
+            iamCreateIdentityView(
+              'iamInlineView',
+              () => cfgClearError('iamInlineError'),
+              (valid) => (document.getElementById('iamInlineSave').disabled = !valid),
+            );
 
           const nameField = document.getElementById('iamInlineName');
           nameField.value = policyName || '';
@@ -1258,9 +1534,9 @@
               );
               return;
             }
-            _iamInlineEditor.setValue(cfgPretty((await response.json()).document));
+            _iamInlineView.setDocument((await response.json()).document);
           } else {
-            _iamInlineEditor.setValue(IAM_POLICY_TEMPLATE);
+            _iamInlineView.setDocument(null);
           }
           openDialog('iamInlinePolicyModal');
           refreshIcons();
@@ -1269,12 +1545,13 @@
         async function saveIamInlinePolicy() {
           const policyName = document.getElementById('iamInlineName').value.trim();
           if (!policyName) return cfgError('iamInlineError', 'Policy name is required');
-          const documentText = _iamInlineEditor.getValue();
-          try {
-            JSON.parse(documentText);
-          } catch (error) {
-            return cfgError('iamInlineError', 'Not valid JSON: ' + error.message);
-          }
+          const result = _iamInlineView.getResult();
+          const problem = iamPolicyProblem(
+            result,
+            'Grant at least one permission. To get rid of the policy, use Remove instead.',
+          );
+          if (problem) return cfgError('iamInlineError', problem);
+          const documentText = result.text;
           cfgClearError('iamInlineError');
 
           const response = await apiFetch(iamInlineUrl('inline-policy', policyName), {
@@ -1289,7 +1566,8 @@
             );
           closeDialog('iamInlinePolicyModal');
           showToast('Inline policy saved', 'success');
-          renderIamInlinePolicies();
+          await renderIamInlinePolicies();
+          iamRefreshAccessIfOpen();
         }
 
         async function removeIamInlinePolicy(button) {
@@ -1308,7 +1586,8 @@
             );
           closeDialog('iamInlinePolicyModal');
           showToast('Inline policy removed', 'success');
-          renderIamInlinePolicies();
+          await renderIamInlinePolicies();
+          iamRefreshAccessIfOpen();
         }
 
         window.initIam = initIam;

@@ -58,6 +58,17 @@ Policy behavior varies by provider:
 
 Where supported, an inline policy lives directly on one user or group. It is useful for a narrowly scoped rule, such as granting access to one bucket. The JSON editor validates JSON before it sends it to the backend; it cannot guarantee that the backend will accept the policy semantics.
 
+### Bucket access (visual editor)
+
+A user's or group's **Permissions** dialog opens with **Bucket access**. Pick a bucket, then switch on **List**, **Read**, **Write**, **Delete** or **Full control** (the chips map to the same S3 actions as the [bucket policy editor](../Usage/Bucket-Configuration.md#visual-view)). Then select **Save access**. You can switch to the **JSON** view at any time; the same error handling applies.
+
+S3 Web UI stores these grants in a single document per identity:
+
+- **AWS and Ceph** (inline policies supported): an inline policy named `s3webui-bucket-access`.
+- **RustFS** (named policies only): a policy named `s3webui-user-<name>` or `s3webui-group-<name>`. It is created and attached on the first save, and detached and deleted when you remove every bucket.
+
+The document also appears under **Advanced: policies & JSON**, marked with a *Bucket access* badge. Rules the visual editor cannot express (conditions, prefixes, denies) are kept as-is. The policy and inline-policy editors in this section also offer the Visual / JSON toggle.
+
 ### Example: attach a managed or named policy to a user
 
 1. Open **Users** and select the permissions action for the target backend user.

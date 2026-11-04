@@ -1,10 +1,41 @@
 # Bucket policies and CORS
 
-Open a bucket and select **Policy** or **CORS** to configure that bucket on the storage backend. These controls require the selected S3 key to have the corresponding backend permissions.
+Open a bucket and select **Permissions** or **CORS** to configure that bucket on the storage backend. These controls require the selected S3 key to have the corresponding backend permissions.
 
 ## Bucket policy
 
-The policy editor reads, writes, and removes the bucket's IAM-style JSON policy. S3 Web UI checks only that the document is valid JSON before it sends it; the storage backend validates policy syntax and permissions.
+**Permissions** edits the bucket's IAM-style policy. The dialog has two views, and you can switch between them at any time while editing without losing changes.
+
+### Visual view
+
+Each row is one principal. The picker offers:
+
+- **IAM users** (admins only): users listed from the backend's IAM API.
+- **Stored S3 keys** (admins only): S3 keys saved in S3 Web UI, shown as `key name (access key ID) → user`. A bucket policy cannot name an access key, so S3 Web UI looks up the IAM user that owns the key and grants that user. The grant therefore covers every key of that user. Keys that don't belong to a listable IAM user (for example the root key, or keys for another endpoint) are not offered.
+- **Everyone**: public, anonymous access.
+- **Enter a principal ARN**: any other principal, for example a user in another account.
+
+Without IAM access (non-admins, or a backend whose IAM API isn't available) only **Everyone** and **Enter a principal ARN** are offered.
+
+> **Groups can't be granted here.** S3 bucket policies don't accept IAM groups as a principal, and AWS rejects a group ARN in `Principal` as an invalid principal. To give a group access to a bucket, open **Settings → IAM → Groups**, choose the group's **Permissions**, and add the bucket under **Bucket access**. That grant is stored in the group's own policy and applies to every member, including users added later.
+
+Use the chips to switch on what that principal may do:
+
+| Chip | S3 actions | Resource |
+| --- | --- | --- |
+| List | `s3:ListBucket`, `s3:GetBucketLocation` | the bucket |
+| Read | `s3:GetObject` | `bucket/*` |
+| Write | `s3:PutObject`, `s3:AbortMultipartUpload`, `s3:ListMultipartUploadParts` | `bucket/*` |
+| Delete | `s3:DeleteObject` | `bucket/*` |
+| Full control | `s3:*` | the bucket and `bucket/*` |
+
+New rows start from a preset (**Read only**, **Read & write**, or **Full control**). If Everyone can write or delete, the dialog shows a warning. If you remove every row and save, the bucket policy is deleted.
+
+The visual view only rewrites statements it fully understands, meaning plain `Allow` statements built from the actions above on the whole bucket. It keeps every other statement exactly as it was and counts them as "advanced statements". This covers `Deny`, `Condition`, prefixes, other actions, and service principals.
+
+### JSON view
+
+The JSON view shows the full document. If the JSON is invalid, or a statement is missing `Effect`, `Action`, `Resource` or `Principal`, the visual view lists the errors and locks the chips, and **Save** is disabled. Select **Switch to editor** to jump to the first error. S3 Web UI does these checks before it sends the policy; the storage backend still validates policy semantics and permissions.
 
 This example allows a single AWS principal to read objects in one bucket. Replace every placeholder and test against a non-production bucket first.
 

@@ -10,7 +10,10 @@ import tech.wenisch.s3webui.model.iam.IamCapabilities;
 import tech.wenisch.s3webui.repository.S3CredentialRepository;
 import tech.wenisch.s3webui.service.iam.IamProvider;
 
+import java.util.List;
 import java.util.Optional;
+import tech.wenisch.s3webui.model.iam.IamAccessKeySummary;
+import tech.wenisch.s3webui.model.iam.IamUser;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -156,5 +159,38 @@ class IamServiceTest {
         properties.setEnabled(false);
 
         assertThrows(IllegalStateException.class, () -> newService().provider());
+    }
+
+    @Test
+    void storedKeysResolveToTheIamUserThatOwnsThem() {
+        enable();
+        when(provider.listUsers()).thenReturn(List.of(
+                new IamUser("alice", "arn:aws:iam::1:user/alice", null),
+                new IamUser("bob", null, null),
+                new IamUser("broken", null, null)));
+        when(provider.listAccessKeys("alice")).thenReturn(List.of(
+                new IamAccessKeySummary("AKIAALICE", "Active", null, true, false)));
+        when(provider.listAccessKeys("bob")).thenReturn(List.of(
+                new IamAccessKeySummary("bob", "Active", null, true, false)));
+        when(provider.listAccessKeys("broken")).thenThrow(new IllegalStateException("denied"));
+        when(credentialRepository.findAllByOrderByNameAsc()).thenReturn(List.of(
+                credential(1L, "Import job", "AKIAALICE"),
+                credential(2L, "Root", "ROOTKEY"),
+                credential(3L, "IAM: bob", "bob")));
+
+        var principals = newService().storedKeyPrincipals();
+
+        assertEquals(List.of(
+                new IamService.StoredKeyPrincipal(1L, "Import job", "AKIAALICE", "alice", "arn:aws:iam::1:user/alice"),
+                new IamService.StoredKeyPrincipal(3L, "IAM: bob", "bob", "bob", "arn:aws:iam:::user/bob")),
+                principals);
+    }
+
+    private static S3Credential credential(Long id, String name, String accessKey) {
+        var credential = new S3Credential();
+        credential.setId(id);
+        credential.setName(name);
+        credential.setAccessKey(accessKey);
+        return credential;
     }
 }

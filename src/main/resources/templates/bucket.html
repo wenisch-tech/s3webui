@@ -50,8 +50,8 @@
             Upload
           </button>
           <button class="btn-secondary" onclick="openBucketPolicyDialog()">
-            <i data-lucide="scroll-text"></i>
-            Bucket policy
+            <i data-lucide="shield-check"></i>
+            Permissions
           </button>
           <button class="btn-secondary" onclick="openBucketCorsDialog()">
             <i data-lucide="globe"></i>
@@ -585,22 +585,25 @@
     >
       <div class="modal-card max-w-3xl">
         <div class="modal-header">
-          <h2 class="modal-title">
-            <i data-lucide="scroll-text"></i>
-            Bucket policy
-          </h2>
+          <div>
+            <h2 class="modal-title">
+              <i data-lucide="shield-check"></i>
+              Permissions
+            </h2>
+            <p
+              class="modal-subtitle"
+              th:text="|Choose who may do what in ${bucket}. Stored as the bucket policy.|"
+            >
+              Choose who may do what in this bucket.
+            </p>
+          </div>
           <button class="btn-icon" onclick="closeDialog('bucketPolicyModal')" aria-label="Close">
             <i data-lucide="x"></i>
           </button>
         </div>
-        <div class="modal-body">
+        <div class="modal-body modal-body-scroll">
           <div id="bucketPolicyError" class="alert alert-error mb-3 hidden"></div>
-          <p class="field-help mb-2">
-            An IAM-style JSON policy document. Leave the editor and press Save to apply it to
-            <strong th:text="${bucket}">bucket</strong>
-            .
-          </p>
-          <div id="bucketPolicyEditor" class="json-editor"></div>
+          <div id="bucketPolicyVisual"></div>
         </div>
         <div class="modal-footer">
           <button class="btn-secondary" onclick="closeDialog('bucketPolicyModal')">Cancel</button>
@@ -612,7 +615,7 @@
             <i data-lucide="trash-2"></i>
             Remove
           </button>
-          <button class="btn-primary" onclick="saveBucketPolicy()">
+          <button class="btn-primary" id="bucketPolicySave" onclick="saveBucketPolicy()">
             <i data-lucide="check-circle-2"></i>
             Save
           </button>
@@ -665,6 +668,7 @@
       window.BUCKET = /*[[${bucket}]]*/ '';
       window.PREFIX = /*[[${prefix}]]*/ '';
       window.HIGHLIGHT_OBJECT_KEY = /*[[${highlight}]]*/ '';
+      window.IS_ADMIN = /*[[${isAdmin}]]*/ false;
     </script>
     <div th:replace="~{fragments/shell :: scripts}"></div>
     <script>
@@ -840,9 +844,9 @@
           )
           .catch((e) => showToast(e.message, 'danger'));
       }
-      let policyEditor = null,
+      let policyView = null,
+        bucketHasPolicy = false,
         corsEditor = null;
-      const POLICY_TEMPLATE = '{\n  "Version": "2012-10-17",\n  "Statement": []\n}';
       const CORS_TEMPLATE =
         '{\n  "CORSRules": [\n    {\n      "AllowedHeaders": ["*"],\n      "AllowedMethods": ["GET", "HEAD"],\n      "AllowedOrigins": ["*"],\n      "ExposeHeaders": [],\n      "MaxAgeSeconds": 3000\n    }\n  ]\n}';
       function cfgUrl(suffix) {
@@ -858,32 +862,86 @@
               return;
             }
             const data = await r.json();
-            const has = data.policy != null;
-            policyEditor = cfgEnsureEditor('bucketPolicyEditor', policyEditor);
-            policyEditor.setValue(has ? cfgPretty(data.policy) : POLICY_TEMPLATE);
-            document.getElementById('bucketPolicyRemove').classList.toggle('hidden', !has);
+            bucketHasPolicy = data.policy != null;
+            if (!policyView) {
+              policyView = createPolicyView(document.getElementById('bucketPolicyVisual'), {
+                kind: 'bucket',
+                bucket: BUCKET,
+                allowPublic: true,
+                allowCustom: true,
+                loadSubjects: loadBucketPolicyPrincipals,
+                onChange: () => cfgClearError('bucketPolicyError'),
+                onValidity: (valid) =>
+                  (document.getElementById('bucketPolicySave').disabled = !valid),
+              });
+              policyView.reloadSubjects();
+            }
+            policyView.setDocument(data.policy);
+            document.getElementById('bucketPolicyRemove').classList.toggle('hidden', !bucketHasPolicy);
             openDialog('bucketPolicyModal');
+            refreshIcons();
           })
           .catch((e) => showToast(e.message, 'danger'));
       }
+      // Principals to offer: IAM users, and the app's stored S3 keys resolved to the user that owns
+      // them (a bucket policy names the user, not the key). Only admins may list either; everyone
+      // else still gets "Everyone" and a free-text ARN. IAM groups are deliberately absent: a
+      // bucket policy cannot name a group as its principal.
+      async function loadBucketPolicyPrincipals() {
+        if (!window.IS_ADMIN) return [];
+        const json = (url) =>
+          apiFetch(url)
+            .then((response) => (response.ok ? response.json() : []))
+            .catch(() => []);
+        const [users, keys] = await Promise.all([
+          json('/api/admin/iam/users'),
+          json('/api/admin/iam/stored-key-principals'),
+        ]);
+        return [
+          ...users.map((user) => {
+            // Providers without ARNs (RustFS) still match the conventional user principal form.
+            const arn = user.arn || `arn:aws:iam:::user/${user.userName}`;
+            return { value: arn, label: user.userName, sublabel: arn, group: 'IAM users' };
+          }),
+          ...keys.map((key) => ({
+            value: key.arn,
+            label: key.userName,
+            sublabel: key.arn,
+            optionLabel: `${key.credentialName} (${key.accessKeyId}) → ${key.userName}`,
+            group: 'Stored S3 keys',
+          })),
+        ];
+      }
       function saveBucketPolicy() {
-        const v = policyEditor.getValue();
-        try {
-          JSON.parse(v);
-        } catch (e) {
-          cfgError('bucketPolicyError', 'Not valid JSON: ' + e.message);
+        const result = policyView.getResult();
+        if (result.errors.length) {
+          cfgError(
+            'bucketPolicyError',
+            'Fix the errors in the policy before saving: ' + result.errors[0].message,
+          );
           return;
         }
         cfgClearError('bucketPolicyError');
+        // Nothing left to grant: removing the policy is the only valid way to save "no rules".
+        if (!result.doc) {
+          if (!bucketHasPolicy) {
+            closeDialog('bucketPolicyModal');
+            return;
+          }
+          const remove = document.getElementById('bucketPolicyRemove');
+          remove.dataset.confirm = '1';
+          removeBucketPolicy(remove);
+          return;
+        }
         apiFetch(cfgUrl('policy'), {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: v,
+          body: result.text,
         })
           .then(async (r) => {
             if (r.ok) {
               closeDialog('bucketPolicyModal');
-              showToast('Bucket policy saved', 'success');
+              showToast('Permissions saved', 'success');
             } else
               cfgError(
                 'bucketPolicyError',

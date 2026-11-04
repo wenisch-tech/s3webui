@@ -74,6 +74,12 @@ public class IamApiController {
 
     // ── Access keys ──────────────────────────────────────────────────────
 
+    /** Stored S3 keys resolved to their owning IAM user, for picking a bucket-policy principal. */
+    @GetMapping("/stored-key-principals")
+    public List<IamService.StoredKeyPrincipal> storedKeyPrincipals() {
+        return iamService.storedKeyPrincipals();
+    }
+
     @GetMapping("/users/{userName}/keys")
     public List<IamAccessKeySummary> listAccessKeys(@PathVariable String userName) {
         return iamService.provider().listAccessKeys(userName);

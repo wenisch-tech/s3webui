@@ -1,23 +1,25 @@
 import Alpine from 'alpinejs';
 import './upload.js';
 import { createJsonEditor } from './editor.js';
+import { createPolicyView } from './policy-view.mjs';
+import { principalDisplayName } from './grant-editor.mjs';
 import { createObjectTableController, syncObjectSelectAll,
   toggleVisibleObjectSelection } from './object-sort.mjs';
 import { appUrl } from './url.js';
 import { globalSearchPagePath, globalSearchResultPath } from './global-search.mjs';
 import { bucketSearchApiPath, formatObjectSize, relativeBucketResultParent,
   relativeBucketResultPath } from './bucket-search.mjs';
-import { createIcons, Archive, ArrowDown, ArrowDownUp, ArrowUp, ArrowUpRight, Box, CalendarDays, CheckCircle2,
+import { createIcons, Archive, ArrowDown, ArrowDownUp, ArrowUp, ArrowUpRight, Box, Braces, CalendarDays, Check, CheckCircle2,
   ChevronDown, ChevronLeft, ChevronRight, Clock3, CloudUpload, Copy, Download, Eye, File, Folder, FolderOpen,
-  FolderPlus, Globe, History, Info, LayoutGrid, LogIn, LogOut,
+  FolderPlus, Globe, History, Info, LayoutGrid, List, LogIn, LogOut,
   Key, KeyRound, Link2, Menu, Moon, MoreHorizontal, Network, Pencil, PieChart, Plus, RefreshCw, Search, SearchX, ScrollText, Settings,
-  ShieldAlert, ShieldCheck, Sun, Table2, Trash2, Unlink2, Upload, UserCircle, UserPlus, Users, X } from 'lucide';
+  Shield, ShieldAlert, ShieldCheck, SlidersHorizontal, Sun, Table2, Trash2, Unlink2, Upload, UserCircle, UserPlus, Users, X } from 'lucide';
 
-const icons = { Archive, ArrowDown, ArrowDownUp, ArrowUp, ArrowUpRight, Box, CalendarDays, CheckCircle2,
+const icons = { Archive, ArrowDown, ArrowDownUp, ArrowUp, ArrowUpRight, Box, Braces, CalendarDays, Check, CheckCircle2,
   ChevronDown, ChevronLeft, ChevronRight, Clock3, CloudUpload, Copy, Eye,
-  Download, File, Folder, FolderOpen, FolderPlus, Globe, History, Info, Key, KeyRound, Link2, LayoutGrid, LogOut,
-  LogIn, Menu, Moon, MoreHorizontal, Network, Pencil, PieChart, Plus, RefreshCw, Search, SearchX, ScrollText, Settings, ShieldAlert, ShieldCheck,
-  Sun, Table2, Trash2, Unlink2, Upload, UserCircle, UserPlus, Users, X };
+  Download, File, Folder, FolderOpen, FolderPlus, Globe, History, Info, Key, KeyRound, Link2, LayoutGrid, List, LogOut,
+  LogIn, Menu, Moon, MoreHorizontal, Network, Pencil, PieChart, Plus, RefreshCw, Search, SearchX, ScrollText, Settings,
+  Shield, ShieldAlert, ShieldCheck, SlidersHorizontal, Sun, Table2, Trash2, Unlink2, Upload, UserCircle, UserPlus, Users, X };
 
 function renderIcons() {
   createIcons({ icons });
@@ -28,6 +30,8 @@ function renderIcons() {
 }
 
 window.createJsonEditor = createJsonEditor;
+window.createPolicyView = createPolicyView;
+window.principalDisplayName = principalDisplayName;
 window.appUrl = appUrl;
 const objectTable = createObjectTableController();
 window.filterObjectTable = query => objectTable.filter(query);

@@ -4,12 +4,17 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 import tech.wenisch.s3webui.config.IamProperties;
+import tech.wenisch.s3webui.entity.S3Credential;
 import tech.wenisch.s3webui.model.iam.IamAccessKey;
 import tech.wenisch.s3webui.model.iam.IamCapabilities;
+import tech.wenisch.s3webui.model.iam.IamUser;
 import tech.wenisch.s3webui.repository.S3CredentialRepository;
 import tech.wenisch.s3webui.service.iam.IamProvider;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Wraps the {@link IamProvider} with the two things the provider should not know about: whether the
@@ -121,6 +126,42 @@ public class IamService {
         return "https://s3." + settings.region() + ".amazonaws.com";
     }
 
+    /**
+     * The app's stored S3 keys that belong to an IAM user on the active backend, resolved to that
+     * user. A bucket policy cannot name an access key, only its owner, so this is what lets an
+     * admin pick "the key the import job uses" instead of looking up its user ARN. Keys owned by
+     * nobody listable (the root key, keys for other endpoints) are left out.
+     */
+    public List<StoredKeyPrincipal> storedKeyPrincipals() {
+        IamProvider provider = provider();
+        Map<String, IamUser> owners = new HashMap<>();
+        for (IamUser user : provider.listUsers()) {
+            try {
+                provider.listAccessKeys(user.userName())
+                        .forEach(key -> owners.put(key.accessKeyId(), user));
+            } catch (RuntimeException ex) {
+                // One unreadable user must not hide every other key.
+                log.debug("Could not list access keys of IAM user {}", user.userName(), ex);
+            }
+        }
+        List<StoredKeyPrincipal> result = new ArrayList<>();
+        for (S3Credential credential : credentialRepository.findAllByOrderByNameAsc()) {
+            IamUser owner = owners.get(credential.getAccessKey());
+            if (owner != null) {
+                result.add(new StoredKeyPrincipal(credential.getId(), credential.getName(),
+                        credential.getAccessKey(), owner.userName(), userArn(owner)));
+            }
+        }
+        return result;
+    }
+
+    /** Providers without ARNs (RustFS) still match the conventional user principal form. */
+    static String userArn(IamUser user) {
+        return user.arn() != null && !user.arn().isBlank()
+                ? user.arn()
+                : "arn:aws:iam:::user/" + user.userName();
+    }
+
     /** Stored key names are unique; suffix until one is free. */
     private String uniqueName(String preferred) {
         if (credentialRepository.findByNameIgnoreCase(preferred).isEmpty()) {
@@ -153,5 +194,10 @@ public class IamService {
      */
     public record StoredKey(String userName, String accessKeyId, Long credentialId, String credentialName,
                             String secretAccessKey) {
+    }
+
+    /** A stored S3 key and the IAM user (principal) that owns it. Never carries the secret. */
+    public record StoredKeyPrincipal(Long credentialId, String credentialName, String accessKeyId,
+                                     String userName, String arn) {
     }
 }
