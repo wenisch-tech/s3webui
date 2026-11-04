@@ -8,6 +8,7 @@ public record S3CredentialView(
         String name,
         String endpointUrl,
         String region,
-        boolean builtIn
+        boolean builtIn,
+        boolean allowReveal
 ) {
 }

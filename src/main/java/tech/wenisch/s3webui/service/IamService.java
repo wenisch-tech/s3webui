@@ -110,6 +110,7 @@ public class IamService {
                 key.secretAccessKey(),
                 settings.insecureSkipTlsVerify(),
                 true,
+                false,
                 List.of()), createdBy);
         return new StoredKey(key.userName(), key.accessKeyId(), credential.getId(), credential.getName(),
                 key.secretAccessKey());

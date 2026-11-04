@@ -156,6 +156,15 @@ class S3ConnectionSettingsServiceTest {
     }
 
     @Test
+    void aSingleKeyCanBeRevealedWhileTheGlobalSettingIsOff() {
+        when(appSettingsService.areUsersAllowedToRevealKeys()).thenReturn(false);
+        when(accessService.resolve(any(), eq("7"))).thenReturn(resolved());
+        when(accessService.isRevealAllowedForKey("7")).thenReturn(true);
+
+        assertThat(service.revealCredential("7").secretKey()).isEqualTo("secret");
+    }
+
+    @Test
     void disablingOwnCredentialsCutsOffSessionsAlreadyUsingThem() {
         service.selectOwnCredentials(new S3ConnectionSettingsService.SubmittedS3Settings(
                 "own-access", "own-secret", "https://minio.local", null, false));

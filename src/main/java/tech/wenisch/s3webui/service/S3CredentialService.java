@@ -46,6 +46,7 @@ public class S3CredentialService {
                 .secretKey(form.secretKey())
                 .insecureSkipTlsVerify(form.insecureSkipTlsVerify())
                 .enabled(form.enabled())
+                .allowReveal(form.allowReveal())
                 .createdAt(LocalDateTime.now())
                 .createdBy(createdBy)
                 .grants(new ArrayList<>())
@@ -67,6 +68,7 @@ public class S3CredentialService {
         credential.setAccessKey(form.accessKey().trim());
         credential.setInsecureSkipTlsVerify(form.insecureSkipTlsVerify());
         credential.setEnabled(form.enabled());
+        credential.setAllowReveal(form.allowReveal());
 
         // A blank secret means "keep the stored one" - the panel never sends it back to the browser.
         if (form.secretKey() != null && !form.secretKey().isBlank()) {
@@ -149,6 +151,7 @@ public class S3CredentialService {
             String secretKey,
             boolean insecureSkipTlsVerify,
             boolean enabled,
+            boolean allowReveal,
             List<GrantForm> grants
     ) {
     }

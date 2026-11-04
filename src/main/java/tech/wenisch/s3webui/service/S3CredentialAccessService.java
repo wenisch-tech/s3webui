@@ -161,7 +161,8 @@ public class S3CredentialAccessService {
                 environmentName(),
                 envEndpointUrl.trim(),
                 hasText(envRegion) ? envRegion.trim() : "us-east-1",
-                true);
+                true,
+                false);
     }
 
     private String environmentName() {
@@ -174,7 +175,17 @@ public class S3CredentialAccessService {
                 credential.getName(),
                 credential.getEndpointUrl(),
                 credential.getRegion(),
-                false);
+                false,
+                credential.isAllowReveal());
+    }
+
+    /** Whether this one key may be revealed regardless of the global setting. */
+    @Transactional(readOnly = true)
+    public boolean isRevealAllowedForKey(String credentialId) {
+        return parseId(credentialId)
+                .flatMap(credentialRepository::findById)
+                .map(S3Credential::isAllowReveal)
+                .orElse(false);
     }
 
     private static Optional<Long> parseId(String credentialId) {

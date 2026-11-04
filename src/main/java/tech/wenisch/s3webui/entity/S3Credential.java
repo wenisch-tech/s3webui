@@ -53,6 +53,13 @@ public class S3Credential {
     @Builder.Default
     private boolean enabled = true;
 
+    /** Lets users with access to this key reveal it, even when the global setting is off. */
+    // The default lets Hibernate's ddl-auto=update add this NOT NULL column to a table that
+    // already has rows; without it the ALTER fails and the column is silently never created.
+    @Column(nullable = false, columnDefinition = "boolean default false")
+    @Builder.Default
+    private boolean allowReveal = false;
+
     private LocalDateTime createdAt;
 
     private String createdBy;

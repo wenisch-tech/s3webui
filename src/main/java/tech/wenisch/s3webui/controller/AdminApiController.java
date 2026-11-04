@@ -125,6 +125,7 @@ public class AdminApiController {
                 credential.getAccessKey(),
                 credential.isInsecureSkipTlsVerify(),
                 credential.isEnabled(),
+                credential.isAllowReveal(),
                 credential.getCreatedAt(),
                 credential.getCreatedBy(),
                 credential.getGrants().stream()
@@ -163,6 +164,7 @@ public class AdminApiController {
             String secretKey,
             Boolean insecureSkipTlsVerify,
             Boolean enabled,
+            Boolean allowReveal,
             List<GrantRequest> grants
     ) {
         S3CredentialService.CredentialForm toForm() {
@@ -173,7 +175,8 @@ public class AdminApiController {
                     .toList();
             return new S3CredentialService.CredentialForm(
                     name, endpointUrl, region, accessKey, secretKey,
-                    Boolean.TRUE.equals(insecureSkipTlsVerify), enabled == null || enabled, grantForms);
+                    Boolean.TRUE.equals(insecureSkipTlsVerify), enabled == null || enabled,
+                    Boolean.TRUE.equals(allowReveal), grantForms);
         }
     }
 
@@ -188,6 +191,7 @@ public class AdminApiController {
             String accessKey,
             boolean insecureSkipTlsVerify,
             boolean enabled,
+            boolean allowReveal,
             LocalDateTime createdAt,
             String createdBy,
             List<GrantResponse> grants

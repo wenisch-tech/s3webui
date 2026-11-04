@@ -47,15 +47,17 @@ public class S3ConnectionSettingsService {
     }
 
     /**
-     * Returns a stored key's pair only when the administrator enabled key reveal and the current
+     * Returns a stored key's pair only when key reveal is enabled globally or for this key, and the current
      * user still has a matching grant. IAM access keys are stored as ordinary S3 credentials, so
      * they receive exactly the same access check.
      */
     public RevealedS3Credential revealCredential(String credentialId) {
-        if (!appSettingsService.areUsersAllowedToRevealKeys()) {
-            throw new AccessDeniedException("Revealing assigned S3 keys has been disabled by an administrator");
-        }
+        // Resolve first: the access check must hold whichever setting allows the reveal.
         ResolvedCredential credential = credentialAccessService.resolve(currentAuthentication(), credentialId);
+        if (!appSettingsService.areUsersAllowedToRevealKeys()
+                && !credentialAccessService.isRevealAllowedForKey(credentialId)) {
+            throw new AccessDeniedException("Revealing this S3 key has been disabled by an administrator");
+        }
         return new RevealedS3Credential(credential.name(), credential.accessKey(), credential.secretKey());
     }
 

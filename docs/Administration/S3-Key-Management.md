@@ -25,6 +25,8 @@ By default, users may enter their own S3 credentials in the session picker. The 
 
 Administrators can also enable **Allow users to reveal keys**. When it is enabled, a user who currently has a matching grant can use the eye button beside an assigned key in the session picker to copy its access key and secret key. The reveal response is marked not to be cached; it remains a high-risk feature because copied credentials work outside S3 Web UI.
 
+Reveal can also be enabled for a single key: tick **Allow users that can use this key also to reveal the secret key** in that key's edit panel. A key can then be revealed when either the global setting or its own option is on, and only by users who currently have a grant for it. While the global setting is on, the edit panel notes that it already applies to every key. IAM keys created by S3 Web UI start with the option off.
+
 Enable reveal only for a deliberate credential-distribution workflow. Prefer granting users a least-privilege key or using OIDC mapping instead of distributing broad shared secrets.
 
 ## Recovery and backup

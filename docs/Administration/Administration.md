@@ -34,7 +34,7 @@ OIDC identities appear after their first successful sign-in when `OIDC_CREATEUSE
 **Settings → Options** controls two policy decisions stored in the application database:
 
 - **Let users connect with their own S3 credentials**: on by default. Turn it off to require every non-administrator connection to be an administrator-created and granted key. Existing own-credential sessions lose access on their next request.
-- **Allow users to reveal keys**: off by default. Turn it on only if it is acceptable for a user assigned a stored S3 or IAM key to copy that access key and secret key for use outside S3 Web UI.
+- **Allow users to reveal keys**: off by default. Turn it on only if it is acceptable for a user assigned a stored S3 or IAM key to copy that access key and secret key for use outside S3 Web UI. Individual keys can opt in from their own edit panel.
 
 ## IAM for the storage backend
 

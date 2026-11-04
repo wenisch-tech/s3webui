@@ -150,7 +150,7 @@
             </div>
             <p class="text-sm text-slate-500">
               Lets users view and copy the access key and secret key for any stored S3 or IAM key
-              currently assigned to them. Disabled by default.
+              currently assigned to them. Disabled by default. Individual keys can also opt in from their edit panel.
             </p>
           </div>
         </div>
@@ -241,6 +241,23 @@
             <div class="mt-4 flex items-center gap-2">
               <input class="form-check-input" type="checkbox" id="credentialEnabled" checked />
               <label class="text-sm" for="credentialEnabled">Enabled</label>
+            </div>
+            <div class="mt-2 flex items-center gap-2">
+              <input class="form-check-input" type="checkbox" id="credentialAllowReveal" />
+              <label class="text-sm" for="credentialAllowReveal">
+                Allow users that can use this key also to reveal the secret key
+              </label>
+            </div>
+            <div
+              id="credentialRevealGlobalNote"
+              class="alert alert-warn mt-2 hidden"
+              role="status"
+            >
+              <i data-lucide="info"></i>
+              <span>
+                Revealing is already enabled for every key in the general settings, so this option
+                has no extra effect right now.
+              </span>
             </div>
             <div class="mt-2 flex items-center gap-2">
               <input class="form-check-input" type="checkbox" id="credentialInsecureTls" />
@@ -349,6 +366,7 @@
     <script th:inline="javascript">
       const GRANT_TYPES = /*[[${grantTypes}]]*/ [];
       const USER_ROLES = /*[[${userRoles}]]*/ [];
+      let globalRevealEnabled = false;
       const userManagementEnabled = /*[[${!authenticationDisabled}]]*/ true;
 
       const GRANT_LABELS = {
@@ -474,6 +492,13 @@
         document.getElementById('credentialInsecureTls').checked = credential
           ? credential.insecureSkipTlsVerify
           : false;
+        document.getElementById('credentialAllowReveal').checked = credential
+          ? credential.allowReveal
+          : false;
+        document
+          .getElementById('credentialRevealGlobalNote')
+          .classList.toggle('hidden', !globalRevealEnabled);
+        refreshIcons();
 
         document.getElementById('grantRows').innerHTML = '';
         (credential ? credential.grants : []).forEach((grant) =>
@@ -555,6 +580,7 @@
           secretKey: document.getElementById('credentialSecretKey').value,
           insecureSkipTlsVerify: document.getElementById('credentialInsecureTls').checked,
           enabled: document.getElementById('credentialEnabled').checked,
+          allowReveal: document.getElementById('credentialAllowReveal').checked,
           grants: collectGrants(),
         };
 
@@ -743,11 +769,13 @@
         document.getElementById('allowOwnCredentials').checked =
           settings.allowUserSuppliedCredentials;
         document.getElementById('allowUsersToRevealKeys').checked = settings.allowUsersToRevealKeys;
+        globalRevealEnabled = Boolean(settings.allowUsersToRevealKeys);
       }
 
       async function saveGeneralSettings() {
         const allowUserSuppliedCredentials = document.getElementById('allowOwnCredentials').checked;
         const allowUsersToRevealKeys = document.getElementById('allowUsersToRevealKeys').checked;
+        globalRevealEnabled = allowUsersToRevealKeys;
         const response = await apiFetch('/api/admin/settings', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
