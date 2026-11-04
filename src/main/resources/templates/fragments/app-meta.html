@@ -3,18 +3,28 @@
     <a href="https://github.com/wenisch-tech/s3webui" target="_blank" rel="noopener noreferrer">
       S3WEBUI
     </a>
+    <a
+      th:href="${releasePageUrl}"
+      target="_blank"
+      rel="noopener noreferrer"
+      th:text="'v' + ${appVersion}"
+      title="Release notes"
+    >
+      v0.0.0
+    </a>
     is open-source software made in Germany and licensed under the
     <a th:href="${licensePageUrl}" target="_blank" rel="noopener noreferrer">GNU AGPL v3</a>
     .
   </p>
   <p class="landing-credit">
     <a
-      th:href="${releasePageUrl}"
+      class="inline-flex items-center gap-1"
+      href="https://github.com/wenisch-tech/s3webui/issues/new"
       target="_blank"
       rel="noopener noreferrer"
-      th:text="'Version ' + ${appVersion}"
     >
-      Version 0.0.0
+      <i data-icon="bug-ant" class="size-3.5"></i>
+      Report a bug
     </a>
   </p>
 </div>

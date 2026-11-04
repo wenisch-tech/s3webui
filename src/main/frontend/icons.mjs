@@ -12,6 +12,7 @@ import arrowUpRight from 'heroicons/24/outline/arrow-up-right.svg';
 import arrowUpTray from 'heroicons/24/outline/arrow-up-tray.svg';
 import arrowsUpDown from 'heroicons/24/outline/arrows-up-down.svg';
 import bars3 from 'heroicons/24/outline/bars-3.svg';
+import bugAnt from 'heroicons/24/outline/bug-ant.svg';
 import calendarDays from 'heroicons/24/outline/calendar-days.svg';
 import chartPie from 'heroicons/24/outline/chart-pie.svg';
 import check from 'heroicons/24/outline/check.svg';
@@ -68,6 +69,7 @@ export const ICONS = {
   'arrow-up-tray': arrowUpTray,
   'arrows-up-down': arrowsUpDown,
   'bars-3': bars3,
+  'bug-ant': bugAnt,
   'calendar-days': calendarDays,
   'chart-pie': chartPie,
   check,
