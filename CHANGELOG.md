@@ -1,5 +1,21 @@
 # Changelog
 
+## v1.7.0 - 2026-11-04
+
+## [1.7.0](https://github.com/wenisch-tech/s3webui/compare/v1.6.6...v1.7.0) (2026-11-04)
+
+
+### Features
+
+* added basic visual editor for policies ([2486142](https://github.com/wenisch-tech/s3webui/commit/24861422ab08a75df2d22f35a74b066f9ea1b832))
+* Added functionality that  allows to enable/disable reveal on a per key basis ([68feccd](https://github.com/wenisch-tech/s3webui/commit/68feccddb3cc0232e2634f71391a56ab07c253eb))
+* Added support for ([9192c3c](https://github.com/wenisch-tech/s3webui/commit/9192c3ce95659c45e56b929f6276d7d78072d412))
+
+
+
+Docker image: ghcr.io/wenisch-tech/s3webui:1.7.0
+
+
 ## v1.6.6 - 2026-11-04
 
 ### [1.6.6](https://github.com/wenisch-tech/s3webui/compare/v1.6.5...v1.6.6) (2026-11-04)
