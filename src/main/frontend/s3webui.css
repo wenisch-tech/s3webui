@@ -411,64 +411,76 @@
     @apply text-brand-400;
   }
   .bucket-heading {
-    @apply min-w-0 flex-1 pt-1.5;
+    @apply min-w-0 flex-1;
+  }
+  .bucket-title {
+    @apply text-lg leading-snug font-semibold tracking-tight;
   }
   .bucket-name {
-    @apply text-base leading-snug font-semibold tracking-tight text-slate-950 hover:text-brand-700;
+    @apply text-slate-950 hover:text-brand-700;
     overflow-wrap: anywhere;
+  }
+  /* The whole card is the click target; the link's box stretches over it. */
+  .bucket-name::after {
+    content: '';
+    @apply absolute inset-0 rounded-xl;
   }
   html[data-theme='dark'] .bucket-name {
     @apply text-slate-100 hover:text-brand-400;
   }
-  .bucket-actions {
-    @apply size-9 border-transparent;
-  }
-  .bucket-metrics {
-    @apply mt-auto grid grid-cols-2 gap-4 px-5 py-6;
-  }
-  .bucket-metrics > div + div {
-    @apply border-l border-slate-700/15 pl-5;
-  }
-  .bucket-metrics dt {
-    @apply text-xs font-medium text-slate-700;
-  }
-  .bucket-metrics dd {
-    @apply mt-1 text-xl leading-tight font-semibold tracking-tight text-slate-950 tabular-nums;
-    overflow-wrap: anywhere;
-  }
-  .bucket-metrics dd[data-stat-state='loading'],
-  .bucket-metrics dd[data-stat-state='error'] {
-    @apply text-sm leading-7 font-normal tracking-normal text-slate-500;
-  }
-  .bucket-card-footer {
-    @apply flex flex-wrap items-center justify-between gap-x-3 gap-y-2 rounded-b-xl border-t border-slate-700/10 bg-slate-800/3 px-5 py-3;
-  }
   .bucket-created {
-    @apply inline-flex items-center gap-1.5 text-xs text-slate-700;
+    @apply mt-0.5 text-xs text-slate-500;
   }
-  .bucket-created svg,
-  .bucket-browse svg {
-    @apply size-3.5 shrink-0;
+  .bucket-actions {
+    @apply relative z-10 size-9 border-transparent;
   }
-  .bucket-browse {
-    @apply inline-flex items-center gap-1 text-xs font-medium text-brand-700 hover:underline;
+  .bucket-actions,
+  html[data-theme='dark'] .bucket-actions {
+    border-color: transparent;
   }
-  html[data-theme='dark'] .bucket-metrics dt,
-  html[data-theme='dark'] .bucket-created {
+  .bucket-actions:hover,
+  .bucket-actions:focus-visible {
+    border-color: color-mix(in srgb, var(--color-slate-700) 55%, transparent);
+  }
+  .bucket-card-body {
+    @apply mt-auto px-5 pt-5 pb-5;
+  }
+  .bucket-stats {
+    @apply flex flex-wrap items-baseline gap-x-5 gap-y-1 text-sm;
+  }
+  .bucket-stats > div {
+    @apply inline-flex items-baseline gap-1.5;
+  }
+  /* Value first, label after: "5 MB used", "12 objects". Weight, not size, carries the value. */
+  .bucket-stats dd {
+    @apply order-first font-medium text-slate-700 tabular-nums;
+  }
+  .bucket-stats dt {
+    @apply text-slate-500;
+  }
+  .bucket-stats dd[data-stat-state='loading'],
+  .bucket-stats dd[data-stat-state='error'] {
+    @apply font-normal text-slate-500;
+  }
+  .bucket-bar {
+    @apply mt-3 h-1 overflow-hidden rounded-full bg-slate-700/10;
+  }
+  .bucket-bar > span {
+    @apply block h-full w-0 rounded-full bg-brand-500/70 transition-[width] duration-500;
+  }
+  html[data-theme='dark'] .bucket-created,
+  html[data-theme='dark'] .bucket-stats dt {
     @apply text-slate-300;
   }
-  html[data-theme='dark'] .bucket-metrics dd {
+  html[data-theme='dark'] .bucket-stats dd {
     @apply text-slate-100;
   }
-  html[data-theme='dark'] .bucket-metrics dd[data-stat-state='loading'],
-  html[data-theme='dark'] .bucket-metrics dd[data-stat-state='error'] {
+  html[data-theme='dark'] .bucket-stats dd[data-stat-state='loading'],
+  html[data-theme='dark'] .bucket-stats dd[data-stat-state='error'] {
     @apply text-slate-300;
   }
-  html[data-theme='dark'] .bucket-card-footer {
-    @apply border-slate-700/50 bg-slate-850/40;
-  }
-  html[data-theme='dark'] .bucket-browse {
-    @apply text-brand-400;
+  html[data-theme='dark'] .bucket-bar {
+    @apply bg-slate-100/10;
   }
   .btn-icon[aria-pressed='true'] {
     @apply border-brand-600/30 bg-brand-500/10 text-brand-700;
@@ -548,6 +560,9 @@
   }
   .dropdown-item {
     @apply flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-800/8;
+  }
+  .dropdown-item svg {
+    @apply size-4 shrink-0;
   }
   html[data-theme='dark'] .dropdown-item {
     @apply text-slate-300 hover:bg-slate-800;

@@ -673,6 +673,15 @@
     <script>
       document.addEventListener('DOMContentLoaded', () => {
         ensureS3ConfigDialog();
+        // The bucket list's card menu deep-links here to open a settings dialog straight away.
+        const requestedDialog = new URLSearchParams(location.search).get('dialog');
+        if (requestedDialog === 'permissions' || requestedDialog === 'cors') {
+          const url = new URL(location.href);
+          url.searchParams.delete('dialog');
+          history.replaceState(null, '', url);
+          if (requestedDialog === 'permissions') openBucketPolicyDialog();
+          else openBucketCorsDialog();
+        }
         if (window.HIGHLIGHT_OBJECT_KEY) {
           const highlighted = document.querySelector('.object-search-highlight');
           if (highlighted) {

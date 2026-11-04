@@ -131,15 +131,27 @@
         >
           <div class="bucket-card-header">
             <div class="bucket-icon"><i data-icon="archive-box" aria-hidden="true"></i></div>
-            <h2 class="bucket-heading">
-              <a
-                class="bucket-name"
-                th:href="@{/buckets/{b}(b=${bucket.name})}"
-                th:text="${bucket.name}"
-              >
-                bucket
-              </a>
-            </h2>
+            <div class="bucket-heading">
+              <h2 class="bucket-title">
+                <a
+                  class="bucket-name"
+                  th:href="@{/buckets/{b}(b=${bucket.name})}"
+                  th:text="${bucket.name}"
+                >
+                  bucket
+                </a>
+              </h2>
+              <p class="bucket-created">
+                <time
+                  th:if="${bucket.creationDate != null}"
+                  th:attr="datetime=${bucket.creationDate}"
+                  th:text="'Created ' + ${#temporals.format(bucket.creationDate, 'MMM d, yyyy')}"
+                >
+                  Created date
+                </time>
+                <span th:if="${bucket.creationDate == null}">Creation date unavailable</span>
+              </p>
+            </div>
             <div class="relative" x-data="{open:false}" @keydown.escape.window="open=false">
               <button
                 class="btn-icon bucket-actions"
@@ -155,6 +167,20 @@
                   <i data-icon="folder-open"></i>
                   Browse
                 </a>
+                <a
+                  class="dropdown-item"
+                  th:href="@{/buckets/{b}(b=${bucket.name}, dialog='permissions')}"
+                >
+                  <i data-icon="shield-check"></i>
+                  Permissions
+                </a>
+                <a
+                  class="dropdown-item"
+                  th:href="@{/buckets/{b}(b=${bucket.name}, dialog='cors')}"
+                >
+                  <i data-icon="globe-alt"></i>
+                  CORS
+                </a>
                 <button
                   class="dropdown-item text-bad-500"
                   th:attr="data-bucket=${bucket.name}"
@@ -166,43 +192,25 @@
               </div>
             </div>
           </div>
-          <dl class="bucket-metrics">
-            <div>
-              <dt>Storage used</dt>
-              <dd th:attr="data-bucket-size-for=${bucket.name}" data-stat-state="loading">
-                Loading…
-              </dd>
-            </div>
-            <div>
-              <dt>Objects</dt>
-              <dd th:attr="data-bucket-count-for=${bucket.name}" data-stat-state="loading">
-                Loading…
-              </dd>
-            </div>
-          </dl>
-          <div class="bucket-card-footer">
-            <span class="bucket-created">
-              <i data-icon="calendar-days" aria-hidden="true"></i>
-              <span>
-                Created
-                <time
-                  th:if="${bucket.creationDate != null}"
-                  th:attr="datetime=${bucket.creationDate}"
-                  th:text="${#temporals.format(bucket.creationDate, 'MMM d, yyyy')}"
-                >
-                  date
-                </time>
-                <span th:if="${bucket.creationDate == null}">date unavailable</span>
-              </span>
-            </span>
-            <a
-              class="bucket-browse"
-              th:href="@{/buckets/{b}(b=${bucket.name})}"
-              th:attr="aria-label='Browse ' + ${bucket.name}"
+          <div class="bucket-card-body">
+            <dl class="bucket-stats">
+              <div>
+                <dd th:attr="data-bucket-size-for=${bucket.name}" data-stat-state="loading">…</dd>
+                <dt>used</dt>
+              </div>
+              <div>
+                <dd th:attr="data-bucket-count-for=${bucket.name}" data-stat-state="loading">…</dd>
+                <dt>objects</dt>
+              </div>
+            </dl>
+            <div
+              class="bucket-bar"
+              th:attr="data-bucket-bar-for=${bucket.name}"
+              title="Storage relative to your largest bucket"
+              aria-hidden="true"
             >
-              Browse
-              <i data-icon="arrow-up-right" aria-hidden="true"></i>
-            </a>
+              <span></span>
+            </div>
           </div>
         </article>
       </section>
@@ -442,6 +450,10 @@
             .forEach((element) => {
               element.textContent = value;
               element.dataset.statState = state;
+              if (attribute === 'count' && stats) {
+                const label = element.parentElement.querySelector('dt');
+                if (label) label.textContent = Number(stats.objectCount) === 1 ? 'object' : 'objects';
+              }
             });
         }
         const row = document.querySelector(
@@ -455,7 +467,27 @@
           }
         }
         updateTotalBucketSize();
+        updateBucketBars();
         renderBucketPieChart();
+      }
+      // Each bar is sized against the largest bucket, so the cards read as a comparison
+      // without the numbers having to shout.
+      function updateBucketBars() {
+        const sizes = new Map();
+        document.querySelectorAll('#bucketTableBody tr[data-stats-state="ready"]').forEach((row) => {
+          sizes.set(row.dataset.name, Number(row.dataset.size));
+        });
+        const max = Math.max(0, ...sizes.values());
+        document.querySelectorAll('[data-bucket-bar-for]').forEach((bar) => {
+          const size = sizes.get(bar.getAttribute('data-bucket-bar-for'));
+          const fill = bar.firstElementChild;
+          if (size === undefined || !max) {
+            fill.style.width = '0%';
+            return;
+          }
+          // A non-empty bucket always shows a sliver, however small next to the largest.
+          fill.style.width = (size > 0 ? Math.max((size / max) * 100, 3) : 0) + '%';
+        });
       }
       function updateTotalBucketSize() {
         const rows = [...document.querySelectorAll('#bucketTableBody tr')];
