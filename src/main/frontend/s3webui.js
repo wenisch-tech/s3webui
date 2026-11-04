@@ -88,7 +88,7 @@ window.cfgEnsureEditor = (hostId, instance) => instance || createJsonEditor(docu
 window.cfgPretty = s => { try { return JSON.stringify(JSON.parse(s), null, 2); } catch { return s; } };
 
 window.openDialog = id => { const dialog = document.getElementById(id); if (!dialog) return; dialog.classList.remove('hidden'); dialog.setAttribute('aria-hidden', 'false'); dialog.querySelector('[data-autofocus]')?.focus(); };
-window.closeDialog = id => { const dialog = document.getElementById(id); if (!dialog) return; dialog.classList.add('hidden'); dialog.setAttribute('aria-hidden', 'true'); dialog.dispatchEvent(new CustomEvent('s3webui:dialogclosed')); };
+window.closeDialog = id => { const dialog = document.getElementById(id); if (!dialog) return; dialog.classList.add('hidden'); dialog.setAttribute('aria-hidden', 'true'); dialog.dispatchEvent(new CustomEvent('s3webui:dialogclosed', { bubbles: true })); };
 document.addEventListener('keydown', event => { if (event.key !== 'Escape') return; const dialogs = [...document.querySelectorAll('.modal-backdrop:not(.hidden)')]; const dialog = dialogs.at(-1); if (dialog?.dataset.static !== 'true') closeDialog(dialog.id); });
 document.addEventListener('click', event => { if (event.target.classList.contains('modal-backdrop') && event.target.dataset.static !== 'true') closeDialog(event.target.id); });
 
