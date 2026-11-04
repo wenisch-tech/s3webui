@@ -1,5 +1,20 @@
 # Changelog
 
+## v1.7.2 - 2026-11-04
+
+### [1.7.2](https://github.com/wenisch-tech/s3webui/compare/v1.7.1...v1.7.2) (2026-11-04)
+
+
+### Bug Fixes
+
+* added necessary license information in about section ([949873a](https://github.com/wenisch-tech/s3webui/commit/949873a0f6f31ee33a9d72ee3cfd125735484fe2))
+* Updated footer information and added report a bug link ([87f2b0b](https://github.com/wenisch-tech/s3webui/commit/87f2b0b9b805245c0f2ac6304fe9736f9d07c660))
+
+
+
+Docker image: ghcr.io/wenisch-tech/s3webui:1.7.2
+
+
 ## v1.7.1 - 2026-11-04
 
 ### [1.7.1](https://github.com/wenisch-tech/s3webui/compare/v1.7.0...v1.7.1) (2026-11-04)
