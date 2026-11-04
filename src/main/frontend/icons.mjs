@@ -11,6 +11,7 @@ import arrowUp from 'heroicons/24/outline/arrow-up.svg';
 import arrowUpRight from 'heroicons/24/outline/arrow-up-right.svg';
 import arrowUpTray from 'heroicons/24/outline/arrow-up-tray.svg';
 import arrowsUpDown from 'heroicons/24/outline/arrows-up-down.svg';
+import bookOpen from 'heroicons/24/outline/book-open.svg';
 import bars3 from 'heroicons/24/outline/bars-3.svg';
 import bugAnt from 'heroicons/24/outline/bug-ant.svg';
 import calendarDays from 'heroicons/24/outline/calendar-days.svg';
@@ -43,6 +44,7 @@ import magnifyingGlass from 'heroicons/24/outline/magnifying-glass.svg';
 import pencil from 'heroicons/24/outline/pencil.svg';
 import plus from 'heroicons/24/outline/plus.svg';
 import serverStack from 'heroicons/24/outline/server-stack.svg';
+import scale from 'heroicons/24/outline/scale.svg';
 import shieldCheck from 'heroicons/24/outline/shield-check.svg';
 import shieldExclamation from 'heroicons/24/outline/shield-exclamation.svg';
 import squares2x2 from 'heroicons/24/outline/squares-2x2.svg';
@@ -69,6 +71,7 @@ export const ICONS = {
   'arrow-up-tray': arrowUpTray,
   'arrows-up-down': arrowsUpDown,
   'bars-3': bars3,
+  'book-open': bookOpen,
   'bug-ant': bugAnt,
   'calendar-days': calendarDays,
   'chart-pie': chartPie,
@@ -101,6 +104,7 @@ export const ICONS = {
   pencil,
   plus,
   'server-stack': serverStack,
+  scale,
   'shield-check': shieldCheck,
   'shield-exclamation': shieldExclamation,
   'squares-2x2': squares2x2,

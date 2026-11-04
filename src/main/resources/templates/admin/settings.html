@@ -43,6 +43,12 @@
           </button>
         </li>
         <li class="" role="presentation">
+          <button class="tab" id="adminTabBtn-iam" onclick="switchAdminTab('iam')" type="button">
+            <i data-icon="shield-check"></i>
+            IAM
+          </button>
+        </li>
+        <li class="" role="presentation">
           <button
             class="tab"
             id="adminTabBtn-general"
@@ -54,9 +60,14 @@
           </button>
         </li>
         <li class="" role="presentation">
-          <button class="tab" id="adminTabBtn-iam" onclick="switchAdminTab('iam')" type="button">
-            <i data-icon="shield-check"></i>
-            IAM
+          <button
+            class="tab"
+            id="adminTabBtn-about"
+            onclick="switchAdminTab('about')"
+            type="button"
+          >
+            <i data-icon="information-circle"></i>
+            About
           </button>
         </li>
       </ul>
@@ -120,6 +131,11 @@
           </div>
         </div>
 
+        <!-- ── IAM ───────────────────────────────────────────── -->
+        <div class="admin-tab hidden" id="tab-iam">
+          <div th:replace="~{admin/fragments/iam :: panel}"></div>
+        </div>
+
         <!-- ── General ─────────────────────────────────────────────────── -->
         <div class="admin-tab hidden" id="tab-general">
           <div class="mb-2 flex items-center gap-2">
@@ -173,9 +189,111 @@
           </div>
         </div>
 
-        <!-- ── IAM ───────────────────────────────────────────── -->
-        <div class="admin-tab hidden" id="tab-iam">
-          <div th:replace="~{admin/fragments/iam :: panel}"></div>
+        <!-- ── About ───────────────────────────────────────────── -->
+        <div class="admin-tab hidden" id="tab-about">
+          <div class="about-hero">
+            <img th:src="@{/img/logo.png}" class="size-14" alt="" />
+            <div>
+              <h2 class="about-name">S3WEBUI</h2>
+              <p class="page-copy">
+                A focused workspace for your S3 storage. Open-source software made in Germany.
+              </p>
+            </div>
+            <a
+              class="badge ml-auto"
+              th:href="${releasePageUrl}"
+              th:text="'Version ' + ${appVersion}"
+              target="_blank"
+              rel="noopener noreferrer"
+              title="Release notes"
+            >
+              Version
+            </a>
+          </div>
+          <dl class="about-list">
+            <div>
+              <dt><i data-icon="scale"></i>License</dt>
+              <dd>
+                <a th:href="${licensePageUrl}" target="_blank" rel="noopener noreferrer">
+                  GNU Affero General Public License v3
+                </a>
+                <span>Free to use, change and share. Changes to a hosted copy must be shared too.</span>
+              </dd>
+            </div>
+            <div>
+              <dt><i data-icon="book-open"></i>Documentation</dt>
+              <dd>
+                <a
+                  href="https://github.com/wenisch-tech/s3webui/tree/main/docs"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Installation, administration and usage guides
+                </a>
+              </dd>
+            </div>
+            <div>
+              <dt><i data-icon="bug-ant"></i>Report a bug</dt>
+              <dd>
+                <a
+                  href="https://github.com/wenisch-tech/s3webui/issues/new"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Open an issue on GitHub
+                </a>
+                <span>Include the version above and what you expected to happen.</span>
+              </dd>
+            </div>
+            <div>
+              <dt><i data-icon="code-bracket-square"></i>Source code</dt>
+              <dd>
+                <a
+                  href="https://github.com/wenisch-tech/s3webui"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  github.com/wenisch-tech/s3webui
+                </a>
+              </dd>
+            </div>
+            <div>
+              <dt><i data-icon="clock"></i>Release notes</dt>
+              <dd>
+                <a th:href="${releasePageUrl}" target="_blank" rel="noopener noreferrer">
+                  What changed in each version
+                </a>
+              </dd>
+            </div>
+            <div>
+              <dt><i data-icon="document-text"></i>Third-party licenses</dt>
+              <dd>
+                <a
+                  href="https://github.com/wenisch-tech/s3webui/blob/main/THIRD_PARTY_LICENSES.md"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Fonts and icons bundled with the app
+                </a>
+                <span>Inter, JetBrains Mono and Heroicons.</span>
+              </dd>
+            </div>
+            <div>
+              <dt><i data-icon="users"></i>Developed by</dt>
+              <dd>
+                <span class="about-credit">
+                  Jean-Fabian Wenisch and
+                  <a
+                    href="https://github.com/wenisch-tech/s3webui/graphs/contributors"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    these awesome contributors
+                  </a>
+                </span>
+              </dd>
+            </div>
+          </dl>
         </div>
       </div>
     </main>

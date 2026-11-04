@@ -954,6 +954,55 @@
     @apply size-3.5;
   }
 
+  .about-hero {
+    @apply flex flex-wrap items-center gap-4 border-b border-slate-700/15 pb-5;
+  }
+  .about-name {
+    @apply text-xl leading-tight font-semibold tracking-tight text-slate-950;
+  }
+  .about-list {
+    @apply divide-y divide-slate-700/10;
+  }
+  .about-list > div {
+    @apply grid gap-1 py-3.5 sm:grid-cols-[13rem_1fr] sm:gap-4;
+  }
+  .about-list dt {
+    @apply flex items-center gap-2 text-sm font-medium text-slate-700;
+  }
+  .about-list dt svg {
+    @apply size-4 shrink-0 text-slate-500;
+  }
+  .about-list dd {
+    @apply flex flex-col gap-0.5 text-sm;
+  }
+  .about-list dd a {
+    @apply w-fit font-medium text-brand-700 underline decoration-brand-600/30 underline-offset-2 transition hover:decoration-brand-600;
+  }
+  .about-list dd span {
+    @apply text-xs text-slate-500;
+  }
+  /* A credit line is body text with a link in it, not a muted hint. */
+  .about-list dd span.about-credit {
+    @apply text-sm text-slate-700;
+  }
+  html[data-theme='dark'] .about-list dd span.about-credit {
+    @apply text-slate-300;
+  }
+  html[data-theme='dark'] .about-name {
+    @apply text-slate-100;
+  }
+  html[data-theme='dark'] .about-hero {
+    @apply border-slate-700;
+  }
+  html[data-theme='dark'] .about-list {
+    @apply divide-slate-700/60;
+  }
+  html[data-theme='dark'] .about-list dt {
+    @apply text-slate-300;
+  }
+  html[data-theme='dark'] .about-list dd a {
+    @apply text-brand-400;
+  }
   .advanced-section {
     @apply rounded-xl border border-slate-700/15;
   }
