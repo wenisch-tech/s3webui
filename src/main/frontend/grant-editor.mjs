@@ -84,7 +84,7 @@ export function createGrantEditor(host, options) {
     return `<button type="button" class="${classes.join(' ')}" data-perm="${permission.id}"
         aria-pressed="${pressed || implied}" title="${escape(title)}"
         aria-label="${escape(`${permission.label} — ${subjectLabel}`)}" ${readOnly || locked ? 'disabled' : ''}>
-        <i data-lucide="${pressed || implied ? 'check' : permission.icon}"></i><span>${escape(permission.label)}</span>
+        <i data-icon="${pressed || implied ? 'check' : permission.icon}"></i><span>${escape(permission.label)}</span>
       </button>`;
   }
 
@@ -92,9 +92,9 @@ export function createGrantEditor(host, options) {
     const info = subjectInfo(subject);
     const full = permissions.has('full');
     const avatar = info.public
-      ? '<span class="grant-avatar is-public"><i data-lucide="globe"></i></span>'
+      ? '<span class="grant-avatar is-public"><i data-icon="globe-alt"></i></span>'
       : kind === 'identity'
-        ? '<span class="grant-avatar"><i data-lucide="archive"></i></span>'
+        ? '<span class="grant-avatar"><i data-icon="archive-box"></i></span>'
         : `<span class="grant-avatar">${escape((info.label || '?').trim().charAt(0).toUpperCase() || '?')}</span>`;
     const chips = PERMISSIONS.map((permission) =>
       chipHtml(permission, { pressed: !full && permissions.has(permission.id), implied: full }, info.label),
@@ -120,7 +120,7 @@ export function createGrantEditor(host, options) {
         ${
           readOnly
             ? ''
-            : `<button type="button" class="btn-icon grant-remove" title="${escape(`Remove access for ${info.label}`)}" ${locked ? 'disabled' : ''}><i data-lucide="x"></i></button>`
+            : `<button type="button" class="btn-icon grant-remove" title="${escape(`Remove access for ${info.label}`)}" ${locked ? 'disabled' : ''}><i data-icon="x-mark"></i></button>`
         }
         ${hints.length ? `<p class="grant-hint">${escape(hints[0])}</p>` : ''}
       </div>`;
@@ -197,7 +197,7 @@ export function createGrantEditor(host, options) {
     ).join('');
 
     addEl.innerHTML = `
-      <div class="grant-add-title"><i data-lucide="plus"></i>Give a ${noun} access</div>
+      <div class="grant-add-title"><i data-icon="plus"></i>Give a ${noun} access</div>
       <div class="grant-add-controls">
         <label class="sr-only" for="${host.id || 'grant'}-subject">${noun === 'bucket' ? 'Bucket' : 'User'}</label>
         <select class="input grant-add-subject" id="${host.id || 'grant'}-subject" ${nothing || locked ? 'disabled' : ''}>
@@ -206,7 +206,7 @@ export function createGrantEditor(host, options) {
         <input class="input grant-add-custom font-mono text-xs${customMode ? '' : ' hidden'}" type="text"
           placeholder="arn:aws:iam::123456789012:user/name" aria-label="Principal ARN" autocomplete="off" />
         <div class="segmented segmented--sm" role="radiogroup" aria-label="Starting permissions">${presets}</div>
-        <button type="button" class="btn-secondary grant-add-button" disabled><i data-lucide="plus"></i>Add</button>
+        <button type="button" class="btn-secondary grant-add-button" disabled><i data-icon="plus"></i>Add</button>
       </div>`;
 
     const select = addEl.querySelector('.grant-add-subject');
@@ -260,7 +260,7 @@ export function createGrantEditor(host, options) {
     listEl.innerHTML = grants.size
       ? [...grants].map(([subject, permissions]) => rowHtml(subject, permissions)).join('')
       : `<div class="grant-empty">
-          <span class="grant-empty-icon"><i data-lucide="shield"></i></span>
+          <span class="grant-empty-icon"><i data-icon="shield-check"></i></span>
           <div>
             <p class="grant-empty-title">${kind === 'identity' ? 'No bucket access yet' : 'Nobody has been granted access here'}</p>
             <p class="grant-empty-copy">${
@@ -273,7 +273,7 @@ export function createGrantEditor(host, options) {
     renderAdd();
     preservedEl.classList.toggle('hidden', !preservedCount);
     if (preservedCount) {
-      preservedEl.innerHTML = `<i data-lucide="braces"></i><span>${preservedCount} advanced ${
+      preservedEl.innerHTML = `<i data-icon="code-bracket-square"></i><span>${preservedCount} advanced ${
         preservedCount === 1 ? 'statement is' : 'statements are'
       } kept as-is.</span> <button type="button" class="link-button">View in JSON</button>`;
       preservedEl.querySelector('button').addEventListener('click', () => onShowJson?.());

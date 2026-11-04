@@ -14,7 +14,7 @@
               onclick="switchIamTab('users')"
               type="button"
             >
-              <i data-lucide="user-circle"></i>
+              <i data-icon="user-circle"></i>
               Users
             </button>
           </li>
@@ -25,7 +25,7 @@
               onclick="switchIamTab('groups')"
               type="button"
             >
-              <i data-lucide="users"></i>
+              <i data-icon="users"></i>
               Groups
             </button>
           </li>
@@ -36,7 +36,7 @@
               onclick="switchIamTab('policies')"
               type="button"
             >
-              <i data-lucide="shield-check"></i>
+              <i data-icon="shield-check"></i>
               Policies
             </button>
           </li>
@@ -52,7 +52,7 @@
               , ready to be granted to an account.
             </p>
             <button class="btn-primary" onclick="openIamUserModal()">
-              <i data-lucide="user-plus"></i>
+              <i data-icon="user-plus"></i>
               New IAM user
             </button>
           </div>
@@ -76,7 +76,7 @@
           <div class="mb-3 flex flex-wrap items-center justify-between gap-3">
             <p class="page-copy">Groups collect users so a policy can be attached once.</p>
             <button class="btn-primary" onclick="openIamGroupModal()">
-              <i data-lucide="plus"></i>
+              <i data-icon="plus"></i>
               New group
             </button>
           </div>
@@ -101,7 +101,7 @@
               Standalone policy documents. Provider-managed policies can be attached but not edited.
             </p>
             <button class="btn-primary" id="iamNewPolicyButton" onclick="openIamPolicyModal(null)">
-              <i data-lucide="plus"></i>
+              <i data-icon="plus"></i>
               New policy
             </button>
           </div>
@@ -132,11 +132,11 @@
         <div class="modal-card max-w-xl">
           <div class="modal-header">
             <h2 class="modal-title">
-              <i data-lucide="user-plus"></i>
+              <i data-icon="user-plus"></i>
               New IAM user
             </h2>
             <button class="btn-icon" type="button" onclick="closeDialog('iamUserModal')" aria-label="Close">
-              <i data-lucide="x"></i>
+              <i data-icon="x-mark"></i>
             </button>
           </div>
           <div class="modal-body">
@@ -153,7 +153,7 @@
               Cancel
             </button>
             <button type="button" class="btn-primary" onclick="createIamUser()">
-              <i data-lucide="check-circle-2"></i>
+              <i data-icon="check-circle"></i>
               Create
             </button>
           </div>
@@ -171,11 +171,11 @@
         <div class="modal-card max-w-xl">
           <div class="modal-header">
             <h2 class="modal-title">
-              <i data-lucide="users"></i>
+              <i data-icon="users"></i>
               New group
             </h2>
             <button class="btn-icon" type="button" onclick="closeDialog('iamGroupModal')" aria-label="Close">
-              <i data-lucide="x"></i>
+              <i data-icon="x-mark"></i>
             </button>
           </div>
           <div class="modal-body">
@@ -188,7 +188,7 @@
               Cancel
             </button>
             <button type="button" class="btn-primary" onclick="createIamGroup()">
-              <i data-lucide="check-circle-2"></i>
+              <i data-icon="check-circle"></i>
               Create
             </button>
           </div>
@@ -206,11 +206,11 @@
         <div class="modal-card max-w-3xl">
           <div class="modal-header">
             <h2 class="modal-title" id="iamPolicyTitle">
-              <i data-lucide="shield-check"></i>
+              <i data-icon="shield-check"></i>
               Policy
             </h2>
             <button class="btn-icon" type="button" onclick="closeDialog('iamPolicyModal')" aria-label="Close">
-              <i data-lucide="x"></i>
+              <i data-icon="x-mark"></i>
             </button>
           </div>
           <div class="modal-body">
@@ -231,11 +231,11 @@
               id="iamPolicyRemove"
               onclick="removeIamPolicy(this)"
             >
-              <i data-lucide="trash-2"></i>
+              <i data-icon="trash"></i>
               Remove
             </button>
             <button type="button" class="btn-primary" id="iamPolicySave" onclick="saveIamPolicy()">
-              <i data-lucide="check-circle-2"></i>
+              <i data-icon="check-circle"></i>
               Save
             </button>
           </div>
@@ -253,11 +253,11 @@
         <div class="modal-card max-w-3xl">
           <div class="modal-header">
             <h2 class="modal-title" id="iamAttachTitle">
-              <i data-lucide="shield-check"></i>
+              <i data-icon="shield-check"></i>
               Permissions
             </h2>
             <button class="btn-icon" type="button" onclick="closeDialog('iamAttachModal')" aria-label="Close">
-              <i data-lucide="x"></i>
+              <i data-icon="x-mark"></i>
             </button>
           </div>
           <div class="modal-body modal-body-scroll">
@@ -276,7 +276,7 @@
 
             <details class="advanced-section" id="iamAdvancedSection">
               <summary>
-                <i data-lucide="chevron-right"></i>
+                <i data-icon="chevron-right"></i>
                 Advanced: policies &amp; JSON
               </summary>
               <div class="advanced-section-body">
@@ -290,7 +290,7 @@
                     class="btn-secondary whitespace-nowrap"
                     onclick="attachIamPolicy()"
                   >
-                    <i data-lucide="link-2"></i>
+                    <i data-icon="link"></i>
                     Attach
                   </button>
                 </div>
@@ -303,7 +303,7 @@
                       class="btn-secondary"
                       onclick="openIamInlinePolicyModal(null)"
                     >
-                      <i data-lucide="plus"></i>
+                      <i data-icon="plus"></i>
                       Add inline policy
                     </button>
                   </div>
@@ -327,7 +327,7 @@
               onclick="saveIamBucketAccess()"
               disabled
             >
-              <i data-lucide="check-circle-2"></i>
+              <i data-icon="check-circle"></i>
               Save access
             </button>
           </div>
@@ -345,11 +345,11 @@
         <div class="modal-card max-w-3xl">
           <div class="modal-header">
             <h2 class="modal-title" id="iamInlineTitle">
-              <i data-lucide="scroll-text"></i>
+              <i data-icon="document-text"></i>
               Inline policy
             </h2>
             <button class="btn-icon" type="button" onclick="closeDialog('iamInlinePolicyModal')" aria-label="Close">
-              <i data-lucide="x"></i>
+              <i data-icon="x-mark"></i>
             </button>
           </div>
           <div class="modal-body">
@@ -372,11 +372,11 @@
               id="iamInlineRemove"
               onclick="removeIamInlinePolicy(this)"
             >
-              <i data-lucide="trash-2"></i>
+              <i data-icon="trash"></i>
               Remove
             </button>
             <button type="button" class="btn-primary" id="iamInlineSave" onclick="saveIamInlinePolicy()">
-              <i data-lucide="check-circle-2"></i>
+              <i data-icon="check-circle"></i>
               Save
             </button>
           </div>
@@ -394,11 +394,11 @@
         <div class="modal-card max-w-2xl">
           <div class="modal-header">
             <h2 class="modal-title" id="iamMembersTitle">
-              <i data-lucide="users"></i>
+              <i data-icon="users"></i>
               Group members
             </h2>
             <button class="btn-icon" type="button" onclick="closeDialog('iamMembersModal')" aria-label="Close">
-              <i data-lucide="x"></i>
+              <i data-icon="x-mark"></i>
             </button>
           </div>
           <div class="modal-body">
@@ -412,7 +412,7 @@
                 class="btn-secondary whitespace-nowrap"
                 onclick="addIamMember()"
               >
-                <i data-lucide="plus"></i>
+                <i data-icon="plus"></i>
                 Add
               </button>
             </div>
@@ -436,11 +436,11 @@
         <div class="modal-card max-w-2xl">
           <div class="modal-header">
             <h2 class="modal-title" id="iamKeysTitle">
-              <i data-lucide="key-round"></i>
+              <i data-icon="key"></i>
               Access keys
             </h2>
             <button class="btn-icon" type="button" onclick="closeDialog('iamKeysModal')" aria-label="Close">
-              <i data-lucide="x"></i>
+              <i data-icon="x-mark"></i>
             </button>
           </div>
           <div class="modal-body">
@@ -453,7 +453,7 @@
               Close
             </button>
             <button type="button" class="btn-primary" onclick="createIamKey()">
-              <i data-lucide="key-round"></i>
+              <i data-icon="key"></i>
               New access key
             </button>
           </div>
@@ -471,11 +471,11 @@
         <div class="modal-card max-w-xl">
           <div class="modal-header">
             <h2 class="modal-title">
-              <i data-lucide="key-round"></i>
+              <i data-icon="key"></i>
               Save this access key
             </h2>
             <button class="btn-icon" type="button" onclick="closeIamCreatedKeyModal()" aria-label="Close">
-              <i data-lucide="x"></i>
+              <i data-icon="x-mark"></i>
             </button>
           </div>
           <div class="modal-body">
@@ -496,7 +496,7 @@
                 type="button"
                 onclick="copyIamCreatedKey('iamCreatedAccessKey')"
               >
-                <i data-lucide="copy"></i>
+                <i data-icon="document-duplicate"></i>
                 Copy
               </button>
             </div>
@@ -513,7 +513,7 @@
                 type="button"
                 onclick="copyIamCreatedKey('iamCreatedSecretKey')"
               >
-                <i data-lucide="copy"></i>
+                <i data-icon="document-duplicate"></i>
                 Copy
               </button>
             </div>
@@ -667,9 +667,9 @@
                     <td class="font-mono text-xs text-slate-500">${iamEscape(user.arn)}</td>
                     <td class="text-sm text-slate-500">${iamEscape(iamDate(user.createdAt))}</td>
                     <td class="whitespace-nowrap text-right">
-                        <button class="btn-icon" title="Permissions" data-name="${iamEscape(user.userName)}" onclick="openIamAttachModal('users', this.getAttribute('data-name'))"><i data-lucide="shield-check"></i></button>
-                        <button class="btn-icon" title="Access keys" data-name="${iamEscape(user.userName)}" onclick="openIamKeysModal(this.getAttribute('data-name'))"><i data-lucide="key-round"></i></button>
-                        <button class="btn-icon text-bad-500" title="Delete user" data-name="${iamEscape(user.userName)}" onclick="deleteIamUser(this)"><i data-lucide="trash-2"></i></button>
+                        <button class="btn-icon" title="Permissions" data-name="${iamEscape(user.userName)}" onclick="openIamAttachModal('users', this.getAttribute('data-name'))"><i data-icon="shield-check"></i></button>
+                        <button class="btn-icon" title="Access keys" data-name="${iamEscape(user.userName)}" onclick="openIamKeysModal(this.getAttribute('data-name'))"><i data-icon="key"></i></button>
+                        <button class="btn-icon text-bad-500" title="Delete user" data-name="${iamEscape(user.userName)}" onclick="deleteIamUser(this)"><i data-icon="trash"></i></button>
                     </td>`;
             body.appendChild(row);
           });
@@ -712,7 +712,7 @@
           if (button.dataset.confirm !== '1') {
             button.dataset.confirm = '1';
             button.title = 'Click again to confirm';
-            button.innerHTML = '<i data-lucide="check-circle-2"></i>';
+            button.innerHTML = '<i data-icon="check-circle"></i>';
             refreshIcons();
             return;
           }
@@ -754,9 +754,9 @@
                     <td class="font-medium">${iamEscape(group.groupName)}</td>
                     <td class="font-mono text-xs text-slate-500">${iamEscape(group.arn)}</td>
                     <td class="whitespace-nowrap text-right">
-                        <button class="btn-icon" title="Members" data-name="${iamEscape(group.groupName)}" onclick="openIamMembersModal(this.getAttribute('data-name'))"><i data-lucide="users"></i></button>
-                        <button class="btn-icon" title="Permissions" data-name="${iamEscape(group.groupName)}" onclick="openIamAttachModal('groups', this.getAttribute('data-name'))"><i data-lucide="shield-check"></i></button>
-                        <button class="btn-icon text-bad-500" title="Delete group" data-name="${iamEscape(group.groupName)}" onclick="deleteIamGroup(this)"><i data-lucide="trash-2"></i></button>
+                        <button class="btn-icon" title="Members" data-name="${iamEscape(group.groupName)}" onclick="openIamMembersModal(this.getAttribute('data-name'))"><i data-icon="users"></i></button>
+                        <button class="btn-icon" title="Permissions" data-name="${iamEscape(group.groupName)}" onclick="openIamAttachModal('groups', this.getAttribute('data-name'))"><i data-icon="shield-check"></i></button>
+                        <button class="btn-icon text-bad-500" title="Delete group" data-name="${iamEscape(group.groupName)}" onclick="deleteIamGroup(this)"><i data-icon="trash"></i></button>
                     </td>`;
             body.appendChild(row);
           });
@@ -794,7 +794,7 @@
           if (button.dataset.confirm !== '1') {
             button.dataset.confirm = '1';
             button.title = 'Click again to confirm';
-            button.innerHTML = '<i data-lucide="check-circle-2"></i>';
+            button.innerHTML = '<i data-icon="check-circle"></i>';
             refreshIcons();
             return;
           }
@@ -816,7 +816,7 @@
           _iamMembersGroup = groupName;
           cfgClearError('iamMembersError');
           document.getElementById('iamMembersTitle').innerHTML =
-            `<i data-lucide="users"></i>Members of ${iamEscape(groupName)}`;
+            `<i data-icon="users"></i>Members of ${iamEscape(groupName)}`;
           await renderIamMembers();
           openDialog('iamMembersModal');
           refreshIcons();
@@ -842,7 +842,7 @@
                     name,
                   ) => `<div class="flex items-center justify-between border-b border-slate-700/10 py-1">
                         <span class="font-mono text-sm">${iamEscape(name)}</span>
-                        <button type="button" class="btn-icon text-bad-500" title="Remove member" aria-label="Remove ${iamEscape(name)} from group" data-name="${iamEscape(name)}" onclick="removeIamMember(this.getAttribute('data-name'))"><i data-lucide="x"></i></button>
+                        <button type="button" class="btn-icon text-bad-500" title="Remove member" aria-label="Remove ${iamEscape(name)} from group" data-name="${iamEscape(name)}" onclick="removeIamMember(this.getAttribute('data-name'))"><i data-icon="x-mark"></i></button>
                     </div>`,
                 )
                 .join('')
@@ -917,7 +917,7 @@
                     <td class="font-medium">${iamEscape(policy.name)}${managed}</td>
                     <td class="font-mono text-xs text-slate-500">${iamEscape(policy.id)}</td>
                     <td class="whitespace-nowrap text-right">
-                        <button class="btn-icon" title="View or edit" data-id="${iamEscape(policy.id)}" onclick="openIamPolicyModal(this.getAttribute('data-id'))"><i data-lucide="pencil"></i></button>
+                        <button class="btn-icon" title="View or edit" data-id="${iamEscape(policy.id)}" onclick="openIamPolicyModal(this.getAttribute('data-id'))"><i data-icon="pencil"></i></button>
                     </td>`;
             body.appendChild(row);
           });
@@ -983,8 +983,8 @@
             .classList.toggle('hidden', Boolean(policyId));
           document.getElementById('iamPolicyName').value = '';
           document.getElementById('iamPolicyTitle').innerHTML = policyId
-            ? `<i data-lucide="shield-check"></i>${iamEscape(policy ? policy.name : policyId)}`
-            : '<i data-lucide="shield-check"></i>New policy';
+            ? `<i data-icon="shield-check"></i>${iamEscape(policy ? policy.name : policyId)}`
+            : '<i data-icon="shield-check"></i>New policy';
           document
             .getElementById('iamPolicyRemove')
             .classList.toggle('hidden', !policyId || !editable);
@@ -1078,7 +1078,7 @@
           _iamAttachTarget = { kind, name };
           cfgClearError('iamAttachError');
           document.getElementById('iamAttachTitle').innerHTML =
-            `<i data-lucide="shield-check"></i>Permissions for ${iamEscape(name)}`;
+            `<i data-icon="shield-check"></i>Permissions for ${iamEscape(name)}`;
           document
             .getElementById('iamInlineSection')
             .classList.toggle('hidden', _iamCapabilities.inlinePolicies === false);
@@ -1297,7 +1297,7 @@
                     policy,
                   ) => `<div class="flex items-center justify-between border-b border-slate-700/10 py-1">
                         <span class="text-sm">${iamEscape(policy.name)}${policy.name === accessName ? ' <span class="badge ml-1">Bucket access</span>' : ''}</span>
-                        <button type="button" class="btn-icon text-bad-500" title="Detach" data-id="${iamEscape(policy.id)}" onclick="detachIamPolicy(this.getAttribute('data-id'))"><i data-lucide="unlink-2"></i></button>
+                        <button type="button" class="btn-icon text-bad-500" title="Detach" data-id="${iamEscape(policy.id)}" onclick="detachIamPolicy(this.getAttribute('data-id'))"><i data-icon="link-slash"></i></button>
                     </div>`,
                 )
                 .join('')
@@ -1362,7 +1362,7 @@
           cfgClearError('iamKeysError');
           document.getElementById('iamKeysNotice').classList.add('hidden');
           document.getElementById('iamKeysTitle').innerHTML =
-            `<i data-lucide="key-round"></i>Access keys for ${iamEscape(userName)}`;
+            `<i data-icon="key"></i>Access keys for ${iamEscape(userName)}`;
           await renderIamKeys();
           openDialog('iamKeysModal');
           refreshIcons();
@@ -1392,7 +1392,7 @@
                         ${
                           key.deletable === false
                             ? '<span class="text-xs text-slate-500" title="Delete the IAM user to remove its primary key">protected</span>'
-                            : `<button type="button" class="btn-icon text-bad-500" title="Delete key" data-id="${iamEscape(key.accessKeyId)}" onclick="deleteIamKey(this.getAttribute('data-id'))"><i data-lucide="trash-2"></i></button>`
+                            : `<button type="button" class="btn-icon text-bad-500" title="Delete key" data-id="${iamEscape(key.accessKeyId)}" onclick="deleteIamKey(this.getAttribute('data-id'))"><i data-icon="trash"></i></button>`
                         }
                     </div>`,
                 )
@@ -1498,7 +1498,7 @@
                     policyName,
                   ) => `<div class="flex items-center justify-between border-b border-slate-700/10 py-1">
                         <span class="text-sm">${iamEscape(policyName)}${policyName === IAM_ACCESS_POLICY ? ' <span class="badge ml-1">Bucket access</span>' : ''}</span>
-                        <button type="button" class="btn-icon" title="View or edit" data-name="${iamEscape(policyName)}" onclick="openIamInlinePolicyModal(this.getAttribute('data-name'))"><i data-lucide="pencil"></i></button>
+                        <button type="button" class="btn-icon" title="View or edit" data-name="${iamEscape(policyName)}" onclick="openIamInlinePolicyModal(this.getAttribute('data-name'))"><i data-icon="pencil"></i></button>
                     </div>`,
                 )
                 .join('')
@@ -1522,8 +1522,8 @@
           nameField.value = policyName || '';
           nameField.disabled = Boolean(policyName);
           document.getElementById('iamInlineTitle').innerHTML = policyName
-            ? `<i data-lucide="scroll-text"></i>${iamEscape(policyName)}`
-            : '<i data-lucide="scroll-text"></i>New inline policy';
+            ? `<i data-icon="document-text"></i>${iamEscape(policyName)}`
+            : '<i data-icon="document-text"></i>New inline policy';
           document.getElementById('iamInlineRemove').classList.toggle('hidden', !policyName);
 
           if (policyName) {

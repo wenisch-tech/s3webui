@@ -52,15 +52,15 @@ export function createPolicyView(host, options) {
   host.innerHTML = `
     <div class="policy-view-bar">
       <div class="segmented" role="tablist" aria-label="Editor">
-        <button type="button" class="segmented-btn" role="tab" data-mode="visual"><i data-lucide="sliders-horizontal"></i>Visual</button>
-        <button type="button" class="segmented-btn" role="tab" data-mode="json"><i data-lucide="braces"></i>JSON</button>
+        <button type="button" class="segmented-btn" role="tab" data-mode="visual"><i data-icon="adjustments-horizontal"></i>Visual</button>
+        <button type="button" class="segmented-btn" role="tab" data-mode="json"><i data-icon="code-bracket-square"></i>JSON</button>
       </div>
       <span class="policy-view-status" aria-live="polite"></span>
     </div>
     <div class="policy-pane" data-pane="visual">
       <div class="policy-errors hidden" role="alert"></div>
       <div class="alert alert-warn policy-public-warning hidden">
-        <i data-lucide="shield-alert"></i>
+        <i data-icon="shield-exclamation"></i>
         <span>Everyone can change or delete files in this bucket. Anyone who knows its address can do this, without signing in.</span>
       </div>
       <div class="policy-grants"></div>
@@ -137,12 +137,12 @@ export function createPolicyView(host, options) {
     const shown = errors.slice(0, 5);
     const more = errors.length - shown.length;
     errorsEl.innerHTML = `
-      <div class="policy-errors-icon"><i data-lucide="shield-alert"></i></div>
+      <div class="policy-errors-icon"><i data-icon="shield-exclamation"></i></div>
       <div class="policy-errors-body">
         <p class="policy-errors-title">${errors.length === 1 ? 'The policy has an error' : `The policy has ${errors.length} errors`}, so it can't be shown visually or saved</p>
         <ul>${shown.map((error) => `<li>${escape(error.message)}</li>`).join('')}${more > 0 ? `<li>…and ${more} more</li>` : ''}</ul>
       </div>
-      <button type="button" class="btn-primary policy-errors-action"><i data-lucide="braces"></i>Switch to editor</button>`;
+      <button type="button" class="btn-primary policy-errors-action"><i data-icon="code-bracket-square"></i>Switch to editor</button>`;
     errorsEl.querySelector('button').addEventListener('click', () => {
       setMode('json');
       editor.focusAt(errors.find((error) => typeof error.offset === 'number')?.offset ?? 0);

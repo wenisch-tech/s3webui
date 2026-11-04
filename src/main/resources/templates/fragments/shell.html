@@ -24,11 +24,11 @@
     </a>
     <div class="hidden items-center gap-1 sm:flex">
       <a th:classappend="${active == 'buckets'} ? ' active'" class="nav-link" th:href="@{/}">
-        <i data-lucide="archive"></i>
+        <i data-icon="archive-box"></i>
         Buckets
       </a>
       <a th:classappend="${active == 'history'} ? ' active'" class="nav-link" th:href="@{/history}">
-        <i data-lucide="history"></i>
+        <i data-icon="clock"></i>
         History
       </a>
       <a
@@ -37,7 +37,7 @@
         class="nav-link"
         th:href="@{/admin/settings}"
       >
-        <i data-lucide="settings"></i>
+        <i data-icon="cog-6-tooth"></i>
         Settings
       </a>
     </div>
@@ -57,13 +57,13 @@
         onclick="openS3SessionDialog()"
         title="S3 key used in this session"
       >
-        <i data-lucide="key"></i>
+        <i data-icon="key"></i>
         <span class="topbar-credential-name" th:text="${activeCredentialName}">S3 key</span>
-        <i data-lucide="chevron-down" aria-hidden="true"></i>
+        <i data-icon="chevron-down" aria-hidden="true"></i>
       </button>
       <form th:if="${!authenticationDisabled}" th:action="@{/logout}" method="post">
         <button class="btn-secondary" type="submit">
-          <i data-lucide="log-out"></i>
+          <i data-icon="arrow-right-start-on-rectangle"></i>
           <span>Logout</span>
         </button>
       </form>
@@ -72,25 +72,26 @@
         @click="toggleTheme()"
         :aria-label="theme === 'dark' ? 'Use light theme' : 'Use dark theme'"
       >
-        <i :data-lucide="theme === 'dark' ? 'sun' : 'moon'" aria-hidden="true"></i>
+        <span x-show="theme === 'dark'" class="inline-flex"><i data-icon="sun"></i></span>
+        <span x-show="theme !== 'dark'" class="inline-flex"><i data-icon="moon"></i></span>
       </button>
       <button
         class="btn-icon sm:hidden"
         @click="mobileOpen = !mobileOpen"
         aria-label="Toggle navigation"
       >
-        <i data-lucide="menu" aria-hidden="true"></i>
+        <i data-icon="bars-3" aria-hidden="true"></i>
       </button>
     </div>
   </div>
   <div class="border-t border-slate-700/15 px-4 py-2 sm:hidden" x-show="mobileOpen" x-cloak>
     <div class="flex flex-wrap gap-1">
       <a th:classappend="${active == 'buckets'} ? ' active'" class="nav-link" th:href="@{/}">
-        <i data-lucide="archive"></i>
+        <i data-icon="archive-box"></i>
         Buckets
       </a>
       <a th:classappend="${active == 'history'} ? ' active'" class="nav-link" th:href="@{/history}">
-        <i data-lucide="history"></i>
+        <i data-icon="clock"></i>
         History
       </a>
       <a
@@ -99,7 +100,7 @@
         class="nav-link"
         th:href="@{/admin/settings}"
       >
-        <i data-lucide="settings"></i>
+        <i data-icon="cog-6-tooth"></i>
         Settings
       </a>
       <button
@@ -108,7 +109,7 @@
         type="button"
         onclick="openS3SessionDialog()"
       >
-        <i data-lucide="key"></i>
+        <i data-icon="key"></i>
         <span th:text="${activeCredentialName}">S3 key</span>
       </button>
     </div>
@@ -138,7 +139,7 @@
           onclick="closeDialog('s3SessionModal')"
           aria-label="Close"
         >
-          <i data-lucide="x"></i>
+          <i data-icon="x-mark"></i>
         </button>
       </div>
       <div class="modal-body">
@@ -148,7 +149,7 @@
         <div id="s3SessionError" class="alert alert-error hidden mb-3"></div>
         <div id="s3SessionKeys"><div id="s3SessionKeyList" class="grid gap-2"></div></div>
         <div id="s3SessionNoKeys" class="empty-state hidden p-6">
-          <i data-lucide="key" class="mx-auto"></i>
+          <i data-icon="key" class="mx-auto"></i>
           <p class="mt-2 text-sm">No stored S3 keys are available to this account.</p>
         </div>
         <div id="s3SessionOwn" class="mt-5 border-t pt-5">
@@ -182,7 +183,7 @@
             <span>Skip TLS certificate verification (not for production)</span>
           </label>
           <button class="btn-primary mt-4 w-full" type="button" onclick="useOwnCredentials()">
-            <i data-lucide="link-2" aria-hidden="true"></i>
+            <i data-icon="link" aria-hidden="true"></i>
             Connect with these credentials
           </button>
         </div>
@@ -211,12 +212,12 @@
           onclick="closeS3RevealKeyDialog()"
           aria-label="Close"
         >
-          <i data-lucide="x"></i>
+          <i data-icon="x-mark"></i>
         </button>
       </div>
       <div class="modal-body">
         <div class="alert alert-warn mb-4">
-          <i data-lucide="shield-alert"></i>
+          <i data-icon="shield-exclamation"></i>
           <span>
             Keep these credentials private. Anyone with them can use this S3 key outside S3WEBUI.
           </span>
@@ -229,7 +230,7 @@
             type="button"
             onclick="copyS3RevealedKey('s3RevealedAccessKey')"
           >
-            <i data-lucide="copy"></i>
+            <i data-icon="document-duplicate"></i>
             Copy
           </button>
         </div>
@@ -241,7 +242,7 @@
             type="button"
             onclick="copyS3RevealedKey('s3RevealedSecretKey')"
           >
-            <i data-lucide="copy"></i>
+            <i data-icon="document-duplicate"></i>
             Copy
           </button>
         </div>

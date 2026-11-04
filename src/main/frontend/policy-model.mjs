@@ -20,7 +20,7 @@ export const PERMISSIONS = [
   {
     id: 'list',
     label: 'List',
-    icon: 'list',
+    icon: 'list-bullet',
     hint: 'See which files and folders exist',
     scope: 'bucket',
     core: ['s3:ListBucket'],
@@ -38,7 +38,7 @@ export const PERMISSIONS = [
   {
     id: 'write',
     label: 'Write',
-    icon: 'upload',
+    icon: 'arrow-up-tray',
     hint: 'Upload new files and overwrite existing ones',
     scope: 'object',
     core: ['s3:PutObject'],
@@ -47,7 +47,7 @@ export const PERMISSIONS = [
   {
     id: 'delete',
     label: 'Delete',
-    icon: 'trash-2',
+    icon: 'trash',
     hint: 'Remove files',
     scope: 'object',
     core: ['s3:DeleteObject'],

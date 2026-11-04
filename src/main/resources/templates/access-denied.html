@@ -8,9 +8,8 @@
           <div
             class="mx-auto grid size-14 place-items-center rounded-full bg-bad-500/10 text-bad-500"
           >
-            <i data-lucide="shield-alert"></i>
+            <i data-icon="shield-exclamation"></i>
           </div>
-          <p class="eyebrow mt-5">Authorization</p>
           <h1 class="page-title">Access denied</h1>
           <p class="page-copy">You do not have permission to access this page.</p>
           <p
@@ -22,12 +21,12 @@
           </p>
           <div class="mt-6 flex justify-center gap-3">
             <a th:href="@{/}" class="btn-secondary">
-              <i data-lucide="archive"></i>
+              <i data-icon="archive-box"></i>
               Home
             </a>
             <form th:if="${oidcEnabled}" th:action="@{/logout}" method="post">
               <button class="btn-primary">
-                <i data-lucide="log-out"></i>
+                <i data-icon="arrow-right-start-on-rectangle"></i>
                 Sign out
               </button>
             </form>

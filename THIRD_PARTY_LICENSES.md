@@ -16,3 +16,12 @@ S3WEBUI bundles the following fonts so the user interface does not depend on an 
 - License: SIL Open Font License 1.1
 - Bundled files: `JetBrainsMono-Regular.woff2`, `OFL.txt`
 
+
+# Third-party icons
+
+## Heroicons 2.2.0
+
+- Copyright: Tailwind Labs, Inc.
+- Source: https://github.com/tailwindlabs/heroicons
+- License: MIT
+- Usage: the outline icon set is inlined into the JavaScript bundle (`src/main/frontend/icons.mjs`)

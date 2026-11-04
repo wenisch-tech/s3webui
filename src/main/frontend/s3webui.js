@@ -9,21 +9,10 @@ import { appUrl } from './url.js';
 import { globalSearchPagePath, globalSearchResultPath } from './global-search.mjs';
 import { bucketSearchApiPath, formatObjectSize, relativeBucketResultParent,
   relativeBucketResultPath } from './bucket-search.mjs';
-import { createIcons, Archive, ArrowDown, ArrowDownUp, ArrowUp, ArrowUpRight, Box, Braces, CalendarDays, Check, CheckCircle2,
-  ChevronDown, ChevronLeft, ChevronRight, Clock3, CloudUpload, Copy, Download, Eye, File, Folder, FolderOpen,
-  FolderPlus, Globe, History, Info, LayoutGrid, List, LogIn, LogOut,
-  Key, KeyRound, Link2, Menu, Moon, MoreHorizontal, Network, Pencil, PieChart, Plus, RefreshCw, Search, SearchX, ScrollText, Settings,
-  Shield, ShieldAlert, ShieldCheck, SlidersHorizontal, Sun, Table2, Trash2, Unlink2, Upload, UserCircle, UserPlus, Users, X } from 'lucide';
-
-const icons = { Archive, ArrowDown, ArrowDownUp, ArrowUp, ArrowUpRight, Box, Braces, CalendarDays, Check, CheckCircle2,
-  ChevronDown, ChevronLeft, ChevronRight, Clock3, CloudUpload, Copy, Eye,
-  Download, File, Folder, FolderOpen, FolderPlus, Globe, History, Info, Key, KeyRound, Link2, LayoutGrid, List, LogOut,
-  LogIn, Menu, Moon, MoreHorizontal, Network, Pencil, PieChart, Plus, RefreshCw, Search, SearchX, ScrollText, Settings,
-  Shield, ShieldAlert, ShieldCheck, SlidersHorizontal, Sun, Table2, Trash2, Unlink2, Upload, UserCircle, UserPlus, Users, X };
+import { renderIcons as renderHeroicons } from './icons.mjs';
 
 function renderIcons() {
-  createIcons({ icons });
-  document.querySelectorAll('svg[data-lucide]').forEach(icon => icon.setAttribute('aria-hidden', 'true'));
+  renderHeroicons();
   document.querySelectorAll('.btn-icon[title]:not([aria-label])').forEach(button => {
     button.setAttribute('aria-label', button.title);
   });
@@ -94,7 +83,7 @@ document.addEventListener('click', event => {
 // Shared helpers for the JSON-document dialogs (bucket policy, CORS, IAM policies).
 window.cfgError = (id, msg) => { const el = document.getElementById(id); el.textContent = msg; el.classList.remove('hidden'); };
 window.cfgClearError = id => { const el = document.getElementById(id); el.textContent = ''; el.classList.add('hidden'); };
-window.cfgResetRemove = id => { const b = document.getElementById(id); if (!b) return; b.dataset.confirm = ''; b.innerHTML = '<i data-lucide="trash-2"></i>Remove'; window.refreshIcons(); };
+window.cfgResetRemove = id => { const b = document.getElementById(id); if (!b) return; b.dataset.confirm = ''; b.innerHTML = '<i data-icon="trash"></i>Remove'; window.refreshIcons(); };
 window.cfgEnsureEditor = (hostId, instance) => instance || createJsonEditor(document.getElementById(hostId));
 window.cfgPretty = s => { try { return JSON.stringify(JSON.parse(s), null, 2); } catch { return s; } };
 
@@ -118,7 +107,7 @@ window.ensureS3ConfigDialog = ensureS3SessionDialog;
 window.openS3SessionDialog = async () => { const status = await loadS3SessionStatus(); if (status) renderS3SessionDialog(status, true); };
 function renderS3SessionDialog(status, dismissible) {
   const list = document.getElementById('s3SessionKeyList'); list.innerHTML = '';
-  status.credentials.forEach(credential => { const item = document.createElement('div'); item.className='session-key'; if (credential.id === status.activeCredentialId) item.classList.add('active'); const select = document.createElement('button'); select.type='button'; select.className='session-key-select'; select.onclick=()=>switchCredential(credential.id); select.innerHTML=`<i data-lucide="${credential.builtIn?'network':'key'}"></i><span><strong>${escapeMarkup(credential.name)}</strong><small>${escapeMarkup([credential.endpointUrl,credential.region].filter(Boolean).join(' · '))}</small></span>`; item.appendChild(select); if (status.allowUsersToRevealKeys || credential.allowReveal) { const reveal = document.createElement('button'); reveal.type='button'; reveal.className='btn-icon shrink-0'; reveal.title='Reveal access and secret key'; reveal.setAttribute('aria-label', reveal.title); reveal.innerHTML='<i data-lucide="eye"></i>'; reveal.onclick=()=>revealS3Credential(credential.id); item.appendChild(reveal); } list.appendChild(item); });
+  status.credentials.forEach(credential => { const item = document.createElement('div'); item.className='session-key'; if (credential.id === status.activeCredentialId) item.classList.add('active'); const select = document.createElement('button'); select.type='button'; select.className='session-key-select'; select.onclick=()=>switchCredential(credential.id); select.innerHTML=`<i data-icon="${credential.builtIn?'server-stack':'key'}"></i><span><strong>${escapeMarkup(credential.name)}</strong><small>${escapeMarkup([credential.endpointUrl,credential.region].filter(Boolean).join(' · '))}</small></span>`; item.appendChild(select); if (status.allowUsersToRevealKeys || credential.allowReveal) { const reveal = document.createElement('button'); reveal.type='button'; reveal.className='btn-icon shrink-0'; reveal.title='Reveal access and secret key'; reveal.setAttribute('aria-label', reveal.title); reveal.innerHTML='<i data-icon="eye"></i>'; reveal.onclick=()=>revealS3Credential(credential.id); item.appendChild(reveal); } list.appendChild(item); });
   document.getElementById('s3SessionKeys')?.classList.toggle('hidden', !status.credentials.length); document.getElementById('s3SessionNoKeys')?.classList.toggle('hidden', !!status.credentials.length); document.getElementById('s3SessionOwn')?.classList.toggle('hidden', !status.allowOwnCredentials); document.getElementById('s3SessionClose')?.classList.toggle('hidden', !dismissible); hideS3SessionError(); openDialog('s3SessionModal'); refreshIcons();
 }
 async function switchCredential(credentialId, options={}) { try { const response=await apiFetch('/api/s3/session',{method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json'},body:JSON.stringify({credentialId})}); if(response.ok)return location.reload(); const message=await getResponseErrorMessage(response,'Unable to select that S3 key'); options.silent?showToast(message,'danger'):showS3SessionError(message); } catch(error){showS3SessionError(error.message||'Unable to select that S3 key');} }
@@ -164,7 +153,7 @@ function createBucketSearchResultRow(result) {
     : 'flex min-w-0 items-center gap-2';
   if (isFolder) content.href = appUrl(globalSearchResultPath(result));
   const icon = document.createElement('i');
-  icon.setAttribute('data-lucide', isFolder ? 'folder' : 'file');
+  icon.setAttribute('data-icon', isFolder ? 'folder' : 'document');
   if (!isFolder) icon.className = 'shrink-0 text-brand-600';
   const label = document.createElement('span');
   label.className = 'min-w-0 break-all';
@@ -203,7 +192,7 @@ function createBucketSearchResultRow(result) {
     download.setAttribute('aria-label', `Download ${result.name}`);
     download.href = appUrl(`/api/buckets/${encodeURIComponent(result.bucket)}/objects/download?${new URLSearchParams({ key: result.key })}`);
     const downloadIcon = document.createElement('i');
-    downloadIcon.setAttribute('data-lucide', 'download');
+    downloadIcon.setAttribute('data-icon', 'arrow-down-tray');
     download.appendChild(downloadIcon);
 
     const rename = document.createElement('button');
@@ -213,7 +202,7 @@ function createBucketSearchResultRow(result) {
     rename.setAttribute('aria-label', `Rename ${result.name}`);
     rename.addEventListener('click', () => window.openRenameModal(result.key, result.name));
     const renameIcon = document.createElement('i');
-    renameIcon.setAttribute('data-lucide', 'pencil');
+    renameIcon.setAttribute('data-icon', 'pencil');
     rename.appendChild(renameIcon);
 
     const remove = document.createElement('button');
@@ -223,7 +212,7 @@ function createBucketSearchResultRow(result) {
     remove.setAttribute('aria-label', `Delete ${result.name}`);
     remove.addEventListener('click', () => window.confirmDeleteObject(result.key));
     const removeIcon = document.createElement('i');
-    removeIcon.setAttribute('data-lucide', 'trash-2');
+    removeIcon.setAttribute('data-icon', 'trash');
     remove.appendChild(removeIcon);
     actions.append(download, rename, remove);
     actionsCell.appendChild(actions);
@@ -386,7 +375,7 @@ function initGlobalSearch() {
     const iconWrap = document.createElement('span');
     iconWrap.className = 'global-search-option-icon';
     const icon = document.createElement('i');
-    icon.setAttribute('data-lucide', result.type === 'FOLDER' ? 'folder' : 'file');
+    icon.setAttribute('data-icon', result.type === 'FOLDER' ? 'folder' : 'document');
     iconWrap.appendChild(icon);
 
     const content = document.createElement('span');
@@ -400,7 +389,7 @@ function initGlobalSearch() {
     content.append(name, path);
 
     const arrow = document.createElement('i');
-    arrow.setAttribute('data-lucide', 'arrow-up-right');
+    arrow.setAttribute('data-icon', 'arrow-up-right');
     arrow.className = 'size-4 shrink-0 text-slate-500';
     link.append(iconWrap, content, arrow);
     link.addEventListener('mouseenter', () => updateActiveItem(selectableItems().indexOf(link)));
@@ -433,7 +422,7 @@ function initGlobalSearch() {
       const label = document.createElement('span');
       label.textContent = `More results (${data.total})`;
       const icon = document.createElement('i');
-      icon.setAttribute('data-lucide', 'arrow-up-right');
+      icon.setAttribute('data-icon', 'arrow-up-right');
       more.append(label, icon);
       more.addEventListener('mouseenter', () => updateActiveItem(selectableItems().indexOf(more)));
       suggestions.appendChild(more);
@@ -508,4 +497,4 @@ function initGlobalSearch() {
 }
 document.addEventListener('DOMContentLoaded', initGlobalSearch);
 
-window.showToast = (message, type = 'info') => { const container = document.getElementById('toastContainer'); if (!container) return; const toast = document.createElement('div'); toast.className = `toast ${type}`; toast.setAttribute('role', 'status'); toast.innerHTML = `<span>${String(message || '').replace(/[<>"'&]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}</span><button class="btn-icon shrink-0" aria-label="Dismiss"><i data-lucide="x"></i></button>`; toast.querySelector('button').onclick = () => toast.remove(); container.appendChild(toast); renderIcons(); setTimeout(() => toast.remove(), 4500); };
+window.showToast = (message, type = 'info') => { const container = document.getElementById('toastContainer'); if (!container) return; const toast = document.createElement('div'); toast.className = `toast ${type}`; toast.setAttribute('role', 'status'); toast.innerHTML = `<span>${String(message || '').replace(/[<>"'&]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}</span><button class="btn-icon shrink-0" aria-label="Dismiss"><i data-icon="x-mark"></i></button>`; toast.querySelector('button').onclick = () => toast.remove(); container.appendChild(toast); renderIcons(); setTimeout(() => toast.remove(), 4500); };

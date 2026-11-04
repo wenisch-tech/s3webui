@@ -9,12 +9,11 @@
     <nav th:replace="~{fragments/shell :: topbar('buckets')}"></nav>
     <main class="page">
       <div th:if="${error}" class="alert alert-error mb-5">
-        <i data-lucide="shield-alert"></i>
+        <i data-icon="shield-exclamation"></i>
         <span th:text="${error}">Error connecting to S3</span>
       </div>
       <header class="page-header">
         <div>
-          <p class="eyebrow">Object storage</p>
           <h1 class="page-title" th:text="${s3BreadcrumbLabel}">S3</h1>
           <p class="page-copy">
             <span
@@ -40,7 +39,7 @@
               aria-label="Card view"
               aria-pressed="true"
             >
-              <i data-lucide="layout-grid"></i>
+              <i data-icon="squares-2x2"></i>
             </button>
             <button
               id="viewTableBtn"
@@ -50,7 +49,7 @@
               aria-label="List view"
               aria-pressed="false"
             >
-              <i data-lucide="table-2"></i>
+              <i data-icon="table-cells"></i>
             </button>
             <button
               id="viewPieBtn"
@@ -60,11 +59,11 @@
               aria-label="Chart view"
               aria-pressed="false"
             >
-              <i data-lucide="pie-chart"></i>
+              <i data-icon="chart-pie"></i>
             </button>
           </div>
           <button class="btn-primary" onclick="openDialog('createBucketModal')">
-            <i data-lucide="plus"></i>
+            <i data-icon="plus"></i>
             New bucket
           </button>
         </div>
@@ -77,7 +76,7 @@
       >
         <form class="global-search-form" th:action="@{/search}" method="get" role="search">
           <label class="sr-only" for="globalSearchInput">Search all buckets</label>
-          <i data-lucide="search" class="global-search-leading-icon" aria-hidden="true"></i>
+          <i data-icon="magnifying-glass" class="global-search-leading-icon" aria-hidden="true"></i>
           <input
             id="globalSearchInput"
             class="global-search-input"
@@ -131,7 +130,7 @@
           th:attr="data-bucket-url=@{/buckets/{b}(b=${bucket.name})}"
         >
           <div class="bucket-card-header">
-            <div class="bucket-icon"><i data-lucide="archive" aria-hidden="true"></i></div>
+            <div class="bucket-icon"><i data-icon="archive-box" aria-hidden="true"></i></div>
             <h2 class="bucket-heading">
               <a
                 class="bucket-name"
@@ -149,11 +148,11 @@
                 th:attr="aria-label='Actions for ' + ${bucket.name}"
                 aria-haspopup="true"
               >
-                <i data-lucide="more-horizontal" aria-hidden="true"></i>
+                <i data-icon="ellipsis-horizontal" aria-hidden="true"></i>
               </button>
               <div class="dropdown-menu" x-show="open" @click.outside="open=false" x-cloak>
                 <a class="dropdown-item" th:href="@{/buckets/{b}(b=${bucket.name})}">
-                  <i data-lucide="folder-open"></i>
+                  <i data-icon="folder-open"></i>
                   Browse
                 </a>
                 <button
@@ -161,7 +160,7 @@
                   th:attr="data-bucket=${bucket.name}"
                   onclick="confirmDeleteBucket(this.dataset.bucket)"
                 >
-                  <i data-lucide="trash-2"></i>
+                  <i data-icon="trash"></i>
                   Delete
                 </button>
               </div>
@@ -183,7 +182,7 @@
           </dl>
           <div class="bucket-card-footer">
             <span class="bucket-created">
-              <i data-lucide="calendar-days" aria-hidden="true"></i>
+              <i data-icon="calendar-days" aria-hidden="true"></i>
               <span>
                 Created
                 <time
@@ -202,7 +201,7 @@
               th:attr="aria-label='Browse ' + ${bucket.name}"
             >
               Browse
-              <i data-lucide="arrow-up-right" aria-hidden="true"></i>
+              <i data-icon="arrow-up-right" aria-hidden="true"></i>
             </a>
           </div>
         </article>
@@ -215,25 +214,25 @@
                 <th data-bucket-sort-header="name" aria-sort="ascending">
                   <button class="table-sort-button" aria-label="Sort by Name descending" onclick="sortBucketTable('name')">
                     Name
-                    <i data-lucide="arrow-up" data-bucket-sort-indicator aria-hidden="true"></i>
+                    <i data-icon="arrow-up" data-bucket-sort-indicator aria-hidden="true"></i>
                   </button>
                 </th>
                 <th data-bucket-sort-header="created" aria-sort="none">
                   <button class="table-sort-button" aria-label="Sort by Created ascending" onclick="sortBucketTable('created')">
                     Created
-                    <i data-lucide="arrow-down-up" data-bucket-sort-indicator aria-hidden="true"></i>
+                    <i data-icon="arrows-up-down" data-bucket-sort-indicator aria-hidden="true"></i>
                   </button>
                 </th>
                 <th data-bucket-sort-header="size" aria-sort="none">
                   <button class="table-sort-button" aria-label="Sort by Size ascending" onclick="sortBucketTable('size')">
                     Size
-                    <i data-lucide="arrow-down-up" data-bucket-sort-indicator aria-hidden="true"></i>
+                    <i data-icon="arrows-up-down" data-bucket-sort-indicator aria-hidden="true"></i>
                   </button>
                 </th>
                 <th data-bucket-sort-header="count" aria-sort="none">
                   <button class="table-sort-button" aria-label="Sort by Objects ascending" onclick="sortBucketTable('count')">
                     Objects
-                    <i data-lucide="arrow-down-up" data-bucket-sort-indicator aria-hidden="true"></i>
+                    <i data-icon="arrows-up-down" data-bucket-sort-indicator aria-hidden="true"></i>
                   </button>
                 </th>
                 <th>Actions</th>
@@ -271,7 +270,7 @@
                     th:attr="data-bucket=${bucket.name}"
                     onclick="confirmDeleteBucket(this.dataset.bucket)"
                   >
-                    <i data-lucide="trash-2"></i>
+                    <i data-icon="trash"></i>
                     <span class="sr-only">Delete</span>
                   </button>
                 </td>
@@ -284,12 +283,12 @@
         <div
           class="mx-auto grid size-14 place-items-center rounded-full bg-brand-500/10 text-brand-700"
         >
-          <i data-lucide="archive"></i>
+          <i data-icon="archive-box"></i>
         </div>
         <h2 class="empty-title mt-4">No buckets found</h2>
         <p class="mt-1 text-sm text-slate-500">Create a bucket to start storing objects.</p>
         <button class="btn-primary mt-5" onclick="openDialog('createBucketModal')">
-          <i data-lucide="plus"></i>
+          <i data-icon="plus"></i>
           Create your first bucket
         </button>
       </section>
@@ -307,7 +306,7 @@
         <div class="modal-header">
           <h2 id="createBucketTitle" class="modal-title">New bucket</h2>
           <button class="btn-icon" onclick="closeDialog('createBucketModal')" aria-label="Close">
-            <i data-lucide="x"></i>
+            <i data-icon="x-mark"></i>
           </button>
         </div>
         <div class="modal-body">
@@ -339,7 +338,7 @@
         <div class="modal-header">
           <h2 id="deleteBucketTitle" class="modal-title text-bad-500">Delete bucket</h2>
           <button class="btn-icon" onclick="closeDialog('deleteBucketModal')" aria-label="Close">
-            <i data-lucide="x"></i>
+            <i data-icon="x-mark"></i>
           </button>
         </div>
         <div class="modal-body">
@@ -373,7 +372,7 @@
         <div class="modal-header">
           <h2 class="modal-title text-bad-500">Delete bucket and all files?</h2>
           <button class="btn-icon" onclick="closeDialog('forceDeleteBucketModal')" aria-label="Close">
-            <i data-lucide="x"></i>
+            <i data-icon="x-mark"></i>
           </button>
         </div>
         <div class="modal-body">
@@ -520,8 +519,12 @@
           const indicator = header.querySelector('[data-bucket-sort-indicator]');
           if (indicator) {
             indicator.setAttribute(
-              'data-lucide',
-              active ? (_bucketSort.dir === 'asc' ? 'arrow-up' : 'arrow-down') : 'arrow-down-up',
+              'data-icon',
+              active
+                ? _bucketSort.dir === 'asc'
+                  ? 'arrow-up'
+                  : 'arrow-down'
+                : 'arrows-up-down',
             );
           }
         });

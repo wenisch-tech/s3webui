@@ -10,7 +10,6 @@
 
     <main class="page">
       <div class="mb-4">
-        <p class="eyebrow">Administration</p>
         <h1 class="page-title">Settings</h1>
         <p th:if="${authenticationDisabled}" class="page-copy">
           Manage S3 keys and IAM identities.
@@ -28,7 +27,7 @@
             onclick="switchAdminTab('keys')"
             type="button"
           >
-            <i data-lucide="key"></i>
+            <i data-icon="key"></i>
             S3 keys
           </button>
         </li>
@@ -39,7 +38,7 @@
             onclick="switchAdminTab('users')"
             type="button"
           >
-            <i data-lucide="users"></i>
+            <i data-icon="users"></i>
             Users
           </button>
         </li>
@@ -50,13 +49,13 @@
             onclick="switchAdminTab('general')"
             type="button"
           >
-            <i data-lucide="settings"></i>
+            <i data-icon="cog-6-tooth"></i>
             Options
           </button>
         </li>
         <li class="" role="presentation">
           <button class="tab" id="adminTabBtn-iam" onclick="switchAdminTab('iam')" type="button">
-            <i data-lucide="shield-check"></i>
+            <i data-icon="shield-check"></i>
             IAM
           </button>
         </li>
@@ -70,7 +69,7 @@
               Each key is an S3 connection. Grants decide who may pick it after signing in.
             </p>
             <button class="btn-primary" onclick="openCredentialModal(null)">
-              <i data-lucide="plus"></i>
+              <i data-icon="plus"></i>
               New key
             </button>
           </div>
@@ -100,7 +99,7 @@
               here once their owner has signed in for the first time.
             </p>
             <button class="btn-primary" onclick="openUserModal()">
-              <i data-lucide="user-plus"></i>
+              <i data-icon="user-plus"></i>
               New user
             </button>
           </div>
@@ -194,7 +193,7 @@
         <div class="">
           <div class="modal-header">
             <h2 class="modal-title" id="credentialModalTitle">
-              <i data-lucide="key"></i>
+              <i data-icon="key"></i>
               New S3 key
             </h2>
             <button
@@ -203,7 +202,7 @@
               onclick="closeDialog(this.closest('.modal-backdrop').id)"
               aria-label="Close"
             >
-              <i data-lucide="x"></i>
+              <i data-icon="x-mark"></i>
             </button>
           </div>
           <div class="modal-body">
@@ -272,7 +271,7 @@
               class="alert alert-warn mt-2 hidden"
               role="status"
             >
-              <i data-lucide="info"></i>
+              <i data-icon="information-circle"></i>
               <span>
                 Revealing is already enabled for every key in the general settings, so this option
                 has no extra effect right now.
@@ -295,7 +294,7 @@
                 </p>
               </div>
               <button class="btn-secondary" type="button" onclick="addGrantRow()">
-                <i data-lucide="plus"></i>
+                <i data-icon="plus"></i>
                 Add
               </button>
             </div>
@@ -332,7 +331,7 @@
         <div class="">
           <div class="modal-header">
             <h2 class="modal-title">
-              <i data-lucide="user-plus"></i>
+              <i data-icon="user-plus"></i>
               New user
             </h2>
             <button
@@ -341,7 +340,7 @@
               onclick="closeDialog(this.closest('.modal-backdrop').id)"
               aria-label="Close"
             >
-              <i data-lucide="x"></i>
+              <i data-icon="x-mark"></i>
             </button>
           </div>
           <div class="modal-body">
@@ -457,11 +456,11 @@
                 <td class="whitespace-nowrap text-right">
                     <button class="btn-icon" title="Edit S3 key" aria-label="Edit ${escapeHtml(credential.name)}" data-id="${credential.id}"
                             onclick="openCredentialModal(Number(this.getAttribute('data-id')))">
-                        <i data-lucide="pencil"></i>
+                        <i data-icon="pencil"></i>
                     </button>
                     <button class="btn-icon text-bad-500" title="Delete S3 key" aria-label="Delete ${escapeHtml(credential.name)}" data-id="${credential.id}"
                             onclick="deleteCredential(Number(this.getAttribute('data-id')))">
-                        <i data-lucide="trash-2"></i>
+                        <i data-icon="trash"></i>
                     </button>
                 </td>`;
           body.appendChild(row);
@@ -488,8 +487,8 @@
         const credential = id == null ? null : _credentials.find((item) => item.id === id);
 
         document.getElementById('credentialModalTitle').innerHTML = credential
-          ? '<i data-lucide="key"></i>Edit S3 key'
-          : '<i data-lucide="key"></i>New S3 key';
+          ? '<i data-icon="key"></i>Edit S3 key'
+          : '<i data-icon="key"></i>New S3 key';
         document.getElementById('credentialId').value = credential ? credential.id : '';
         document.getElementById('credentialName').value = credential ? credential.name : '';
         document.getElementById('credentialEndpoint').value = credential
@@ -559,7 +558,7 @@
             <div class="text-right">
                 <button class="btn-icon text-bad-500" type="button" title="Remove grant" aria-label="Remove grant"
                         onclick="this.closest('.grant-row').remove(); updateGrantHint();">
-                    <i data-lucide="x"></i>
+                    <i data-icon="x-mark"></i>
                 </button>
             </div>`;
         container.appendChild(row);
@@ -681,11 +680,11 @@
                     <button class="btn-icon" data-id="${user.id}" aria-label="Reset password for ${escapeHtml(user.email)}"
                             ${user.provider === 'LOCAL' ? 'title="Reset password"' : 'disabled title="Password is managed by the identity provider"'}
                             onclick="resetPassword(Number(this.getAttribute('data-id')))">
-                        <i data-lucide="key"></i>
+                        <i data-icon="key"></i>
                     </button>
                     <button class="btn-icon text-bad-500" title="Delete user" aria-label="Delete ${escapeHtml(user.email)}" data-id="${user.id}"
                             onclick="deleteUser(Number(this.getAttribute('data-id')))">
-                        <i data-lucide="trash-2"></i>
+                        <i data-icon="trash"></i>
                     </button>
                 </td>`;
           body.appendChild(row);
