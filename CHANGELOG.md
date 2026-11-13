@@ -1,5 +1,20 @@
 # Changelog
 
+## v1.9.0 - 2026-11-13
+
+## [1.9.0](https://github.com/wenisch-tech/s3webui/compare/v1.8.0...v1.9.0) (2026-11-13)
+
+
+### Features
+
+* added multiple recursive folder level actions, such as download, move and copy ([0b4f80e](https://github.com/wenisch-tech/s3webui/commit/0b4f80e4c682a5b4c8ff28d7c06e86a5fb42bcdf))
+* added versioning and lifecycle rules per bucket ([08109f2](https://github.com/wenisch-tech/s3webui/commit/08109f2888bd7084c79f9accd6cafeb758a013ee))
+
+
+
+Docker image: ghcr.io/wenisch-tech/s3webui:1.9.0
+
+
 ## v1.8.0 - 2026-11-13
 
 ## [1.8.0](https://github.com/wenisch-tech/s3webui/compare/v1.7.2...v1.8.0) (2026-11-13)
