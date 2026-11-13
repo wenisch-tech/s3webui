@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.8.0 - 2026-11-13
+
+## [1.8.0](https://github.com/wenisch-tech/s3webui/compare/v1.7.2...v1.8.0) (2026-11-13)
+
+
+### Features
+
+* introduced support for configuring versioning per bucket ([e344fa9](https://github.com/wenisch-tech/s3webui/commit/e344fa92dc2b4fd47407b8f2d664f7787dadc58f))
+
+
+
+Docker image: ghcr.io/wenisch-tech/s3webui:1.8.0
+
+
 ## v1.7.2 - 2026-11-04
 
 ### [1.7.2](https://github.com/wenisch-tech/s3webui/compare/v1.7.1...v1.7.2) (2026-11-04)
