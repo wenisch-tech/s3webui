@@ -46,6 +46,10 @@ Use the object-row actions for one file, or select multiple rows for bulk action
 | Move | Performs the same transfer, then removes the sources. |
 | Delete | Removes selected objects. Selecting a folder applies to its contents. |
 
+### Download as ZIP
+
+Each folder row has a **Download folder as ZIP** button. To download several items at once, select them and use **Download selected as ZIP**. Folders are included recursively and keep their name inside the archive. The archive is streamed from S3 as it is built, and is limited to 10,000 objects per download.
+
 When copying or moving a folder, its own name is preserved below the destination prefix. For example, moving `reports/` to `archive/` produces `archive/reports/...`. Transfers and renames are composed of S3 operations, not filesystem moves; avoid interrupting a large operation and verify the destination before deleting the source yourself.
 
 Deleting a non-empty bucket requires an explicit **Delete everything** confirmation. The application removes object versions and delete markers in batches before it deletes the bucket.

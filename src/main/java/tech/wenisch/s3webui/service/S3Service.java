@@ -315,6 +315,71 @@ public class S3Service {
         return new ArrayList<>(result);
     }
 
+    /** Upper bound on objects in one ZIP download. */
+    public static final int MAX_ZIP_OBJECTS = 10_000;
+
+    /**
+     * Maps ZIP entry name to object key for the selected files/folders. A selected item keeps its own
+     * name ("a/b/" becomes "b/..."), so the archive extracts to the same layout the user sees.
+     */
+    public java.util.Map<String, String> planZip(String bucket, List<String> keys) {
+        java.util.Map<String, String> plan = new java.util.LinkedHashMap<>();
+        for (String selected : keys) {
+            boolean folder = selected.endsWith("/");
+            String trimmed = folder ? selected.substring(0, selected.length() - 1) : selected;
+            String parent = trimmed.substring(0, trimmed.lastIndexOf('/') + 1);
+            for (String key : expandKeys(bucket, List.of(selected))) {
+                String entry = sanitizeZipEntry(key.substring(parent.length()));
+                if (!entry.isEmpty()) {
+                    plan.putIfAbsent(entry, key);
+                }
+                if (plan.size() > MAX_ZIP_OBJECTS) {
+                    throw new IllegalArgumentException(
+                            "Too many objects for one ZIP (limit " + MAX_ZIP_OBJECTS + "); select a smaller folder");
+                }
+            }
+        }
+        return plan;
+    }
+
+    /** Drops leading slashes and "." / ".." segments so an extracted archive cannot escape its folder. */
+    static String sanitizeZipEntry(String name) {
+        StringBuilder sb = new StringBuilder();
+        for (String part : name.split("/", -1)) {
+            if (part.equals("..") || part.equals(".") ) {
+                continue;
+            }
+            if (part.isEmpty() && sb.length() == 0) {
+                continue;
+            }
+            if (sb.length() > 0) {
+                sb.append('/');
+            }
+            sb.append(part);
+        }
+        return sb.toString();
+    }
+
+    /** Streams the planned objects as a ZIP archive. Keys ending in "/" become empty directory entries. */
+    public void writeZip(String bucket, java.util.Map<String, String> plan, java.io.OutputStream out)
+            throws java.io.IOException {
+        try (java.util.zip.ZipOutputStream zip = new java.util.zip.ZipOutputStream(out)) {
+            for (var item : plan.entrySet()) {
+                String entryName = item.getKey();
+                if (item.getValue().endsWith("/")) {
+                    zip.putNextEntry(new java.util.zip.ZipEntry(entryName.endsWith("/") ? entryName : entryName + "/"));
+                    zip.closeEntry();
+                    continue;
+                }
+                zip.putNextEntry(new java.util.zip.ZipEntry(entryName));
+                try (ResponseInputStream<GetObjectResponse> in = getObject(bucket, item.getValue())) {
+                    in.transferTo(zip);
+                }
+                zip.closeEntry();
+            }
+        }
+    }
+
     /** Deletes the given files and, recursively, the contents of any folder keys. */
     public void deleteKeys(String bucket, List<String> keys) {
         deleteObjects(bucket, expandKeys(bucket, keys));

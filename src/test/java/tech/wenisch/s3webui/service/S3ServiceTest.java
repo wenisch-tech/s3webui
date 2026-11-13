@@ -343,6 +343,49 @@ class S3ServiceTest {
         verify(s3Client, org.mockito.Mockito.never()).deleteBucketLifecycle(any(DeleteBucketLifecycleRequest.class));
     }
 
+    // ── ZIP download ─────────────────────────────────────────────────────
+
+    @Test
+    void planZipKeepsSelectedNamesAndSanitizesEntries() {
+        S3Client s3Client = mock(S3Client.class);
+        S3Service s3Service = new S3Service(s3Client, mock(S3Presigner.class));
+
+        var plan = s3Service.planZip("b", List.of("docs/readme.txt", "x/../evil.txt"));
+
+        assertEquals(List.of("readme.txt", "evil.txt"), List.copyOf(plan.keySet()));
+        assertEquals("docs/readme.txt", plan.get("readme.txt"));
+    }
+
+    @Test
+    void sanitizeZipEntryRemovesTraversal() {
+        assertEquals("a/b.txt", S3Service.sanitizeZipEntry("/../a/./b.txt"));
+        assertEquals("", S3Service.sanitizeZipEntry("../"));
+    }
+
+    @Test
+    void writeZipStreamsObjectsAndDirectoryEntries() throws Exception {
+        S3Client s3Client = mock(S3Client.class);
+        S3Service s3Service = new S3Service(s3Client, mock(S3Presigner.class));
+        when(s3Client.getObject(any(software.amazon.awssdk.services.s3.model.GetObjectRequest.class)))
+                .thenReturn(new software.amazon.awssdk.core.ResponseInputStream<>(
+                        software.amazon.awssdk.services.s3.model.GetObjectResponse.builder().build(),
+                        software.amazon.awssdk.http.AbortableInputStream.create(
+                                new java.io.ByteArrayInputStream("hello".getBytes()))));
+        var plan = new java.util.LinkedHashMap<String, String>();
+        plan.put("dir/", "dir/");
+        plan.put("dir/a.txt", "dir/a.txt");
+        var out = new java.io.ByteArrayOutputStream();
+
+        s3Service.writeZip("b", plan, out);
+
+        try (var zin = new java.util.zip.ZipInputStream(new java.io.ByteArrayInputStream(out.toByteArray()))) {
+            assertEquals("dir/", zin.getNextEntry().getName());
+            var file = zin.getNextEntry();
+            assertEquals("dir/a.txt", file.getName());
+            assertEquals("hello", new String(zin.readAllBytes()));
+        }
+    }
+
     // ── Object versions ──────────────────────────────────────────────────
 
     @Test

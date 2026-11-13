@@ -237,6 +237,34 @@ public class S3ApiController {
         }
     }
 
+    /** Streams the selected files and folders (folders recursively) as one ZIP archive. */
+    @GetMapping("/buckets/{bucket}/objects/zip")
+    public void downloadZip(
+            @PathVariable String bucket,
+            @RequestParam("key") List<String> keys,
+            HttpServletResponse response) throws IOException {
+        if (keys == null || keys.isEmpty()) {
+            throw new IllegalArgumentException("Select at least one file or folder");
+        }
+        var plan = s3Service.planZip(bucket, keys);
+        if (plan.isEmpty()) {
+            throw new IllegalArgumentException("Nothing to download: the selection is empty");
+        }
+        String name = bucket;
+        if (keys.size() == 1) {
+            String k = keys.get(0);
+            String trimmed = k.endsWith("/") ? k.substring(0, k.length() - 1) : k;
+            name = trimmed.substring(trimmed.lastIndexOf('/') + 1);
+            if (name.isEmpty()) {
+                name = bucket;
+            }
+        }
+        response.setContentType("application/zip");
+        response.setHeader(HttpHeaders.CONTENT_DISPOSITION,
+                "attachment; filename=\"" + URLEncoder.encode(name, StandardCharsets.UTF_8) + ".zip\"");
+        s3Service.writeZip(bucket, plan, response.getOutputStream());
+    }
+
     // ── Object versions ───────────────────────────────────────────────────
 
     @GetMapping("/buckets/{bucket}/objects/versions")

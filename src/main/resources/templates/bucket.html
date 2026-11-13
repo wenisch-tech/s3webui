@@ -98,6 +98,15 @@
             Search subfolders
           </label>
           <button
+            id="zipSelectedBtn"
+            type="button"
+            class="btn-secondary hidden"
+            onclick="downloadSelectedZip()"
+          >
+            <i data-icon="arrow-down-tray"></i>
+            <span id="zipSelectedLabel">Download selected as ZIP</span>
+          </button>
+          <button
             id="copySelectedBtn"
             type="button"
             class="btn-secondary hidden"
@@ -229,6 +238,16 @@
                   date
                 </td>
                 <td>
+                  <div th:if="${obj.directory}" class="flex gap-1">
+                    <a
+                      class="btn-icon"
+                      title="Download folder as ZIP"
+                      th:attr="aria-label='Download ' + ${obj.name} + ' as ZIP'"
+                      th:href="@{/api/buckets/{b}/objects/zip(b=${bucket}, key=${obj.key})}"
+                    >
+                      <i data-icon="arrow-down-tray"></i>
+                    </a>
+                  </div>
                   <div th:unless="${obj.directory}" class="flex gap-1">
                     <a
                       class="btn-icon"
@@ -881,12 +900,22 @@
         deleteSelectedLabel.textContent = `Delete selected (${n})`;
         moveSelectedBtn.classList.toggle('hidden', n === 0);
         copySelectedBtn.classList.toggle('hidden', n === 0);
+        zipSelectedBtn.classList.toggle('hidden', n === 0);
+        zipSelectedLabel.textContent = `Download selected as ZIP (${n})`;
         copySelectedLabel.textContent = `Copy selected (${n})`;
         moveSelectedLabel.textContent = `Move selected (${n})`;
       }
       document.addEventListener('change', (e) => {
         if (e.target.matches('.obj-check, #selectAll')) updateDeleteSelected();
       });
+      function downloadSelectedZip() {
+        const keys = selectedObjectKeys();
+        if (!keys.length) return;
+        location.href = appUrl(
+          `/api/buckets/${encodeURIComponent(BUCKET)}/objects/zip?` +
+            keys.map((k) => 'key=' + encodeURIComponent(k)).join('&'),
+        );
+      }
       let transferIsCopy = false;
       async function openMoveSelected(copy) {
         if (!selectedObjectKeys().length) return;

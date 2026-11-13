@@ -97,6 +97,7 @@ a real deployment.
 -  **Search within buckets** — filter files and folders in the current path as you type, optionally include matching results from subfolders, and sort by name, size, or last modified date
 -  **Global search across buckets** — search file and folder names and paths across every bucket available to the selected S3 key, with five top suggestions, a complete results page, and a five-minute per-session catalog
 -  **File management** — upload with multipart progress and ETA, download objects, rename files without re-uploading, and delete objects or buckets
+-  **Folder download** — download any folder, or a multi-selection of files and folders, as a ZIP (streamed, up to 10,000 objects)
 -  **Create buckets** — create new buckets directly from the UI
 -  **Visual permission editor** — grant users (or everyone) List / Read / Write / Delete / Full control on a bucket, or give an IAM user or group access to buckets, with toggle chips; switch to the JSON policy editor (syntax highlighting, inline validation) at any time
 -  **CORS editor** — edit a bucket's CORS rules in the same editor, in the `aws s3api` JSON shape
