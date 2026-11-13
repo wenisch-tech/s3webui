@@ -5,7 +5,18 @@ import org.mockito.ArgumentCaptor;
 import software.amazon.awssdk.awscore.exception.AwsErrorDetails;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.BucketVersioningStatus;
 import software.amazon.awssdk.services.s3.model.CORSRule;
+import software.amazon.awssdk.services.s3.model.DeleteBucketLifecycleRequest;
+import software.amazon.awssdk.services.s3.model.ExpirationStatus;
+import software.amazon.awssdk.services.s3.model.GetBucketLifecycleConfigurationRequest;
+import software.amazon.awssdk.services.s3.model.GetBucketLifecycleConfigurationResponse;
+import software.amazon.awssdk.services.s3.model.GetBucketVersioningRequest;
+import software.amazon.awssdk.services.s3.model.GetBucketVersioningResponse;
+import software.amazon.awssdk.services.s3.model.LifecycleRule;
+import software.amazon.awssdk.services.s3.model.NoncurrentVersionExpiration;
+import software.amazon.awssdk.services.s3.model.PutBucketLifecycleConfigurationRequest;
+import software.amazon.awssdk.services.s3.model.PutBucketVersioningRequest;
 import software.amazon.awssdk.services.s3.model.CompleteMultipartUploadRequest;
 import software.amazon.awssdk.services.s3.model.CompleteMultipartUploadResponse;
 import software.amazon.awssdk.services.s3.model.Bucket;
@@ -206,6 +217,117 @@ class S3ServiceTest {
         assertEquals(List.of(), sent.allowedHeaders());
         assertEquals(List.of("ETag"), sent.exposeHeaders());
         assertEquals(3000, sent.maxAgeSeconds());
+    }
+
+    // ── Bucket versioning ────────────────────────────────────────────────
+
+    private static LifecycleRule otherRule() {
+        return LifecycleRule.builder().id("user-rule").status(ExpirationStatus.ENABLED).build();
+    }
+
+    @Test
+    void getBucketVersioningReportsStatusAndRetention() {
+        S3Client s3Client = mock(S3Client.class);
+        S3Service s3Service = new S3Service(s3Client, mock(S3Presigner.class));
+        when(s3Client.getBucketVersioning(any(GetBucketVersioningRequest.class)))
+                .thenReturn(GetBucketVersioningResponse.builder().status(BucketVersioningStatus.ENABLED).build());
+        when(s3Client.getBucketLifecycleConfiguration(any(GetBucketLifecycleConfigurationRequest.class)))
+                .thenReturn(GetBucketLifecycleConfigurationResponse.builder().rules(otherRule(),
+                        LifecycleRule.builder().id(S3Service.RETENTION_RULE_ID)
+                                .noncurrentVersionExpiration(NoncurrentVersionExpiration.builder()
+                                        .newerNoncurrentVersions(5).noncurrentDays(7).build())
+                                .build()).build());
+
+        S3Service.VersioningConfig config = s3Service.getBucketVersioning("b");
+
+        assertEquals("Enabled", config.status());
+        assertEquals(5, config.maxVersions());
+        assertEquals(7, config.noncurrentDays());
+    }
+
+    @Test
+    void getBucketVersioningWithoutStatusOrLifecycleIsOff() {
+        S3Client s3Client = mock(S3Client.class);
+        S3Service s3Service = new S3Service(s3Client, mock(S3Presigner.class));
+        when(s3Client.getBucketVersioning(any(GetBucketVersioningRequest.class)))
+                .thenReturn(GetBucketVersioningResponse.builder().build());
+        when(s3Client.getBucketLifecycleConfiguration(any(GetBucketLifecycleConfigurationRequest.class)))
+                .thenThrow(s3Error("NoSuchLifecycleConfiguration"));
+
+        S3Service.VersioningConfig config = s3Service.getBucketVersioning("b");
+
+        assertEquals("Off", config.status());
+        assertNull(config.maxVersions());
+    }
+
+    @Test
+    void putBucketVersioningPreservesOtherLifecycleRules() {
+        S3Client s3Client = mock(S3Client.class);
+        S3Service s3Service = new S3Service(s3Client, mock(S3Presigner.class));
+        when(s3Client.getBucketLifecycleConfiguration(any(GetBucketLifecycleConfigurationRequest.class)))
+                .thenReturn(GetBucketLifecycleConfigurationResponse.builder().rules(otherRule()).build());
+
+        s3Service.putBucketVersioning("b", true, 3, 2);
+
+        ArgumentCaptor<PutBucketVersioningRequest> versioning = ArgumentCaptor.forClass(PutBucketVersioningRequest.class);
+        verify(s3Client).putBucketVersioning(versioning.capture());
+        assertEquals(BucketVersioningStatus.ENABLED, versioning.getValue().versioningConfiguration().status());
+        ArgumentCaptor<PutBucketLifecycleConfigurationRequest> lifecycle =
+                ArgumentCaptor.forClass(PutBucketLifecycleConfigurationRequest.class);
+        verify(s3Client).putBucketLifecycleConfiguration(lifecycle.capture());
+        List<LifecycleRule> sent = lifecycle.getValue().lifecycleConfiguration().rules();
+        assertEquals(2, sent.size());
+        assertEquals("user-rule", sent.get(0).id());
+        assertEquals(S3Service.RETENTION_RULE_ID, sent.get(1).id());
+        assertEquals(3, sent.get(1).noncurrentVersionExpiration().newerNoncurrentVersions());
+        assertEquals(2, sent.get(1).noncurrentVersionExpiration().noncurrentDays());
+    }
+
+    @Test
+    void putBucketVersioningWithoutRetentionRemovesOnlyOwnRule() {
+        S3Client s3Client = mock(S3Client.class);
+        S3Service s3Service = new S3Service(s3Client, mock(S3Presigner.class));
+        when(s3Client.getBucketLifecycleConfiguration(any(GetBucketLifecycleConfigurationRequest.class)))
+                .thenReturn(GetBucketLifecycleConfigurationResponse.builder().rules(otherRule(),
+                        LifecycleRule.builder().id(S3Service.RETENTION_RULE_ID).build()).build());
+
+        s3Service.putBucketVersioning("b", true, null, null);
+
+        ArgumentCaptor<PutBucketLifecycleConfigurationRequest> lifecycle =
+                ArgumentCaptor.forClass(PutBucketLifecycleConfigurationRequest.class);
+        verify(s3Client).putBucketLifecycleConfiguration(lifecycle.capture());
+        List<LifecycleRule> sent = lifecycle.getValue().lifecycleConfiguration().rules();
+        assertEquals(1, sent.size());
+        assertEquals("user-rule", sent.get(0).id());
+    }
+
+    @Test
+    void putBucketVersioningDeletesLifecycleWhenOnlyOwnRuleRemoved() {
+        S3Client s3Client = mock(S3Client.class);
+        S3Service s3Service = new S3Service(s3Client, mock(S3Presigner.class));
+        when(s3Client.getBucketLifecycleConfiguration(any(GetBucketLifecycleConfigurationRequest.class)))
+                .thenReturn(GetBucketLifecycleConfigurationResponse.builder()
+                        .rules(LifecycleRule.builder().id(S3Service.RETENTION_RULE_ID).build()).build());
+
+        s3Service.putBucketVersioning("b", false, 3, 1);
+
+        verify(s3Client).deleteBucketLifecycle(any(DeleteBucketLifecycleRequest.class));
+        verify(s3Client, org.mockito.Mockito.never())
+                .putBucketLifecycleConfiguration(any(PutBucketLifecycleConfigurationRequest.class));
+    }
+
+    @Test
+    void putBucketVersioningLeavesLifecycleAloneWhenNothingToChange() {
+        S3Client s3Client = mock(S3Client.class);
+        S3Service s3Service = new S3Service(s3Client, mock(S3Presigner.class));
+        when(s3Client.getBucketLifecycleConfiguration(any(GetBucketLifecycleConfigurationRequest.class)))
+                .thenThrow(s3Error("NoSuchLifecycleConfiguration"));
+
+        s3Service.putBucketVersioning("b", false, null, null);
+
+        verify(s3Client, org.mockito.Mockito.never())
+                .putBucketLifecycleConfiguration(any(PutBucketLifecycleConfigurationRequest.class));
+        verify(s3Client, org.mockito.Mockito.never()).deleteBucketLifecycle(any(DeleteBucketLifecycleRequest.class));
     }
 
     private static S3Exception s3Error(String errorCode) {

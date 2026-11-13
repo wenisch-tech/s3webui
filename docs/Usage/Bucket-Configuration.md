@@ -144,12 +144,20 @@ Use explicit origins and headers when a browser application uploads straight to 
 
 At least one rule is required when saving. Use **Remove** to clear the complete CORS configuration. Avoid `"*"` in origins, methods, or headers unless the bucket's content and authentication model genuinely permit public browser access.
 
+## Versioning and retention
+
+The **Versioning** button (next to Permissions and CORS) enables or suspends object versioning for the bucket. Suspending keeps existing versions; it only stops creating new ones.
+
+While versioning is enabled you can also **limit retained versions**: set how many noncurrent (older) versions to keep and after how many days older versions may be deleted. S3 has no direct "keep N versions" setting, so this is stored as a lifecycle rule with the ID `s3webui-version-retention` (`NoncurrentVersionExpiration` with `NewerNoncurrentVersions` and `NoncurrentDays`). Other lifecycle rules on the bucket are read and written back unchanged. Unchecking the limit, or suspending versioning, removes only that rule.
+
+Some S3-compatible servers do not implement the versioning or lifecycle APIs; the dialog then reports that the provider does not support the operation.
+
 ## Troubleshooting
 
 | Symptom | Likely cause or response |
 |---|---|
 | Editor reports invalid JSON | Check commas, quote all property names and strings, and keep the root object. |
-| Save is denied by the backend | The active S3 key lacks `PutBucketPolicy`, `PutBucketCors`, or provider-equivalent permission. Select an authorized key. |
+| Save is denied by the backend | The active S3 key lacks `PutBucketPolicy`, `PutBucketCors`, `PutBucketVersioning`, `PutLifecycleConfiguration`, or provider-equivalent permission. Select an authorized key. |
 | Browser still reports CORS errors | Verify the request reaches the S3 endpoint, the origin matches exactly, and the rule allows the HTTP method and request headers. S3 Web UI's proxied multipart upload does not need browser-to-S3 CORS. |
 | A policy locks out expected users | Use a remaining administrative credential to restore access; policy changes are recorded in [History](Audit-History.md). |
 

@@ -56,6 +56,10 @@
             <i data-icon="globe-alt"></i>
             CORS
           </button>
+          <button class="btn-secondary" onclick="openBucketVersioningDialog()">
+            <i data-icon="clock"></i>
+            Versioning
+          </button>
           <button class="btn-danger" onclick="confirmDeleteCurrentBucket()">
             <i data-icon="trash"></i>
             Delete bucket
@@ -662,6 +666,57 @@
         </div>
       </div>
     </div>
+    <div
+      id="bucketVersioningModal"
+      class="modal-backdrop hidden"
+      aria-hidden="true"
+      role="dialog"
+      aria-modal="true"
+    >
+      <div class="modal-card max-w-xl">
+        <div class="modal-header">
+          <h2 class="modal-title">
+            <i data-icon="clock"></i>
+            Versioning
+          </h2>
+          <button class="btn-icon" onclick="closeDialog('bucketVersioningModal')" aria-label="Close">
+            <i data-icon="x-mark"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div id="bucketVersioningError" class="alert alert-error mb-3 hidden"></div>
+          <label class="flex items-center gap-2 mb-4">
+            <input type="checkbox" id="bucketVersioningEnabled" onchange="syncVersioningInputs()" />
+            <span>Enable versioning</span>
+            <span id="bucketVersioningStatus" class="field-help"></span>
+          </label>
+          <label class="flex items-center gap-2 mb-2">
+            <input type="checkbox" id="bucketVersioningLimit" onchange="syncVersioningInputs()" />
+            <span>Limit retained versions</span>
+          </label>
+          <div class="mb-2">
+            <label for="bucketVersioningMax">Versions to keep (noncurrent)</label>
+            <input id="bucketVersioningMax" type="number" min="1" value="3" class="input" />
+          </div>
+          <div class="mb-2">
+            <label for="bucketVersioningDays">Delete older versions after (days)</label>
+            <input id="bucketVersioningDays" type="number" min="1" value="1" class="input" />
+          </div>
+          <p class="field-help">
+            Retention is stored as the lifecycle rule
+            <code class="font-mono">s3webui-version-retention</code>
+            ; other lifecycle rules are not changed. Suspending versioning keeps existing versions.
+          </p>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-secondary" onclick="closeDialog('bucketVersioningModal')">Cancel</button>
+          <button class="btn-primary" onclick="saveBucketVersioning()">
+            <i data-icon="check-circle"></i>
+            Save
+          </button>
+        </div>
+      </div>
+    </div>
     <div th:replace="~{fragments/shell :: footer}"></div>
     <script th:inline="javascript">
       window.BUCKET = /*[[${bucket}]]*/ '';
@@ -675,11 +730,12 @@
         ensureS3ConfigDialog();
         // The bucket list's card menu deep-links here to open a settings dialog straight away.
         const requestedDialog = new URLSearchParams(location.search).get('dialog');
-        if (requestedDialog === 'permissions' || requestedDialog === 'cors') {
+        if (['permissions', 'cors', 'versioning'].includes(requestedDialog)) {
           const url = new URL(location.href);
           url.searchParams.delete('dialog');
           history.replaceState(null, '', url);
           if (requestedDialog === 'permissions') openBucketPolicyDialog();
+          else if (requestedDialog === 'versioning') openBucketVersioningDialog();
           else openBucketCorsDialog();
         }
         if (window.HIGHLIGHT_OBJECT_KEY) {
@@ -1042,6 +1098,70 @@
               );
           })
           .catch((e) => cfgError('bucketCorsError', e.message));
+      }
+      function syncVersioningInputs() {
+        const enabled = document.getElementById('bucketVersioningEnabled').checked;
+        const limitBox = document.getElementById('bucketVersioningLimit');
+        limitBox.disabled = !enabled;
+        const limited = enabled && limitBox.checked;
+        document.getElementById('bucketVersioningMax').disabled = !limited;
+        document.getElementById('bucketVersioningDays').disabled = !limited;
+      }
+      function openBucketVersioningDialog() {
+        cfgClearError('bucketVersioningError');
+        apiFetch(cfgUrl('versioning'))
+          .then(async (r) => {
+            if (!r.ok) {
+              showToast(
+                await getResponseErrorMessage(r, 'Failed to load versioning configuration'),
+                'danger',
+              );
+              return;
+            }
+            const data = await r.json();
+            document.getElementById('bucketVersioningEnabled').checked = data.status === 'Enabled';
+            document.getElementById('bucketVersioningStatus').textContent =
+              '(current: ' + data.status + ')';
+            document.getElementById('bucketVersioningLimit').checked = data.maxVersions != null;
+            if (data.maxVersions != null)
+              document.getElementById('bucketVersioningMax').value = data.maxVersions;
+            if (data.noncurrentDays != null)
+              document.getElementById('bucketVersioningDays').value = data.noncurrentDays;
+            syncVersioningInputs();
+            openDialog('bucketVersioningModal');
+          })
+          .catch((e) => showToast(e.message, 'danger'));
+      }
+      function saveBucketVersioning() {
+        const enabled = document.getElementById('bucketVersioningEnabled').checked;
+        const limited = enabled && document.getElementById('bucketVersioningLimit').checked;
+        const max = parseInt(document.getElementById('bucketVersioningMax').value, 10);
+        const days = parseInt(document.getElementById('bucketVersioningDays').value, 10);
+        if (limited && (!(max >= 1) || !(days >= 1))) {
+          cfgError('bucketVersioningError', 'Versions to keep and days must be at least 1');
+          return;
+        }
+        cfgClearError('bucketVersioningError');
+        apiFetch(cfgUrl('versioning'), {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            enabled,
+            maxVersions: limited ? max : null,
+            noncurrentDays: limited ? days : null,
+          }),
+        })
+          .then(async (r) => {
+            if (r.ok) {
+              closeDialog('bucketVersioningModal');
+              showToast('Versioning configuration saved', 'success');
+            } else
+              cfgError(
+                'bucketVersioningError',
+                await getResponseErrorMessage(r, 'Failed to save versioning configuration'),
+              );
+          })
+          .catch((e) => cfgError('bucketVersioningError', e.message));
       }
     </script>
   </body>

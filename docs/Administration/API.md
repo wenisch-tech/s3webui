@@ -9,7 +9,7 @@ Use an S3 SDK or the storage provider's API for programmatic object-storage inte
 | Prefix | Purpose |
 |---|---|
 | `/api/s3/session` | List/select the session's S3 key, submit own credentials, and conditionally reveal an assigned key. |
-| `/api/buckets` | Create/list/delete buckets; list, search, upload, download, rename, copy, move, delete objects; bucket statistics, policies, CORS, and multipart upload lifecycle. |
+| `/api/buckets` | Create/list/delete buckets; list, search, upload, download, rename, copy, move, delete objects; bucket statistics, policies, CORS, versioning and retention, and multipart upload lifecycle. |
 | `/api/search` | Global search over the selected key's accessible buckets. |
 | `/api/history` | Audit entries visible to the signed-in identity. |
 | `/api/admin` | Administrator-only stored credentials, local users, and runtime options. |

@@ -418,6 +418,40 @@ public class S3ApiController {
         return ResponseEntity.ok().build();
     }
 
+    // ── Bucket versioning ─────────────────────────────────────────────────
+
+    @GetMapping("/buckets/{bucket}/versioning")
+    public S3Service.VersioningConfig getBucketVersioning(@PathVariable String bucket) {
+        return s3Service.getBucketVersioning(bucket);
+    }
+
+    @PutMapping("/buckets/{bucket}/versioning")
+    public ResponseEntity<Void> updateBucketVersioning(
+            @PathVariable String bucket,
+            @RequestBody VersioningRequest request,
+            Principal principal) {
+        if (request == null || request.enabled() == null) {
+            throw new IllegalArgumentException("'enabled' is required");
+        }
+        if (request.maxVersions() != null && request.maxVersions() < 1) {
+            throw new IllegalArgumentException("Versions to keep must be at least 1");
+        }
+        if (request.noncurrentDays() != null && request.noncurrentDays() < 1) {
+            throw new IllegalArgumentException("Days must be at least 1");
+        }
+        try {
+            s3Service.putBucketVersioning(bucket, request.enabled(), request.maxVersions(), request.noncurrentDays());
+            auditHistoryService.record(username(principal), "EDIT", "BUCKET", bucket, null, "Updated versioning configuration");
+        } catch (Exception ex) {
+            recordFailure(principal, "EDIT", "BUCKET", bucket, null, ex);
+            throw ex;
+        }
+        return ResponseEntity.ok().build();
+    }
+
+    public record VersioningRequest(Boolean enabled, Integer maxVersions, Integer noncurrentDays) {
+    }
+
     /** Rejects a body that is not well-formed JSON with a 400 before it ever reaches S3. */
     private void requireValidJson(String json, String what) {
         try {

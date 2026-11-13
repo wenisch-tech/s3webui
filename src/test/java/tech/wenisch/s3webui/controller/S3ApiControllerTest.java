@@ -19,6 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.ArgumentMatchers.startsWith;
@@ -216,5 +217,33 @@ class S3ApiControllerTest {
         verify(s3Service).deleteBucketCors("b");
         verify(auditHistoryService).record(
                 isNull(), eq("DELETE"), eq("BUCKET"), eq("b"), isNull(), eq("Removed CORS configuration"));
+    }
+
+    @Test
+    void updateBucketVersioningRecordsAnEditInAuditHistory() {
+        S3Service s3Service = mock(S3Service.class);
+        AuditHistoryService auditHistoryService = mock(AuditHistoryService.class);
+        S3ApiController controller = new S3ApiController(s3Service, auditHistoryService, jsonMapper);
+
+        controller.updateBucketVersioning("b", new S3ApiController.VersioningRequest(true, 3, 1), null);
+
+        verify(s3Service).putBucketVersioning("b", true, 3, 1);
+        verify(auditHistoryService).record(
+                isNull(), eq("EDIT"), eq("BUCKET"), eq("b"), isNull(), eq("Updated versioning configuration"));
+    }
+
+    @Test
+    void invalidVersioningRequestIsRejectedWithoutCallingS3() {
+        S3Service s3Service = mock(S3Service.class);
+        AuditHistoryService auditHistoryService = mock(AuditHistoryService.class);
+        S3ApiController controller = new S3ApiController(s3Service, auditHistoryService, jsonMapper);
+
+        assertThrows(IllegalArgumentException.class, () -> controller.updateBucketVersioning(
+                "b", new S3ApiController.VersioningRequest(true, 0, 1), null));
+        assertThrows(IllegalArgumentException.class, () -> controller.updateBucketVersioning(
+                "b", new S3ApiController.VersioningRequest(true, 3, 0), null));
+        assertThrows(IllegalArgumentException.class, () -> controller.updateBucketVersioning(
+                "b", new S3ApiController.VersioningRequest(null, null, null), null));
+        verify(s3Service, never()).putBucketVersioning(any(), anyBoolean(), any(), any());
     }
 }

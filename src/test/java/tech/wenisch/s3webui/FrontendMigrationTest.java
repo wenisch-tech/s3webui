@@ -36,7 +36,7 @@ class FrontendMigrationTest {
         "createBucketModal", "deleteBucketModal");
     assertThat(bucket).contains("createFolderModal", "uploadModal", "renameModal",
         "deleteObjectModal", "folderNameError",
-        "bucketPolicyModal", "bucketPolicyVisual", "createPolicyView", "bucketCorsModal",
+        "bucketPolicyModal", "bucketPolicyVisual", "createPolicyView", "bucketCorsModal", "bucketVersioningModal",
         "json-editor",
         "data-object-sort-header=\"name\"", "data-object-sort-header=\"size\"",
         "data-object-sort-header=\"lastModified\"", "aria-sort=\"none\"",

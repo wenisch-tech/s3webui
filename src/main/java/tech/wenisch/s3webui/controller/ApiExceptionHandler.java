@@ -78,7 +78,7 @@ public class ApiExceptionHandler {
         if (throwable instanceof AwsServiceException awsEx && awsEx.awsErrorDetails() != null) {
             if ("NotImplemented".equals(awsEx.awsErrorDetails().errorCode())) {
                 return "This S3 provider does not support this operation. Some S3-compatible servers "
-                        + "(for example older MinIO releases) do not implement the bucket policy or CORS APIs.";
+                        + "(for example older MinIO releases) do not implement the bucket policy, CORS, versioning or lifecycle APIs.";
             }
             String errorMessage = awsEx.awsErrorDetails().errorMessage();
             if (errorMessage != null && !errorMessage.isBlank()) {

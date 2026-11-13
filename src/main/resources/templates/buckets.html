@@ -181,6 +181,13 @@
                   <i data-icon="globe-alt"></i>
                   CORS
                 </a>
+                <a
+                  class="dropdown-item"
+                  th:href="@{/buckets/{b}(b=${bucket.name}, dialog='versioning')}"
+                >
+                  <i data-icon="clock"></i>
+                  Versioning
+                </a>
                 <button
                   class="dropdown-item text-bad-500"
                   th:attr="data-bucket=${bucket.name}"

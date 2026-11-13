@@ -584,6 +584,79 @@ public class S3Service {
         s3Client.deleteBucketCors(DeleteBucketCorsRequest.builder().bucket(bucket).build());
     }
 
+    // ── Bucket versioning + retention ─────────────────────────────────────
+
+    /** Lifecycle rule ID owned by this app; all other lifecycle rules are left untouched. */
+    static final String RETENTION_RULE_ID = "s3webui-version-retention";
+
+    /** Versioning status ("Enabled", "Suspended" or "Off") plus the retention rule managed by this app, if any. */
+    public VersioningConfig getBucketVersioning(String bucket) {
+        var response = s3Client.getBucketVersioning(GetBucketVersioningRequest.builder().bucket(bucket).build());
+        String status = response.statusAsString() == null ? "Off" : response.statusAsString();
+        Integer maxVersions = null;
+        Integer noncurrentDays = null;
+        for (LifecycleRule rule : getLifecycleRules(bucket)) {
+            if (RETENTION_RULE_ID.equals(rule.id()) && rule.noncurrentVersionExpiration() != null) {
+                maxVersions = rule.noncurrentVersionExpiration().newerNoncurrentVersions();
+                noncurrentDays = rule.noncurrentVersionExpiration().noncurrentDays();
+            }
+        }
+        return new VersioningConfig(status, maxVersions, noncurrentDays);
+    }
+
+    /**
+     * Enables or suspends versioning and, when enabled with {@code maxVersions}, keeps only that many
+     * noncurrent versions (older ones expire after {@code noncurrentDays}). Other lifecycle rules are preserved.
+     */
+    public void putBucketVersioning(String bucket, boolean enabled, Integer maxVersions, Integer noncurrentDays) {
+        s3Client.putBucketVersioning(PutBucketVersioningRequest.builder()
+                .bucket(bucket)
+                .versioningConfiguration(VersioningConfiguration.builder()
+                        .status(enabled ? BucketVersioningStatus.ENABLED : BucketVersioningStatus.SUSPENDED)
+                        .build())
+                .build());
+
+        List<LifecycleRule> rules = new ArrayList<>(getLifecycleRules(bucket));
+        boolean hadRule = rules.removeIf(rule -> RETENTION_RULE_ID.equals(rule.id()));
+        boolean wantRule = enabled && maxVersions != null;
+        if (wantRule) {
+            rules.add(LifecycleRule.builder()
+                    .id(RETENTION_RULE_ID)
+                    .status(ExpirationStatus.ENABLED)
+                    .filter(LifecycleRuleFilter.builder().prefix("").build())
+                    .noncurrentVersionExpiration(NoncurrentVersionExpiration.builder()
+                            .newerNoncurrentVersions(maxVersions)
+                            .noncurrentDays(noncurrentDays == null ? 1 : noncurrentDays)
+                            .build())
+                    .build());
+        } else if (!hadRule) {
+            return;
+        }
+        if (rules.isEmpty()) {
+            s3Client.deleteBucketLifecycle(DeleteBucketLifecycleRequest.builder().bucket(bucket).build());
+        } else {
+            s3Client.putBucketLifecycleConfiguration(PutBucketLifecycleConfigurationRequest.builder()
+                    .bucket(bucket)
+                    .lifecycleConfiguration(BucketLifecycleConfiguration.builder().rules(rules).build())
+                    .build());
+        }
+    }
+
+    private List<LifecycleRule> getLifecycleRules(String bucket) {
+        try {
+            return s3Client.getBucketLifecycleConfiguration(
+                    GetBucketLifecycleConfigurationRequest.builder().bucket(bucket).build()).rules();
+        } catch (S3Exception ex) {
+            if (isS3NotFound(ex, "NoSuchLifecycleConfiguration")) {
+                return List.of();
+            }
+            throw ex;
+        }
+    }
+
+    public record VersioningConfig(String status, Integer maxVersions, Integer noncurrentDays) {
+    }
+
     private static List<String> orEmpty(List<String> values) {
         return values == null ? List.of() : values;
     }
