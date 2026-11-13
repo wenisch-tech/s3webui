@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import tech.wenisch.s3webui.model.CompleteMultipartRequest;
 import tech.wenisch.s3webui.model.BucketDto;
 import tech.wenisch.s3webui.model.CorsRuleDto;
+import tech.wenisch.s3webui.model.LifecycleRuleDto;
+import tech.wenisch.s3webui.model.ObjectVersionDto;
 import tech.wenisch.s3webui.model.MoveObjectsRequest;
 import tech.wenisch.s3webui.model.S3ObjectDto;
 import tech.wenisch.s3webui.service.AuditHistoryService;
@@ -32,6 +34,8 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.security.Principal;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.List;
 import java.util.Map;
 
@@ -217,19 +221,63 @@ public class S3ApiController {
     public void downloadObject(
             @PathVariable String bucket,
             @RequestParam String key,
+            @RequestParam(required = false) String versionId,
             HttpServletResponse response) throws IOException {
         String filename = key.contains("/") ? key.substring(key.lastIndexOf('/') + 1) : key;
         response.setHeader(HttpHeaders.CONTENT_DISPOSITION,
                 "attachment; filename=\"" + URLEncoder.encode(filename, StandardCharsets.UTF_8) + "\"");
         response.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
 
-        try (ResponseInputStream<GetObjectResponse> s3Stream = s3Service.getObject(bucket, key)) {
+        try (ResponseInputStream<GetObjectResponse> s3Stream = s3Service.getObject(bucket, key, versionId)) {
             GetObjectResponse meta = s3Stream.response();
             if (meta.contentLength() != null) {
                 response.setContentLengthLong(meta.contentLength());
             }
             s3Stream.transferTo(response.getOutputStream());
         }
+    }
+
+    // ── Object versions ───────────────────────────────────────────────────
+
+    @GetMapping("/buckets/{bucket}/objects/versions")
+    public List<ObjectVersionDto> listObjectVersions(@PathVariable String bucket, @RequestParam String key) {
+        return s3Service.listObjectVersions(bucket, key);
+    }
+
+    @PostMapping("/buckets/{bucket}/objects/versions/restore")
+    public ResponseEntity<Void> restoreObjectVersion(
+            @PathVariable String bucket,
+            @RequestParam String key,
+            @RequestParam String versionId,
+            Principal principal) {
+        try {
+            s3Service.restoreObjectVersion(bucket, key, versionId);
+            invalidateSearchCatalog();
+            auditHistoryService.record(username(principal), "EDIT", "OBJECT", bucket, key,
+                    "Restored version " + versionId);
+        } catch (Exception ex) {
+            recordFailure(principal, "EDIT", "OBJECT", bucket, key, ex);
+            throw ex;
+        }
+        return ResponseEntity.ok().build();
+    }
+
+    @DeleteMapping("/buckets/{bucket}/objects/versions")
+    public ResponseEntity<Void> deleteObjectVersion(
+            @PathVariable String bucket,
+            @RequestParam String key,
+            @RequestParam String versionId,
+            Principal principal) {
+        try {
+            s3Service.deleteObjectVersion(bucket, key, versionId);
+            invalidateSearchCatalog();
+            auditHistoryService.record(username(principal), "DELETE", "OBJECT", bucket, key,
+                    "Permanently deleted version " + versionId);
+        } catch (Exception ex) {
+            recordFailure(principal, "DELETE", "OBJECT", bucket, key, ex);
+            throw ex;
+        }
+        return ResponseEntity.ok().build();
     }
 
     // ── Simple upload (for small files or fallback) ────────────────────────
@@ -447,6 +495,73 @@ public class S3ApiController {
             throw ex;
         }
         return ResponseEntity.ok().build();
+    }
+
+    // ── Bucket lifecycle ──────────────────────────────────────────────────
+
+    @GetMapping("/buckets/{bucket}/lifecycle")
+    public LifecycleConfig getBucketLifecycle(@PathVariable String bucket) {
+        return new LifecycleConfig(s3Service.getBucketLifecycle(bucket));
+    }
+
+    @PutMapping("/buckets/{bucket}/lifecycle")
+    public ResponseEntity<Void> updateBucketLifecycle(
+            @PathVariable String bucket,
+            @RequestBody LifecycleConfig request,
+            Principal principal) {
+        List<LifecycleRuleDto> rules = request == null || request.rules() == null ? List.of() : request.rules();
+        validateLifecycleRules(rules);
+        try {
+            s3Service.putBucketLifecycle(bucket, rules);
+            auditHistoryService.record(username(principal), "EDIT", "BUCKET", bucket, null, "Updated lifecycle rules");
+        } catch (Exception ex) {
+            recordFailure(principal, "EDIT", "BUCKET", bucket, null, ex);
+            throw ex;
+        }
+        return ResponseEntity.ok().build();
+    }
+
+    private static final Set<String> TRANSITION_CLASSES = Set.of(
+            "STANDARD_IA", "ONEZONE_IA", "INTELLIGENT_TIERING", "GLACIER_IR", "GLACIER", "DEEP_ARCHIVE");
+
+    private static void validateLifecycleRules(List<LifecycleRuleDto> rules) {
+        Set<String> ids = new HashSet<>();
+        for (LifecycleRuleDto rule : rules) {
+            if (rule == null || rule.id() == null || rule.id().isBlank()) {
+                throw new IllegalArgumentException("Every lifecycle rule needs an ID");
+            }
+            if (rule.id().length() > 255 || !ids.add(rule.id())) {
+                throw new IllegalArgumentException("Lifecycle rule IDs must be unique and at most 255 characters: " + rule.id());
+            }
+            if (S3Service.RETENTION_RULE_ID.equals(rule.id())) {
+                throw new IllegalArgumentException("'" + rule.id() + "' is managed by the Versioning dialog");
+            }
+            requirePositive(rule.expirationDays(), "Expiration days");
+            requirePositive(rule.noncurrentDays(), "Noncurrent version days");
+            requirePositive(rule.noncurrentKeepVersions(), "Noncurrent versions to keep");
+            requirePositive(rule.abortIncompleteMultipartDays(), "Abort incomplete uploads days");
+            if (rule.expirationDays() != null && Boolean.TRUE.equals(rule.expireDeleteMarkers())) {
+                throw new IllegalArgumentException(
+                        "Rule '" + rule.id() + "': expiring after N days cannot be combined with removing expired delete markers");
+            }
+            if (rule.transitions() != null) {
+                for (LifecycleRuleDto.Transition t : rule.transitions()) {
+                    requirePositive(t.days() == null ? 0 : t.days(), "Transition days");
+                    if (t.storageClass() == null || !TRANSITION_CLASSES.contains(t.storageClass())) {
+                        throw new IllegalArgumentException("Unsupported storage class: " + t.storageClass());
+                    }
+                }
+            }
+        }
+    }
+
+    private static void requirePositive(Integer value, String what) {
+        if (value != null && value < 1) {
+            throw new IllegalArgumentException(what + " must be at least 1");
+        }
+    }
+
+    public record LifecycleConfig(List<LifecycleRuleDto> rules) {
     }
 
     public record VersioningRequest(Boolean enabled, Integer maxVersions, Integer noncurrentDays) {

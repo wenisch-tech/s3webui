@@ -246,4 +246,49 @@ class S3ApiControllerTest {
                 "b", new S3ApiController.VersioningRequest(null, null, null), null));
         verify(s3Service, never()).putBucketVersioning(any(), anyBoolean(), any(), any());
     }
+
+    @Test
+    void restoreAndDeleteVersionAreAudited() {
+        S3Service s3Service = mock(S3Service.class);
+        AuditHistoryService auditHistoryService = mock(AuditHistoryService.class);
+        S3ApiController controller = new S3ApiController(s3Service, auditHistoryService, jsonMapper);
+
+        controller.restoreObjectVersion("b", "k", "v1", null);
+        controller.deleteObjectVersion("b", "k", "v2", null);
+
+        verify(s3Service).restoreObjectVersion("b", "k", "v1");
+        verify(s3Service).deleteObjectVersion("b", "k", "v2");
+        verify(auditHistoryService).record(
+                isNull(), eq("EDIT"), eq("OBJECT"), eq("b"), eq("k"), eq("Restored version v1"));
+        verify(auditHistoryService).record(
+                isNull(), eq("DELETE"), eq("OBJECT"), eq("b"), eq("k"), eq("Permanently deleted version v2"));
+    }
+
+    @Test
+    void updateBucketLifecycleIsAuditedAndValidated() {
+        S3Service s3Service = mock(S3Service.class);
+        AuditHistoryService auditHistoryService = mock(AuditHistoryService.class);
+        S3ApiController controller = new S3ApiController(s3Service, auditHistoryService, jsonMapper);
+        var ok = new tech.wenisch.s3webui.model.LifecycleRuleDto("r", true, "", 30, null, List.of(), null, null, null, true);
+
+        controller.updateBucketLifecycle("b", new S3ApiController.LifecycleConfig(List.of(ok)), null);
+
+        verify(s3Service).putBucketLifecycle("b", List.of(ok));
+        verify(auditHistoryService).record(
+                isNull(), eq("EDIT"), eq("BUCKET"), eq("b"), isNull(), eq("Updated lifecycle rules"));
+
+        var duplicate = new S3ApiController.LifecycleConfig(List.of(ok, ok));
+        assertThrows(IllegalArgumentException.class, () -> controller.updateBucketLifecycle("b", duplicate, null));
+        var conflicting = new tech.wenisch.s3webui.model.LifecycleRuleDto("c", true, "", 5, true, List.of(), null, null, null, true);
+        assertThrows(IllegalArgumentException.class, () -> controller.updateBucketLifecycle(
+                "b", new S3ApiController.LifecycleConfig(List.of(conflicting)), null));
+        var managed = new tech.wenisch.s3webui.model.LifecycleRuleDto(
+                S3Service.RETENTION_RULE_ID, true, "", 5, null, List.of(), null, null, null, true);
+        assertThrows(IllegalArgumentException.class, () -> controller.updateBucketLifecycle(
+                "b", new S3ApiController.LifecycleConfig(List.of(managed)), null));
+        var badClass = new tech.wenisch.s3webui.model.LifecycleRuleDto("t", true, "", null, null,
+                List.of(new tech.wenisch.s3webui.model.LifecycleRuleDto.Transition(5, "BOGUS")), null, null, null, true);
+        assertThrows(IllegalArgumentException.class, () -> controller.updateBucketLifecycle(
+                "b", new S3ApiController.LifecycleConfig(List.of(badClass)), null));
+    }
 }

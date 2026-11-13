@@ -100,7 +100,8 @@ a real deployment.
 -  **Create buckets** — create new buckets directly from the UI
 -  **Visual permission editor** — grant users (or everyone) List / Read / Write / Delete / Full control on a bucket, or give an IAM user or group access to buckets, with toggle chips; switch to the JSON policy editor (syntax highlighting, inline validation) at any time
 -  **CORS editor** — edit a bucket's CORS rules in the same editor, in the `aws s3api` JSON shape
--  **Versioning & retention** — enable or suspend bucket versioning and limit how many older versions are kept
+-  **Versioning & retention** — enable or suspend bucket versioning and limit how many older versions are kept; browse, download, restore and permanently delete individual object versions
+-  **Lifecycle rules** — expire objects, transition them to cheaper storage classes and abort incomplete multipart uploads
 -  **Audit history** — per-session activity log (uploads, downloads, deletes, renames) with user and action filters
 -  **Light / Dark theme** — toggle stored in `localStorage`, light is the default
 -  **Administration panel** — manage named S3 keys, decide who may use each one, and manage local accounts

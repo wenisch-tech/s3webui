@@ -3,6 +3,8 @@ package tech.wenisch.s3webui.service;
 import tech.wenisch.s3webui.model.BucketDto;
 import tech.wenisch.s3webui.model.CompleteMultipartRequest;
 import tech.wenisch.s3webui.model.CorsRuleDto;
+import tech.wenisch.s3webui.model.LifecycleRuleDto;
+import tech.wenisch.s3webui.model.ObjectVersionDto;
 import tech.wenisch.s3webui.model.S3ObjectDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -214,6 +216,65 @@ public class S3Service {
         return s3Client.getObject(GetObjectRequest.builder()
                 .bucket(bucket)
                 .key(key)
+                .build());
+    }
+
+    /** Downloads a specific version of an object ({@code versionId} may be null for the latest). */
+    public ResponseInputStream<GetObjectResponse> getObject(String bucket, String key, String versionId) {
+        return s3Client.getObject(GetObjectRequest.builder()
+                .bucket(bucket)
+                .key(key)
+                .versionId(versionId)
+                .build());
+    }
+
+    // ── Object versions ───────────────────────────────────────────────────
+
+    /** All versions and delete markers of exactly this key, newest first. */
+    public List<ObjectVersionDto> listObjectVersions(String bucket, String key) {
+        List<ObjectVersionDto> result = new ArrayList<>();
+        var paginator = s3Client.listObjectVersionsPaginator(
+                ListObjectVersionsRequest.builder().bucket(bucket).prefix(key).build());
+        for (var page : paginator) {
+            for (ObjectVersion v : page.versions()) {
+                if (key.equals(v.key())) {
+                    result.add(new ObjectVersionDto(v.versionId(), Boolean.TRUE.equals(v.isLatest()), false,
+                            v.size() == null ? 0 : v.size(), v.lastModified(), v.storageClassAsString()));
+                }
+            }
+            for (DeleteMarkerEntry m : page.deleteMarkers()) {
+                if (key.equals(m.key())) {
+                    result.add(new ObjectVersionDto(m.versionId(), Boolean.TRUE.equals(m.isLatest()), true,
+                            0, m.lastModified(), null));
+                }
+            }
+        }
+        result.sort((a, b) -> {
+            if (a.lastModified() == null || b.lastModified() == null) {
+                return 0;
+            }
+            return b.lastModified().compareTo(a.lastModified());
+        });
+        return result;
+    }
+
+    /** Makes an old version the latest by copying it over the key (the old version itself is kept). */
+    public void restoreObjectVersion(String bucket, String key, String versionId) {
+        s3Client.copyObject(CopyObjectRequest.builder()
+                .sourceBucket(bucket)
+                .sourceKey(key)
+                .sourceVersionId(versionId)
+                .destinationBucket(bucket)
+                .destinationKey(key)
+                .build());
+    }
+
+    /** Permanently deletes one version (or removes a delete marker, which undeletes the object). */
+    public void deleteObjectVersion(String bucket, String key, String versionId) {
+        s3Client.deleteObject(DeleteObjectRequest.builder()
+                .bucket(bucket)
+                .key(key)
+                .versionId(versionId)
                 .build());
     }
 
@@ -587,7 +648,7 @@ public class S3Service {
     // ── Bucket versioning + retention ─────────────────────────────────────
 
     /** Lifecycle rule ID owned by this app; all other lifecycle rules are left untouched. */
-    static final String RETENTION_RULE_ID = "s3webui-version-retention";
+    public static final String RETENTION_RULE_ID = "s3webui-version-retention";
 
     /** Versioning status ("Enabled", "Suspended" or "Off") plus the retention rule managed by this app, if any. */
     public VersioningConfig getBucketVersioning(String bucket) {
@@ -640,6 +701,119 @@ public class S3Service {
                     .lifecycleConfiguration(BucketLifecycleConfiguration.builder().rules(rules).build())
                     .build());
         }
+    }
+
+    // ── Bucket lifecycle rules ────────────────────────────────────────────
+
+    public List<LifecycleRuleDto> getBucketLifecycle(String bucket) {
+        return getLifecycleRules(bucket).stream().map(S3Service::toDto).toList();
+    }
+
+    /**
+     * Replaces the editable rules with {@code rules}. Rules the editor cannot represent (and the
+     * versioning retention rule) are kept exactly as they are on the server.
+     */
+    public void putBucketLifecycle(String bucket, List<LifecycleRuleDto> rules) {
+        List<LifecycleRule> merged = new ArrayList<>();
+        for (LifecycleRule existing : getLifecycleRules(bucket)) {
+            if (!toDto(existing).editable()) {
+                merged.add(existing);
+            }
+        }
+        for (LifecycleRuleDto dto : rules) {
+            merged.add(fromDto(dto));
+        }
+        if (merged.isEmpty()) {
+            s3Client.deleteBucketLifecycle(DeleteBucketLifecycleRequest.builder().bucket(bucket).build());
+        } else {
+            s3Client.putBucketLifecycleConfiguration(PutBucketLifecycleConfigurationRequest.builder()
+                    .bucket(bucket)
+                    .lifecycleConfiguration(BucketLifecycleConfiguration.builder().rules(merged).build())
+                    .build());
+        }
+    }
+
+    static LifecycleRuleDto toDto(LifecycleRule rule) {
+        boolean editable = rule.id() != null && !rule.id().isBlank() && !RETENTION_RULE_ID.equals(rule.id());
+        String prefix = rule.prefix() == null ? "" : rule.prefix();
+        LifecycleRuleFilter filter = rule.filter();
+        if (filter != null) {
+            if (filter.tag() != null || filter.and() != null
+                    || filter.objectSizeGreaterThan() != null || filter.objectSizeLessThan() != null) {
+                editable = false;
+            }
+            if (filter.prefix() != null) {
+                prefix = filter.prefix();
+            }
+        }
+        Integer expirationDays = null;
+        Boolean expireDeleteMarkers = null;
+        if (rule.expiration() != null) {
+            if (rule.expiration().date() != null) {
+                editable = false;
+            }
+            expirationDays = rule.expiration().days();
+            expireDeleteMarkers = rule.expiration().expiredObjectDeleteMarker();
+        }
+        List<LifecycleRuleDto.Transition> transitions = new ArrayList<>();
+        for (Transition t : rule.transitions()) {
+            if (t.date() != null || t.days() == null) {
+                editable = false;
+            }
+            transitions.add(new LifecycleRuleDto.Transition(t.days(), t.storageClassAsString()));
+        }
+        if (!rule.noncurrentVersionTransitions().isEmpty()) {
+            editable = false;
+        }
+        Integer noncurrentDays = null;
+        Integer noncurrentKeep = null;
+        if (rule.noncurrentVersionExpiration() != null) {
+            noncurrentDays = rule.noncurrentVersionExpiration().noncurrentDays();
+            noncurrentKeep = rule.noncurrentVersionExpiration().newerNoncurrentVersions();
+        }
+        Integer abortDays = rule.abortIncompleteMultipartUpload() == null
+                ? null : rule.abortIncompleteMultipartUpload().daysAfterInitiation();
+        return new LifecycleRuleDto(rule.id(), rule.status() == ExpirationStatus.ENABLED, prefix,
+                expirationDays, expireDeleteMarkers, transitions, noncurrentDays, noncurrentKeep,
+                abortDays, editable);
+    }
+
+    static LifecycleRule fromDto(LifecycleRuleDto dto) {
+        LifecycleRule.Builder rule = LifecycleRule.builder()
+                .id(dto.id())
+                .status(Boolean.FALSE.equals(dto.enabled()) ? ExpirationStatus.DISABLED : ExpirationStatus.ENABLED)
+                .filter(LifecycleRuleFilter.builder().prefix(dto.prefix() == null ? "" : dto.prefix()).build());
+        boolean hasAction = false;
+        boolean deleteMarkers = Boolean.TRUE.equals(dto.expireDeleteMarkers());
+        if (dto.expirationDays() != null || deleteMarkers) {
+            rule.expiration(LifecycleExpiration.builder()
+                    .days(dto.expirationDays())
+                    .expiredObjectDeleteMarker(deleteMarkers ? Boolean.TRUE : null)
+                    .build());
+            hasAction = true;
+        }
+        if (dto.transitions() != null && !dto.transitions().isEmpty()) {
+            rule.transitions(dto.transitions().stream()
+                    .map(t -> Transition.builder().days(t.days()).storageClass(t.storageClass()).build())
+                    .toList());
+            hasAction = true;
+        }
+        if (dto.noncurrentDays() != null || dto.noncurrentKeepVersions() != null) {
+            rule.noncurrentVersionExpiration(NoncurrentVersionExpiration.builder()
+                    .noncurrentDays(dto.noncurrentDays())
+                    .newerNoncurrentVersions(dto.noncurrentKeepVersions())
+                    .build());
+            hasAction = true;
+        }
+        if (dto.abortIncompleteMultipartDays() != null) {
+            rule.abortIncompleteMultipartUpload(AbortIncompleteMultipartUpload.builder()
+                    .daysAfterInitiation(dto.abortIncompleteMultipartDays()).build());
+            hasAction = true;
+        }
+        if (!hasAction) {
+            throw new IllegalArgumentException("Lifecycle rule '" + dto.id() + "' needs at least one action");
+        }
+        return rule.build();
     }
 
     private List<LifecycleRule> getLifecycleRules(String bucket) {

@@ -152,12 +152,36 @@ While versioning is enabled you can also **limit retained versions**: set how ma
 
 Some S3-compatible servers do not implement the versioning or lifecycle APIs; the dialog then reports that the provider does not support the operation.
 
+### Browsing, restoring and deleting versions
+
+Every file row has a **Versions** button (archive icon). It lists all versions and delete markers of that object, newest first. From there you can:
+
+- **Download** any version.
+- **Restore** an older version. It is copied over the key and becomes the latest version; the old version is kept.
+- **Delete** a version permanently (click twice to confirm). Deleting a *delete marker* brings a deleted object back.
+
+Objects deleted while versioning was enabled no longer appear in the file list (only a delete marker remains), so they can't be opened from there yet.
+
+## Lifecycle rules
+
+The **Lifecycle** button edits the bucket's lifecycle rules. Each rule has an ID, a prefix filter (empty means the whole bucket), and any of these actions:
+
+| Action | Meaning |
+|---|---|
+| Expire after N days | Delete current objects N days after creation |
+| Transitions | After N days move objects to `STANDARD_IA`, `ONEZONE_IA`, `INTELLIGENT_TIERING`, `GLACIER_IR`, `GLACIER` or `DEEP_ARCHIVE` |
+| Delete noncurrent versions after N days (keep newest M) | Clean up old versions of versioned objects |
+| Abort incomplete uploads after N days | Removes orphaned multipart upload parts |
+| Remove expired delete markers | Cannot be combined with "Expire after" |
+
+Rules using features the editor cannot represent (tag or object-size filters, date-based actions, noncurrent-version transitions) and the retention rule created by the Versioning dialog are shown read-only and are written back unchanged on save. Removing every editable rule deletes the lifecycle configuration only if no read-only rules remain. Some S3-compatible servers support only part of the lifecycle API.
+
 ## Troubleshooting
 
 | Symptom | Likely cause or response |
 |---|---|
 | Editor reports invalid JSON | Check commas, quote all property names and strings, and keep the root object. |
-| Save is denied by the backend | The active S3 key lacks `PutBucketPolicy`, `PutBucketCors`, `PutBucketVersioning`, `PutLifecycleConfiguration`, or provider-equivalent permission. Select an authorized key. |
+| Save is denied by the backend | The active S3 key lacks `PutBucketPolicy`, `PutBucketCors`, `PutBucketVersioning`, `PutLifecycleConfiguration`, `GetObjectVersion`, `DeleteObjectVersion`, or provider-equivalent permission. Select an authorized key. |
 | Browser still reports CORS errors | Verify the request reaches the S3 endpoint, the origin matches exactly, and the rule allows the HTTP method and request headers. S3 Web UI's proxied multipart upload does not need browser-to-S3 CORS. |
 | A policy locks out expected users | Use a remaining administrative credential to restore access; policy changes are recorded in [History](Audit-History.md). |
 

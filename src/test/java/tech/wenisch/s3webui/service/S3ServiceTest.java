@@ -6,6 +6,19 @@ import software.amazon.awssdk.awscore.exception.AwsErrorDetails;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.BucketVersioningStatus;
+import software.amazon.awssdk.services.s3.model.CopyObjectRequest;
+import software.amazon.awssdk.services.s3.model.DeleteMarkerEntry;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
+import software.amazon.awssdk.services.s3.model.ListObjectVersionsRequest;
+import software.amazon.awssdk.services.s3.model.ListObjectVersionsResponse;
+import software.amazon.awssdk.services.s3.model.LifecycleExpiration;
+import software.amazon.awssdk.services.s3.model.LifecycleRuleFilter;
+import software.amazon.awssdk.services.s3.model.ObjectVersion;
+import software.amazon.awssdk.services.s3.model.Transition;
+import software.amazon.awssdk.services.s3.model.TransitionStorageClass;
+import tech.wenisch.s3webui.model.LifecycleRuleDto;
+import tech.wenisch.s3webui.model.ObjectVersionDto;
+import java.time.Instant;
 import software.amazon.awssdk.services.s3.model.CORSRule;
 import software.amazon.awssdk.services.s3.model.DeleteBucketLifecycleRequest;
 import software.amazon.awssdk.services.s3.model.ExpirationStatus;
@@ -328,6 +341,135 @@ class S3ServiceTest {
         verify(s3Client, org.mockito.Mockito.never())
                 .putBucketLifecycleConfiguration(any(PutBucketLifecycleConfigurationRequest.class));
         verify(s3Client, org.mockito.Mockito.never()).deleteBucketLifecycle(any(DeleteBucketLifecycleRequest.class));
+    }
+
+    // ── Object versions ──────────────────────────────────────────────────
+
+    @Test
+    void listObjectVersionsReturnsOnlyExactKeyNewestFirstIncludingDeleteMarkers() {
+        S3Client s3Client = mock(S3Client.class);
+        S3Service s3Service = new S3Service(s3Client, mock(S3Presigner.class));
+        when(s3Client.listObjectVersionsPaginator(any(ListObjectVersionsRequest.class)))
+                .thenReturn(new software.amazon.awssdk.services.s3.paginators.ListObjectVersionsIterable(
+                        s3Client, ListObjectVersionsRequest.builder().bucket("b").prefix("a.txt").build()));
+        when(s3Client.listObjectVersions(any(ListObjectVersionsRequest.class)))
+                .thenReturn(ListObjectVersionsResponse.builder()
+                        .versions(
+                                ObjectVersion.builder().key("a.txt").versionId("v1").size(5L).isLatest(false)
+                                        .lastModified(Instant.parse("2026-01-01T00:00:00Z")).build(),
+                                ObjectVersion.builder().key("a.txt.bak").versionId("x").size(1L)
+                                        .lastModified(Instant.parse("2026-01-05T00:00:00Z")).build())
+                        .deleteMarkers(DeleteMarkerEntry.builder().key("a.txt").versionId("v2").isLatest(true)
+                                .lastModified(Instant.parse("2026-02-01T00:00:00Z")).build())
+                        .isTruncated(false)
+                        .build());
+
+        List<ObjectVersionDto> versions = s3Service.listObjectVersions("b", "a.txt");
+
+        assertEquals(2, versions.size());
+        assertEquals("v2", versions.get(0).versionId());
+        assertEquals(true, versions.get(0).deleteMarker());
+        assertEquals("v1", versions.get(1).versionId());
+    }
+
+    @Test
+    void restoreObjectVersionCopiesTheVersionOverTheKey() {
+        S3Client s3Client = mock(S3Client.class);
+        S3Service s3Service = new S3Service(s3Client, mock(S3Presigner.class));
+
+        s3Service.restoreObjectVersion("b", "k", "v1");
+
+        ArgumentCaptor<CopyObjectRequest> captor = ArgumentCaptor.forClass(CopyObjectRequest.class);
+        verify(s3Client).copyObject(captor.capture());
+        assertEquals("v1", captor.getValue().sourceVersionId());
+        assertEquals("k", captor.getValue().sourceKey());
+        assertEquals("k", captor.getValue().destinationKey());
+    }
+
+    @Test
+    void deleteObjectVersionPassesTheVersionId() {
+        S3Client s3Client = mock(S3Client.class);
+        S3Service s3Service = new S3Service(s3Client, mock(S3Presigner.class));
+
+        s3Service.deleteObjectVersion("b", "k", "v1");
+
+        ArgumentCaptor<DeleteObjectRequest> captor = ArgumentCaptor.forClass(DeleteObjectRequest.class);
+        verify(s3Client).deleteObject(captor.capture());
+        assertEquals("v1", captor.getValue().versionId());
+    }
+
+    // ── Bucket lifecycle ─────────────────────────────────────────────────
+
+    @Test
+    void getBucketLifecycleFlagsUnsupportedAndManagedRulesAsReadOnly() {
+        S3Client s3Client = mock(S3Client.class);
+        S3Service s3Service = new S3Service(s3Client, mock(S3Presigner.class));
+        when(s3Client.getBucketLifecycleConfiguration(any(GetBucketLifecycleConfigurationRequest.class)))
+                .thenReturn(GetBucketLifecycleConfigurationResponse.builder().rules(
+                        LifecycleRule.builder().id("simple").status(ExpirationStatus.ENABLED)
+                                .filter(LifecycleRuleFilter.builder().prefix("logs/").build())
+                                .expiration(LifecycleExpiration.builder().days(30).build())
+                                .transitions(Transition.builder().days(10)
+                                        .storageClass(TransitionStorageClass.GLACIER).build())
+                                .build(),
+                        LifecycleRule.builder().id("dated").status(ExpirationStatus.ENABLED)
+                                .expiration(LifecycleExpiration.builder().date(Instant.parse("2030-01-01T00:00:00Z")).build())
+                                .build(),
+                        LifecycleRule.builder().id(S3Service.RETENTION_RULE_ID).status(ExpirationStatus.ENABLED).build())
+                        .build());
+
+        List<LifecycleRuleDto> rules = s3Service.getBucketLifecycle("b");
+
+        assertEquals(true, rules.get(0).editable());
+        assertEquals("logs/", rules.get(0).prefix());
+        assertEquals(30, rules.get(0).expirationDays());
+        assertEquals("GLACIER", rules.get(0).transitions().get(0).storageClass());
+        assertEquals(false, rules.get(1).editable());
+        assertEquals(false, rules.get(2).editable());
+    }
+
+    @Test
+    void putBucketLifecycleKeepsReadOnlyRulesAndReplacesEditableOnes() {
+        S3Client s3Client = mock(S3Client.class);
+        S3Service s3Service = new S3Service(s3Client, mock(S3Presigner.class));
+        LifecycleRule retention = LifecycleRule.builder().id(S3Service.RETENTION_RULE_ID)
+                .status(ExpirationStatus.ENABLED).build();
+        when(s3Client.getBucketLifecycleConfiguration(any(GetBucketLifecycleConfigurationRequest.class)))
+                .thenReturn(GetBucketLifecycleConfigurationResponse.builder().rules(retention,
+                        LifecycleRule.builder().id("old").status(ExpirationStatus.ENABLED)
+                                .expiration(LifecycleExpiration.builder().days(1).build()).build()).build());
+
+        s3Service.putBucketLifecycle("b", List.of(new LifecycleRuleDto("new", true, "tmp/", 7, null,
+                List.of(), null, null, 2, true)));
+
+        ArgumentCaptor<PutBucketLifecycleConfigurationRequest> captor =
+                ArgumentCaptor.forClass(PutBucketLifecycleConfigurationRequest.class);
+        verify(s3Client).putBucketLifecycleConfiguration(captor.capture());
+        List<LifecycleRule> sent = captor.getValue().lifecycleConfiguration().rules();
+        assertEquals(2, sent.size());
+        assertEquals(S3Service.RETENTION_RULE_ID, sent.get(0).id());
+        assertEquals("new", sent.get(1).id());
+        assertEquals("tmp/", sent.get(1).filter().prefix());
+        assertEquals(7, sent.get(1).expiration().days());
+        assertEquals(2, sent.get(1).abortIncompleteMultipartUpload().daysAfterInitiation());
+    }
+
+    @Test
+    void putBucketLifecycleWithNothingLeftDeletesTheConfiguration() {
+        S3Client s3Client = mock(S3Client.class);
+        S3Service s3Service = new S3Service(s3Client, mock(S3Presigner.class));
+        when(s3Client.getBucketLifecycleConfiguration(any(GetBucketLifecycleConfigurationRequest.class)))
+                .thenThrow(s3Error("NoSuchLifecycleConfiguration"));
+
+        s3Service.putBucketLifecycle("b", List.of());
+
+        verify(s3Client).deleteBucketLifecycle(any(DeleteBucketLifecycleRequest.class));
+    }
+
+    @Test
+    void ruleWithoutAnyActionIsRejected() {
+        org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class, () ->
+                S3Service.fromDto(new LifecycleRuleDto("r", true, "", null, null, List.of(), null, null, null, true)));
     }
 
     private static S3Exception s3Error(String errorCode) {

@@ -60,6 +60,10 @@
             <i data-icon="clock"></i>
             Versioning
           </button>
+          <button class="btn-secondary" onclick="openBucketLifecycleDialog()">
+            <i data-icon="arrow-path"></i>
+            Lifecycle
+          </button>
           <button class="btn-danger" onclick="confirmDeleteCurrentBucket()">
             <i data-icon="trash"></i>
             Delete bucket
@@ -234,6 +238,14 @@
                     >
                       <i data-icon="arrow-down-tray"></i>
                     </a>
+                    <button
+                      class="btn-icon"
+                      title="Versions"
+                      th:attr="data-key=${obj.key},aria-label='Versions of ' + ${obj.name}"
+                      onclick="openVersionsModal(this.dataset.key)"
+                    >
+                      <i data-icon="archive-box"></i>
+                    </button>
                     <button
                       class="btn-icon"
                       title="Rename"
@@ -717,6 +729,91 @@
         </div>
       </div>
     </div>
+    <div
+      id="versionsModal"
+      class="modal-backdrop hidden"
+      aria-hidden="true"
+      role="dialog"
+      aria-modal="true"
+    >
+      <div class="modal-card max-w-3xl">
+        <div class="modal-header">
+          <h2 class="modal-title">
+            <i data-icon="archive-box"></i>
+            Versions
+          </h2>
+          <button class="btn-icon" onclick="closeVersionsModal()" aria-label="Close">
+            <i data-icon="x-mark"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div id="versionsError" class="alert alert-error mb-3 hidden"></div>
+          <p class="field-help mb-2"><strong id="versionsKey" class="font-mono"></strong></p>
+          <p id="versionsEmpty" class="field-help hidden">
+            No versions found. Enable versioning on the bucket to keep previous versions.
+          </p>
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead>
+                <tr class="text-left text-slate-500">
+                  <th>Modified</th>
+                  <th>Size</th>
+                  <th>Version</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="versionsBody"></tbody>
+            </table>
+          </div>
+          <p class="field-help mt-2">
+            Restore copies an old version to become the latest; the old version is kept. Deleting a
+            version is permanent. Removing a delete marker brings the object back.
+          </p>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-secondary" onclick="closeVersionsModal()">Close</button>
+        </div>
+      </div>
+    </div>
+    <div
+      id="bucketLifecycleModal"
+      class="modal-backdrop hidden"
+      aria-hidden="true"
+      role="dialog"
+      aria-modal="true"
+    >
+      <div class="modal-card max-w-3xl">
+        <div class="modal-header">
+          <h2 class="modal-title">
+            <i data-icon="arrow-path"></i>
+            Lifecycle rules
+          </h2>
+          <button class="btn-icon" onclick="closeDialog('bucketLifecycleModal')" aria-label="Close">
+            <i data-icon="x-mark"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div id="bucketLifecycleError" class="alert alert-error mb-3 hidden"></div>
+          <p class="field-help mb-2">
+            Automatically expire objects, move them to cheaper storage classes and clean up
+            incomplete multipart uploads. Rules the editor cannot represent, and the retention rule
+            managed by the Versioning dialog, are shown read-only and left unchanged.
+          </p>
+          <div id="lifecycleRules"></div>
+          <button class="btn-secondary mt-2" onclick="addLifecycleRule()">
+            <i data-icon="plus"></i>
+            Add rule
+          </button>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-secondary" onclick="closeDialog('bucketLifecycleModal')">Cancel</button>
+          <button class="btn-primary" onclick="saveBucketLifecycle()">
+            <i data-icon="check-circle"></i>
+            Save
+          </button>
+        </div>
+      </div>
+    </div>
     <div th:replace="~{fragments/shell :: footer}"></div>
     <script th:inline="javascript">
       window.BUCKET = /*[[${bucket}]]*/ '';
@@ -730,12 +827,13 @@
         ensureS3ConfigDialog();
         // The bucket list's card menu deep-links here to open a settings dialog straight away.
         const requestedDialog = new URLSearchParams(location.search).get('dialog');
-        if (['permissions', 'cors', 'versioning'].includes(requestedDialog)) {
+        if (['permissions', 'cors', 'versioning', 'lifecycle'].includes(requestedDialog)) {
           const url = new URL(location.href);
           url.searchParams.delete('dialog');
           history.replaceState(null, '', url);
           if (requestedDialog === 'permissions') openBucketPolicyDialog();
           else if (requestedDialog === 'versioning') openBucketVersioningDialog();
+          else if (requestedDialog === 'lifecycle') openBucketLifecycleDialog();
           else openBucketCorsDialog();
         }
         if (window.HIGHLIGHT_OBJECT_KEY) {
@@ -1162,6 +1260,235 @@
               );
           })
           .catch((e) => cfgError('bucketVersioningError', e.message));
+      }
+
+      const esc = (v) =>
+        String(v == null ? '' : v).replace(
+          /[&<>"']/g,
+          (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c],
+        );
+      // ── Object versions ──
+      let versionsKey = null;
+      let versionsChanged = false;
+      function formatBytes(n) {
+        if (!n) return '0 B';
+        const u = ['B', 'KB', 'MB', 'GB', 'TB'];
+        const i = Math.min(Math.floor(Math.log(n) / Math.log(1024)), u.length - 1);
+        return (n / Math.pow(1024, i)).toFixed(i ? 1 : 0) + ' ' + u[i];
+      }
+      function versionsUrl(extra) {
+        return (
+          `/api/buckets/${encodeURIComponent(BUCKET)}/objects/versions` +
+          `?key=${encodeURIComponent(versionsKey)}` +
+          (extra || '')
+        );
+      }
+      function openVersionsModal(key) {
+        versionsKey = key;
+        versionsChanged = false;
+        document.getElementById('versionsKey').textContent = key;
+        cfgClearError('versionsError');
+        loadVersions(true);
+      }
+      function closeVersionsModal() {
+        closeDialog('versionsModal');
+        if (versionsChanged) location.reload();
+      }
+      function loadVersions(open) {
+        apiFetch(versionsUrl())
+          .then(async (r) => {
+            if (!r.ok) {
+              const msg = await getResponseErrorMessage(r, 'Failed to load versions');
+              if (open) showToast(msg, 'danger');
+              else cfgError('versionsError', msg);
+              return;
+            }
+            renderVersions(await r.json());
+            if (open) openDialog('versionsModal');
+          })
+          .catch((e) => showToast(e.message, 'danger'));
+      }
+      function renderVersions(list) {
+        document.getElementById('versionsEmpty').classList.toggle('hidden', list.length > 0);
+        const body = document.getElementById('versionsBody');
+        body.innerHTML = list
+          .map((v) => {
+            const dl = `/api/buckets/${encodeURIComponent(BUCKET)}/objects/download?key=${encodeURIComponent(
+              versionsKey,
+            )}&versionId=${encodeURIComponent(v.versionId)}`;
+            const label = v.deleteMarker ? 'Delete marker' : v.latest ? 'Latest' : '';
+            const actions = [];
+            if (!v.deleteMarker)
+              actions.push(
+                `<a class="btn-icon" title="Download" aria-label="Download version" href="${esc(dl)}"><i data-icon="arrow-down-tray"></i></a>`,
+              );
+            if (!v.deleteMarker && !v.latest)
+              actions.push(
+                `<button class="btn-icon" title="Restore this version" aria-label="Restore version" data-act="restore" data-vid="${esc(v.versionId)}"><i data-icon="arrow-path"></i></button>`,
+              );
+            actions.push(
+              `<button class="btn-icon text-bad-500" title="${v.deleteMarker ? 'Remove delete marker' : 'Delete permanently'}" aria-label="Delete version" data-act="delete" data-vid="${esc(v.versionId)}"><i data-icon="trash"></i></button>`,
+            );
+            return `<tr><td>${esc(v.lastModified ? v.lastModified.replace('T', ' ').substring(0, 19) : '-')}</td>
+              <td>${v.deleteMarker ? '' : esc(formatBytes(v.size))}</td>
+              <td><code class="font-mono">${esc(v.versionId)}</code> ${label ? `<span class="field-help">${label}</span>` : ''}</td>
+              <td><div class="flex gap-1">${actions.join('')}</div></td></tr>`;
+          })
+          .join('');
+        body.querySelectorAll('button[data-act]').forEach((b) => {
+          b.onclick = () => versionAction(b);
+        });
+        refreshIcons();
+      }
+      function versionAction(btn) {
+        const act = btn.dataset.act;
+        if (act === 'delete' && btn.dataset.confirm !== '1') {
+          btn.dataset.confirm = '1';
+          btn.classList.add('btn-danger');
+          btn.title = 'Click again to confirm';
+          return;
+        }
+        const extra = `&versionId=${encodeURIComponent(btn.dataset.vid)}`;
+        const url = act === 'restore' ? versionsUrl().replace('/versions', '/versions/restore') + extra : versionsUrl(extra);
+        apiFetch(url, { method: act === 'restore' ? 'POST' : 'DELETE' })
+          .then(async (r) => {
+            if (r.ok) {
+              versionsChanged = true;
+              cfgClearError('versionsError');
+              showToast(act === 'restore' ? 'Version restored' : 'Version deleted', 'success');
+              loadVersions(false);
+            } else
+              cfgError('versionsError', await getResponseErrorMessage(r, 'Failed to update version'));
+          })
+          .catch((e) => cfgError('versionsError', e.message));
+      }
+      // ── Lifecycle rules ──
+      const STORAGE_CLASSES = ['STANDARD_IA', 'ONEZONE_IA', 'INTELLIGENT_TIERING', 'GLACIER_IR', 'GLACIER', 'DEEP_ARCHIVE'];
+      let lcRules = [];
+      function openBucketLifecycleDialog() {
+        cfgClearError('bucketLifecycleError');
+        apiFetch(cfgUrl('lifecycle'))
+          .then(async (r) => {
+            if (!r.ok) {
+              showToast(await getResponseErrorMessage(r, 'Failed to load lifecycle rules'), 'danger');
+              return;
+            }
+            lcRules = (await r.json()).rules || [];
+            renderLifecycle();
+            openDialog('bucketLifecycleModal');
+          })
+          .catch((e) => showToast(e.message, 'danger'));
+      }
+      function num(v) {
+        return v == null ? '' : v;
+      }
+      function renderLifecycle() {
+        const box = document.getElementById('lifecycleRules');
+        if (!lcRules.length) {
+          box.innerHTML = '<p class="field-help">No lifecycle rules configured.</p>';
+          return;
+        }
+        box.innerHTML = lcRules
+          .map((r, i) => {
+            if (!r.editable)
+              return `<div class="mb-3 rounded border p-3 opacity-70"><strong>${esc(r.id || '(no ID)')}</strong>
+                <span class="field-help"> — read-only; preserved unchanged</span></div>`;
+            const trans = (r.transitions || [])
+              .map(
+                (t, j) => `<div class="flex gap-2 items-center mb-1">
+                  <span>After</span><input type="number" min="1" class="input w-24" data-f="tdays" data-j="${j}" value="${num(t.days)}" />
+                  <span>days →</span>
+                  <select class="input" data-f="tclass" data-j="${j}">${STORAGE_CLASSES.map(
+                    (c) => `<option${c === t.storageClass ? ' selected' : ''}>${c}</option>`,
+                  ).join('')}</select>
+                  <button class="btn-icon" aria-label="Remove transition" onclick="removeLifecycleTransition(${i},${j})"><i data-icon="trash"></i></button>
+                </div>`,
+              )
+              .join('');
+            return `<div class="mb-3 rounded border p-3" data-i="${i}">
+              <div class="flex gap-2 items-center mb-2">
+                <input class="input" data-f="id" placeholder="Rule ID" value="${esc(r.id)}" />
+                <label class="flex items-center gap-1"><input type="checkbox" data-f="enabled"${r.enabled === false ? '' : ' checked'} /> Enabled</label>
+                <button class="btn-icon text-bad-500 ml-auto" aria-label="Remove rule" onclick="removeLifecycleRule(${i})"><i data-icon="trash"></i></button>
+              </div>
+              <label class="field-label">Prefix (empty = whole bucket)</label>
+              <input class="input mb-2" data-f="prefix" value="${esc(r.prefix)}" />
+              <div class="flex gap-4 flex-wrap mb-2">
+                <label>Expire after (days)<br /><input type="number" min="1" class="input w-28" data-f="exp" value="${num(r.expirationDays)}" /></label>
+                <label>Delete noncurrent versions after (days)<br /><input type="number" min="1" class="input w-28" data-f="ncdays" value="${num(r.noncurrentDays)}" /></label>
+                <label>…but keep newest (versions)<br /><input type="number" min="1" class="input w-28" data-f="nckeep" value="${num(r.noncurrentKeepVersions)}" /></label>
+                <label>Abort incomplete uploads after (days)<br /><input type="number" min="1" class="input w-28" data-f="abort" value="${num(r.abortIncompleteMultipartDays)}" /></label>
+              </div>
+              <label class="flex items-center gap-1 mb-2"><input type="checkbox" data-f="markers"${r.expireDeleteMarkers ? ' checked' : ''} /> Remove expired delete markers (cannot be combined with "Expire after")</label>
+              <div>${trans}</div>
+              <button class="btn-secondary" onclick="addLifecycleTransition(${i})"><i data-icon="plus"></i> Add transition</button>
+            </div>`;
+          })
+          .join('');
+        refreshIcons();
+      }
+      function readLifecycleInputs() {
+        document.querySelectorAll('#lifecycleRules [data-i]').forEach((card) => {
+          const r = lcRules[Number(card.dataset.i)];
+          const val = (f) => card.querySelector(`[data-f="${f}"]`);
+          const n = (f) => {
+            const v = val(f).value.trim();
+            return v === '' ? null : parseInt(v, 10);
+          };
+          r.id = val('id').value.trim();
+          r.enabled = val('enabled').checked;
+          r.prefix = val('prefix').value;
+          r.expirationDays = n('exp');
+          r.noncurrentDays = n('ncdays');
+          r.noncurrentKeepVersions = n('nckeep');
+          r.abortIncompleteMultipartDays = n('abort');
+          r.expireDeleteMarkers = val('markers').checked;
+          r.transitions = [...card.querySelectorAll('[data-f="tdays"]')].map((el, j) => ({
+            days: el.value.trim() === '' ? null : parseInt(el.value, 10),
+            storageClass: card.querySelectorAll('[data-f="tclass"]')[j].value,
+          }));
+        });
+      }
+      function addLifecycleRule() {
+        readLifecycleInputs();
+        lcRules.push({ id: '', enabled: true, prefix: '', transitions: [], editable: true });
+        renderLifecycle();
+      }
+      function removeLifecycleRule(i) {
+        readLifecycleInputs();
+        lcRules.splice(i, 1);
+        renderLifecycle();
+      }
+      function addLifecycleTransition(i) {
+        readLifecycleInputs();
+        lcRules[i].transitions.push({ days: 30, storageClass: 'STANDARD_IA' });
+        renderLifecycle();
+      }
+      function removeLifecycleTransition(i, j) {
+        readLifecycleInputs();
+        lcRules[i].transitions.splice(j, 1);
+        renderLifecycle();
+      }
+      function saveBucketLifecycle() {
+        readLifecycleInputs();
+        cfgClearError('bucketLifecycleError');
+        const editable = lcRules.filter((r) => r.editable);
+        apiFetch(cfgUrl('lifecycle'), {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ rules: editable }),
+        })
+          .then(async (r) => {
+            if (r.ok) {
+              closeDialog('bucketLifecycleModal');
+              showToast('Lifecycle rules saved', 'success');
+            } else
+              cfgError(
+                'bucketLifecycleError',
+                await getResponseErrorMessage(r, 'Failed to save lifecycle rules'),
+              );
+          })
+          .catch((e) => cfgError('bucketLifecycleError', e.message));
       }
     </script>
   </body>
