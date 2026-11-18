@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.9.2 - 2026-11-18
+
+### [1.9.2](https://github.com/wenisch-tech/s3webui/compare/v1.9.1...v1.9.2) (2026-11-18)
+
+
+### Bug Fixes
+
+* make upload dialog scrollable with many files ([#123](https://github.com/wenisch-tech/s3webui/issues/123)) ([177a931](https://github.com/wenisch-tech/s3webui/commit/177a931fe06cde2985d683f966d8a418a004311d))
+
+
+
+Docker image: ghcr.io/wenisch-tech/s3webui:1.9.2
+
+
 ## v1.9.1 - 2026-11-18
 
 ### [1.9.1](https://github.com/wenisch-tech/s3webui/compare/v1.9.0...v1.9.1) (2026-11-18)
