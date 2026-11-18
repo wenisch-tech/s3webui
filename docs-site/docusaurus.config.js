@@ -55,8 +55,14 @@ const config = {
       logo: { alt: 'S3 Web UI', src: 'img/logo.png' },
       items: [
         { type: 'docSidebar', sidebarId: 'docs', position: 'left', label: 'Documentation' },
-        { href: 'https://artifacthub.io/packages/helm/jfwenisch/s3webui', label: 'Helm chart', position: 'right' },
-        { href: 'https://github.com/wenisch-tech/s3webui', label: 'GitHub', position: 'right' },
+        {
+          href: 'https://artifacthub.io/packages/helm/jfwenisch/s3webui', position: 'right',
+          className: 'navbar-icon navbar-icon--helm', 'aria-label': 'Helm chart on Artifact Hub', title: 'Helm chart on Artifact Hub',
+        },
+        {
+          href: 'https://github.com/wenisch-tech/s3webui', position: 'right',
+          className: 'navbar-icon navbar-icon--github', 'aria-label': 'GitHub repository', title: 'GitHub repository',
+        },
       ],
     },
     footer: {

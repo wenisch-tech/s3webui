@@ -1,4 +1,4 @@
-# Administer S3 Web UI
+# Administration
 
 Use this section to control who can sign in, which storage connections they can use, and how supported storage backends are administered.
 
