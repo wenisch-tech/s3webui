@@ -21,6 +21,7 @@ const config = {
     mermaid: true,
     hooks: { onBrokenMarkdownLinks: 'throw' },
   },
+  plugins: ['docusaurus-plugin-image-zoom'],
   themes: [
     '@docusaurus/theme-mermaid',
     [
@@ -64,6 +65,12 @@ const config = {
         'S3 Web UI is open-source software made in Germany, licensed under AGPL-3.0.<br/>' +
         '<a href="https://github.com/wenisch-tech/s3webui">GitHub</a> · ' +
         '<a href="https://github.com/wenisch-tech/s3webui/issues/new">Report a bug</a>',
+    },
+    // Click an image to enlarge it.
+    zoom: {
+      selector: '.markdown img:not(.no-zoom)',
+      background: { light: 'rgba(7, 19, 28, 0.82)', dark: 'rgba(7, 19, 28, 0.9)' },
+      config: { margin: 24 },
     },
     docs: { sidebar: { hideable: true, autoCollapseCategories: true } },
     tableOfContents: { minHeadingLevel: 2, maxHeadingLevel: 3 },
