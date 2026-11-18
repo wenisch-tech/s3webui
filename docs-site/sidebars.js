@@ -8,13 +8,13 @@ const sidebars = {
       items: [
         'Installation/Docker',
         'Installation/Helm',
-        'Installation/First-Steps',
         'Installation/Configuration',
         'Installation/Reverse-Proxy',
       ],
     },
+    'First-Steps',
     {
-      type: 'category', label: 'Use', collapsed: true,
+      type: 'category', label: 'Usage', collapsed: true,
       link: { type: 'doc', id: 'Usage/README' },
       items: ['Usage/User-Guide', 'Usage/Storage-Workflows', 'Usage/Bucket-Configuration', 'Usage/Audit-History'],
     },

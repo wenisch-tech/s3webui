@@ -1,4 +1,4 @@
-# Use S3 Web UI
+# Usage
 
 Use this section to work with buckets and objects after selecting an S3 key.
 

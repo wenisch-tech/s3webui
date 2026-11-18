@@ -24,7 +24,7 @@ helm install s3webui oci://ghcr.io/wenisch-tech/helm-charts/s3webui \
   --set secrets.ADMIN_PASSWORD='replace-with-a-strong-password'
 ```
 
-Reach the application with `kubectl port-forward svc/s3webui 8080:8080`, or enable the ingress below. Continue with [First sign-in](First-Steps.md).
+Reach the application with `kubectl port-forward svc/s3webui 8080:8080`, or enable the ingress below. Continue with [First sign-in](../First-Steps.md).
 
 Upgrade with `helm upgrade s3webui wenisch-tech/s3webui --reuse-values`.
 

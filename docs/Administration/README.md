@@ -19,4 +19,4 @@ Use this section to control who can sign in, which storage connections they can 
 | [IAM policies and bucket access](IAM-Policies.md) | grant bucket access with the visual editor or JSON policies |
 | [Internal browser API (reference)](API.md) | understand the browser API boundary and its support status |
 
-For application deployment, return to [Install S3 Web UI](../Installation/README.md). For daily bucket and object work, go to [Use S3 Web UI](../Usage/README.md).
+For application deployment, return to [Install S3 Web UI](../Installation/README.md). For daily bucket and object work, go to [Usage](../Usage/README.md).
