@@ -7,7 +7,7 @@ const config = {
   tagline: 'A browser interface for S3-compatible object storage',
   favicon: 'img/favicon.png',
   // Served from the root of its host; override through the environment for a sub-path or another host.
-  url: process.env.DOCS_URL || 'https://wenisch-tech.github.io',
+  url: process.env.DOCS_URL || 'https://s3webui.wenisch.tech',
   baseUrl: process.env.DOCS_BASE_URL || '/',
   organizationName: 'wenisch-tech',
   projectName: 's3webui',
@@ -49,7 +49,7 @@ const config = {
 
   themeConfig: /** @type {import('@docusaurus/preset-classic').ThemeConfig} */ ({
     image: 'img/social-card.png',
-    colorMode: { defaultMode: 'light', respectPrefersColorScheme: true },
+    colorMode: { defaultMode: 'light', respectPrefersColorScheme: false },
     navbar: {
       title: 'S3 Web UI',
       logo: { alt: 'S3 Web UI', src: 'img/logo.png' },
