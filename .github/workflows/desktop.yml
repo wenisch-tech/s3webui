@@ -57,20 +57,24 @@ jobs:
           -DskipTests -Djacoco.skip=true -Ddesktop.app.version="$APP_VERSION"
           pre-integration-test
 
-      - name: Keep app-image for the Arch job
-        run: tar -C target/dist -cf s3webui-appimage.tar S3WEBUI
+      - name: Create portable archive
+        run: |
+          tar -C target/dist -czf "s3webui-${APP_VERSION}-linux-x64-portable.tar.gz" S3WEBUI
 
       - uses: actions/upload-artifact@v7
         with:
-          name: s3webui-appimage
-          path: s3webui-appimage.tar
+          name: s3webui-portable
+          path: s3webui-*-linux-x64-portable.tar.gz
 
       - uses: actions/upload-artifact@v7
         with:
-          name: s3webui-linux
-          path: |
-            target/dist/*.deb
-            target/dist/*.rpm
+          name: s3webui-deb
+          path: target/dist/*.deb
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: s3webui-rpm
+          path: target/dist/*.rpm
 
   arch:
     name: Arch (pacman)
@@ -82,12 +86,12 @@ jobs:
 
       - uses: actions/download-artifact@v7
         with:
-          name: s3webui-appimage
+          name: s3webui-portable
 
       - name: Build pacman package
         run: |
           pacman -Syu --noconfirm base-devel git
-          mkdir -p target/dist && tar -C target/dist -xf s3webui-appimage.tar
+          mkdir -p target/dist && tar -C target/dist -xzf s3webui-*-linux-x64-portable.tar.gz
           useradd -m builder
           chown -R builder .
           v="${RAW_VERSION:-1.0.0}"
@@ -187,7 +191,6 @@ jobs:
       - name: Checksums
         run: |
           cd dist
-          rm -f s3webui-appimage.tar
           sha256sum * > SHA256SUMS
 
       - name: Upload to GitHub release
