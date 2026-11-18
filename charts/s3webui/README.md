@@ -1,6 +1,10 @@
 # S3WebUI Helm Chart
 
+[![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/jfwenisch)](https://artifacthub.io/packages/helm/jfwenisch/s3webui)
+
 A Kubernetes Helm chart for deploying **S3WebUI** — a graphical web interface for S3-compatible object storage systems like MinIO, AWS S3, and others.
+
+![S3 Web UI product tour (dark theme)](https://raw.githubusercontent.com/wenisch-tech/s3webui/main/docs/.img/s3webui-tour-dark.gif)
 
 ## Features
 
@@ -22,11 +26,15 @@ A Kubernetes Helm chart for deploying **S3WebUI** — a graphical web interface 
 
 ### Add the Chart Repository
 
-If the chart is hosted in a Helm registry:
+```bash
+helm repo add wenisch-tech https://charts.wenisch.tech
+helm repo update
+```
+
+Or install straight from the OCI registry, without adding a repository:
 
 ```bash
-helm repo add wenisch-tech https://charts.example.com
-helm repo update
+helm install s3webui oci://ghcr.io/wenisch-tech/helm-charts/s3webui
 ```
 
 ### Install the Chart
