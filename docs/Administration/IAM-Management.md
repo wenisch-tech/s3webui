@@ -1,4 +1,8 @@
-# IAM management
+---
+sidebar_label: Storage IAM
+---
+
+# Manage storage users, groups and policies (IAM)
 
 S3 Web UI can administer identities and permissions on a supported **storage backend**. This is separate from S3 Web UI's own local users and OIDC sign-in: the IAM tab changes the users, groups, access keys, and policies understood by the selected S3-compatible service.
 
@@ -113,4 +117,4 @@ IAM mutations made through this UI are recorded in **History**. They do not incl
 - Test new policies against non-production buckets and identities first.
 - Confirm the active S3 key before applying a destructive IAM change.
 
-For application-level key grants and local user administration, see the [administration overview](Administration.md). For storage endpoints and deployment settings, see [Deployment](../Installation/Deployment.md).
+For application-level key grants and local user administration, see the [administration overview](Administration.md). For storage endpoints and deployment settings, see [configuration reference](../Installation/Configuration.md).

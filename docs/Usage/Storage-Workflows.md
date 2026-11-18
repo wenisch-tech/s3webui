@@ -1,4 +1,8 @@
-# Storage workflows
+---
+sidebar_label: Buckets and files
+---
+
+# Work with buckets and files
 
 This guide covers the bucket browser, object operations, search, uploads, and storage statistics. The underlying S3 key decides what the storage service permits; S3 Web UI does not add permissions to that key.
 

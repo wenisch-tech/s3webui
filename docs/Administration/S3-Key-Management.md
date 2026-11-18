@@ -1,4 +1,8 @@
-# S3 key management
+---
+sidebar_label: S3 keys
+---
+
+# Share storage connections with S3 keys
 
 An S3 key in S3 Web UI is a named storage connection: endpoint URL, region, access key, secret key, TLS setting, and grants. It is not an application user. See [Authentication](Authentication.md) for who can sign in and [IAM management](IAM-Management.md) for creating backend identities.
 
@@ -31,4 +35,4 @@ Enable reveal only for a deliberate credential-distribution workflow. Prefer gra
 
 ## Recovery and backup
 
-Stored secrets can be decrypted only with the same `APP_ENCRYPTION_KEY`. Back up the database and that key together. With the default H2 database, both are normally under `APP_DATA_DIR`; persist `/app/data` in the container. See [Deployment](../Installation/Deployment.md#persistence-and-database) for PostgreSQL and encryption-key guidance.
+Stored secrets can be decrypted only with the same `APP_ENCRYPTION_KEY`. Back up the database and that key together. With the default H2 database, both are normally under `APP_DATA_DIR`; persist `/app/data` in the container. See [Deployment](../Installation/Configuration.md#persistence-and-database) for PostgreSQL and encryption-key guidance.

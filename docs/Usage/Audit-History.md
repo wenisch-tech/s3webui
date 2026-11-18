@@ -1,4 +1,8 @@
-# Audit history
+---
+sidebar_label: Activity history
+---
+
+# Review the activity history
 
 Open **History** to review actions performed through S3 Web UI. The table lists newest entries first and can be filtered by user and action.
 

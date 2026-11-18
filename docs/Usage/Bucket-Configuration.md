@@ -1,4 +1,8 @@
-# Bucket policies and CORS
+---
+sidebar_label: Bucket settings
+---
+
+# Bucket policies, CORS, versioning and lifecycle rules
 
 Open a bucket and select **Permissions** or **CORS** to configure that bucket on the storage backend. These controls require the selected S3 key to have the corresponding backend permissions.
 

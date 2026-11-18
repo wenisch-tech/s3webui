@@ -3,17 +3,23 @@ const sidebars = {
   docs: [
     'README',
     {
-      type: 'category', label: 'Installation', collapsed: true,
+      type: 'category', label: 'Install', collapsed: true,
       link: { type: 'doc', id: 'Installation/README' },
-      items: ['Installation/Getting-Started', 'Installation/Deployment', 'Installation/Helm-Chart'],
+      items: [
+        'Installation/Docker',
+        'Installation/Helm',
+        'Installation/First-Steps',
+        'Installation/Configuration',
+        'Installation/Reverse-Proxy',
+      ],
     },
     {
-      type: 'category', label: 'Usage', collapsed: true,
+      type: 'category', label: 'Use', collapsed: true,
       link: { type: 'doc', id: 'Usage/README' },
       items: ['Usage/User-Guide', 'Usage/Storage-Workflows', 'Usage/Bucket-Configuration', 'Usage/Audit-History'],
     },
     {
-      type: 'category', label: 'Administration', collapsed: true,
+      type: 'category', label: 'Administer', collapsed: true,
       link: { type: 'doc', id: 'Administration/README' },
       items: [
         'Administration/Administration',

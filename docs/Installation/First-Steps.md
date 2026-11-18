@@ -1,36 +1,16 @@
-# Getting started
+---
+sidebar_label: First sign-in
+---
 
-This guide starts S3 Web UI with an S3-compatible endpoint, connects it, and explains the first sign-in. The example uses RustFS, but the application works with compatible endpoints such as AWS S3, Ceph RGW, and MinIO for normal object operations.
+# First sign-in and connecting storage
 
-## 1. Start storage and S3 Web UI
+S3 Web UI is running ([Docker](Docker.md) or [Helm](Helm.md)) and you want to sign in, connect an S3-compatible endpoint and upload a first file. The application works with endpoints such as AWS S3, Ceph RGW, RustFS and MinIO for normal object operations.
 
-For a quick local test, run RustFS:
+## 1. Sign in
 
-```bash
-docker run -d --name rustfs -p 9000:9000 -p 9001:9001 \
-  -v rustfs-data:/data \
-  -e RUSTFS_ACCESS_KEY=S3WEBUI \
-  -e RUSTFS_SECRET_KEY=s3webui-secret \
-  -e RUSTFS_ADDRESS=:9000 \
-  -e RUSTFS_CONSOLE_ADDRESS=:9001 \
-  rustfs/rustfs:latest /data
-```
+Open the address of your instance, for example <http://localhost:8080>. On a new database, sign in with `admin@s3webui.local` / `admin`, then change the password under **Settings → Users**. If you set `ADMIN_PASSWORD` during installation, use that instead.
 
-Then start S3 Web UI. The data volume is deliberate: it preserves users, stored S3 keys, and the generated encryption key across container replacement.
-
-```bash
-docker run -d --name s3webui -p 8080:8080 \
-  --add-host=host.docker.internal:host-gateway \
-  -v s3webui-data:/app/data \
-  -e S3_ACCESS_KEY=S3WEBUI \
-  -e S3_SECRET_KEY=s3webui-secret \
-  -e S3_ENDPOINT_URL=http://host.docker.internal:9000 \
-  ghcr.io/wenisch-tech/s3webui:latest
-```
-
-Open <http://localhost:8080>. On a new database, sign in with `admin@s3webui.local` / `admin`, then change the password under **Settings → Users**.
-
-The three `S3_*` values above create a built-in S3 key available to all signed-in users. It is read-only in the administration panel; its effective storage permissions still come from the S3 credential. Alternatively, leave the variables unset and add keys in the application as described below.
+If you started the application with `S3_ACCESS_KEY`, `S3_SECRET_KEY` and `S3_ENDPOINT_URL`, a built-in S3 key is already available to every signed-in user and you can continue with step 3. It is read-only in the administration panel; its effective storage permissions still come from the S3 credential.
 
 ## 2. Connect an endpoint from the UI
 
