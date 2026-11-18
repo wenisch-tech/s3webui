@@ -1,0 +1,53 @@
+name: Documentation
+
+on:
+  push:
+    branches: [main, docs/updated-docs]
+    paths: ['docs/**', 'docs-site/**', '.github/workflows/docs-pages.yml']
+  pull_request:
+    paths: ['docs/**', 'docs-site/**', '.github/workflows/docs-pages.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# One Pages site, so every deploy shares a group; the newest push wins.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: docs-site/package-lock.json
+      - name: Install
+        working-directory: docs-site
+        run: npm ci
+      - name: Build (fails on broken links)
+        working-directory: docs-site
+        run: npm run build
+      - name: Upload Pages artifact
+        if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/docs/updated-docs')
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: docs-site/build
+
+  deploy:
+    needs: build
+    if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/docs/updated-docs')
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5
