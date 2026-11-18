@@ -28,6 +28,6 @@ For another IdP, configure its claim/mapper settings to emit one of the shapes a
 
 ### Authelia and other providers that need a scope
 
-Authelia only includes `groups` when the client requests the `groups` scope. Allow it in the Authelia client (`scopes: [openid, profile, email, groups]`) and set `OIDC_ADDITIONAL_SCOPES=groups` in S3 Web UI. S3 Web UI reads the claim from both the ID token and the UserInfo response. If your Authelia version leaves `groups` out of the ID token, it still arrives through UserInfo, or you can attach a `claims_policy` to the client.
+Authelia only releases the `groups` claim when the client is allowed the `groups` scope **and** the application requests it. Set `OIDC_ADDITIONAL_SCOPES=groups` (or `OIDC_PROVIDERS_0_ADDITIONAL_SCOPES=groups`) in S3 Web UI; Authelia's default client scopes already include `groups`. S3 Web UI reads the claim from both the ID token and the UserInfo response, which is where Authelia delivers it by default. The [Keycloak and Authelia examples](OIDC-Examples.md) show the whole setup.
 
 Application administrator status is deliberately different: it is read from the local S3 Web UI user record. An IdP role named `admin` can match an S3-key role grant, but it cannot make a person an S3 Web UI administrator.

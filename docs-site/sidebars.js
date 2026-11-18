@@ -32,6 +32,7 @@ const sidebars = {
           items: [
             'Administration/OIDC-Concepts',
             'Administration/OIDC-Setup',
+            'Administration/OIDC-Examples',
             'Administration/OIDC-Roles-And-Groups',
             'Administration/OIDC-Troubleshooting',
             'Administration/Open-Access',

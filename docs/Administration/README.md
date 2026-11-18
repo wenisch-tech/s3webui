@@ -11,6 +11,7 @@ Use this section to control who can sign in, which storage connections they can 
 | [Choose a sign-in method](Authentication.md) | decide between local accounts, OIDC single sign-on and no sign-in |
 | [How OIDC sign-in works](OIDC-Concepts.md) | understand issuer, client ID, secret and redirect URI |
 | [Set up OIDC single sign-on](OIDC-Setup.md) | connect Keycloak, Entra ID, Okta or another provider |
+| [Keycloak and Authelia examples](OIDC-Examples.md) | copy a complete provider and application setup for Docker or Helm |
 | [Map OIDC roles and groups to S3 keys](OIDC-Roles-And-Groups.md) | decide who may use which storage connection |
 | [Troubleshoot OIDC sign-in](OIDC-Troubleshooting.md) | fix callback errors, missing buttons and wrong access |
 | [Run without sign-in](Open-Access.md) | disable authentication on a trusted network |
