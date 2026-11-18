@@ -65,4 +65,46 @@ class OidcPropertiesTest {
 
         assertThrows(IllegalStateException.class, properties::getResolvedProviders);
     }
+
+    @Test
+    void requestsOnlyDefaultScopesUnlessConfigured() {
+        OidcProperties properties = new OidcProperties();
+        properties.setClientId("s3webui");
+        properties.setIssuerUri("https://auth.example.com");
+
+        assertEquals(List.of("openid", "profile", "email"), properties.getResolvedProviders().get(0).scopes());
+    }
+
+    @Test
+    void appendsGlobalAdditionalScopesAndNormalisesThem() {
+        OidcProperties properties = new OidcProperties();
+        properties.setClientId("s3webui");
+        properties.setIssuerUri("https://auth.example.com");
+        properties.setAdditionalScopes(" groups, email  offline_access ,,");
+
+        assertEquals(List.of("openid", "profile", "email", "groups", "offline_access"),
+                properties.getResolvedProviders().get(0).scopes());
+    }
+
+    @Test
+    void providerScopesOverrideGlobalOnes() {
+        OidcProperties.Provider withOwn = new OidcProperties.Provider();
+        withOwn.setName("Authelia");
+        withOwn.setClientId("a");
+        withOwn.setIssuerUri("https://a.example.com");
+        withOwn.setAdditionalScopes("groups");
+
+        OidcProperties.Provider inherits = new OidcProperties.Provider();
+        inherits.setName("Other");
+        inherits.setClientId("b");
+        inherits.setIssuerUri("https://b.example.com");
+
+        OidcProperties properties = new OidcProperties();
+        properties.setAdditionalScopes("roles");
+        properties.setProviders(List.of(withOwn, inherits));
+
+        List<OidcProperties.ResolvedProvider> resolved = properties.getResolvedProviders();
+        assertEquals(List.of("openid", "profile", "email", "groups"), resolved.get(0).scopes());
+        assertEquals(List.of("openid", "profile", "email", "roles"), resolved.get(1).scopes());
+    }
 }

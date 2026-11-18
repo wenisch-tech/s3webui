@@ -101,6 +101,9 @@ env:
   OIDC_CLIENT_ID: ""
   OIDC_ISSUER_URI: ""
   OIDC_REQUIRED_ROLE: ""
+  # Extra scopes to request on top of openid/profile/email, e.g. "groups" for Authelia
+  # (per provider: OIDC_PROVIDERS_0_ADDITIONAL_SCOPES)
+  OIDC_ADDITIONAL_SCOPES: ""
   # Create a local record the first time an unknown SSO user signs in
   OIDC_CREATEUSERS: "true"
   OIDC_INSECURE_SKIP_TLS_VERIFY: "false"
