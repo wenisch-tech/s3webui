@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.11.1 - 2026-11-18
+
+### [1.11.1](https://github.com/wenisch-tech/s3webui/compare/v1.11.0...v1.11.1) (2026-11-18)
+
+
+### Documentation
+
+* updates docs regarding OIDC usage ([27892ee](https://github.com/wenisch-tech/s3webui/commit/27892ee507b191558cae08657f20bbac9ca7af21))
+
+
+
+Docker image: ghcr.io/wenisch-tech/s3webui:1.11.1
+
+
 ## v1.11.0 - 2026-11-18
 
 ## [1.11.0](https://github.com/wenisch-tech/s3webui/compare/v1.10.0...v1.11.0) (2026-11-18)
