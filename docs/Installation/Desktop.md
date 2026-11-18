@@ -24,6 +24,7 @@ Download the package for your system from the [GitHub releases](https://github.c
 | Arch Linux, CachyOS | `s3webui-<version>-1-x86_64.pkg.tar.zst` | `sudo pacman -U s3webui-*.pkg.tar.zst` |
 | Debian, Ubuntu | `s3webui_<version>-1_amd64.deb` | `sudo apt install ./s3webui_*.deb` |
 | Fedora, openSUSE | `s3webui-<version>-1.x86_64.rpm` | `sudo dnf install ./s3webui-*.rpm` |
+| Any Linux (x86_64) | `s3webui-<version>-linux-x64-portable.tar.gz` | extract it and run `S3WEBUI/bin/S3WEBUI`; no install, but GTK 3 and the X11/GL libraries must be present |
 | Windows | `S3WEBUI-<version>.msi` | double-click the installer |
 | macOS, Apple Silicon | `S3WEBUI-<version>-arm64.dmg` | drag the app to Applications |
 | macOS, Intel | `S3WEBUI-<version>-x64.dmg` | drag the app to Applications |
