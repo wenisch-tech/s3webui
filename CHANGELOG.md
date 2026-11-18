@@ -1,5 +1,30 @@
 # Changelog
 
+## v1.10.0 - 2026-11-18
+
+## [1.10.0](https://github.com/wenisch-tech/s3webui/compare/v1.9.2...v1.10.0) (2026-11-18)
+
+
+### Features
+
+* initial commit new  docs with docusauras ([ffb028a](https://github.com/wenisch-tech/s3webui/commit/ffb028af39e1e7f51b2768383e15719156be9462))
+
+
+### Bug Fixes
+
+* make documentation light mode per default. updated badges ([c95b71e](https://github.com/wenisch-tech/s3webui/commit/c95b71e03fa363b46d8d03866dced54758b8bcfa))
+* updated doc structure ([92c25a7](https://github.com/wenisch-tech/s3webui/commit/92c25a773996610379c0654d0b5ad65d08e1eacd))
+* updated docs structure ([b8cffb9](https://github.com/wenisch-tech/s3webui/commit/b8cffb921acf183805ff63addacfce09cd56eeeb))
+* updated docs structure ([2546084](https://github.com/wenisch-tech/s3webui/commit/2546084e865950cf27198c0464e3289d1b9abfcd))
+* updated documenation baseurl and relating links at the bottom of the application ([7d935eb](https://github.com/wenisch-tech/s3webui/commit/7d935eb0711b1bf3dd90dfa38c48e0494b46cb2d))
+* updated images ([dc9911e](https://github.com/wenisch-tech/s3webui/commit/dc9911e56b2eb083f8464ce0a749428c63036a65))
+* updated menus in documentation ([4fb3bcb](https://github.com/wenisch-tech/s3webui/commit/4fb3bcbdb142740daeacff078f4afa0e56840abc))
+
+
+
+Docker image: ghcr.io/wenisch-tech/s3webui:1.10.0
+
+
 ## v1.9.2 - 2026-11-18
 
 ### [1.9.2](https://github.com/wenisch-tech/s3webui/compare/v1.9.1...v1.9.2) (2026-11-18)
