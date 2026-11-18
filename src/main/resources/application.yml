@@ -39,6 +39,8 @@ management:
 app:
   data-dir: ${APP_DATA_DIR:./data}
   encryption-key: ${APP_ENCRYPTION_KEY:}
+  # save keys users type in as stored S3 keys (the desktop edition turns this on)
+  auto-store-keys: ${AUTOSTOREKEYS:false}
   admin:
     email: ${ADMIN_EMAIL:admin@s3webui.local}
     password: ${ADMIN_PASSWORD:admin}

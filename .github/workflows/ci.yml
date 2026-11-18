@@ -110,3 +110,15 @@ jobs:
       image: ${{ needs.versioning.outputs.image }}
       digest: ${{ needs.docker.outputs.digest }}
     secrets: inherit
+
+  desktop:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && !contains(github.event.head_commit.message, '[skip ci]')
+    needs:
+      - versioning
+      - release
+    permissions:
+      contents: write
+    uses: ./.github/workflows/desktop.yml
+    with:
+      version: ${{ needs.versioning.outputs.version }}
+      tag: ${{ needs.versioning.outputs.tag }}

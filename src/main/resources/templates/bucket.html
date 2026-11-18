@@ -915,9 +915,11 @@
       function downloadSelectedZip() {
         const keys = selectedObjectKeys();
         if (!keys.length) return;
-        location.href = appUrl(
-          `/api/buckets/${encodeURIComponent(BUCKET)}/objects/zip?` +
-            keys.map((k) => 'key=' + encodeURIComponent(k)).join('&'),
+        startDownload(
+          appUrl(
+            `/api/buckets/${encodeURIComponent(BUCKET)}/objects/zip?` +
+              keys.map((k) => 'key=' + encodeURIComponent(k)).join('&'),
+          ),
         );
       }
       let transferIsCopy = false;

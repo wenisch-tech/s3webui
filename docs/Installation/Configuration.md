@@ -49,6 +49,7 @@ docker run -d -p 8080:8080 \
 | `S3_INSECURE_SKIP_TLS_VERIFY` | Disables S3 certificate verification | `false` |
 | `IAM_ENABLED` | Shows storage-backend IAM management | `true` |
 | `DISABLE_AUTHENTICATION` | Makes all visitors administrators | `false` |
+| `AUTOSTOREKEYS` | Saves S3 keys that a user types in as stored keys, so they appear in the key picker next time. Needs **Users may use their own credentials** to be on. The desktop edition turns it on | `false` |
 
 See [Choose a sign-in method](../Administration/Authentication.md) for the sign-in modes, and [Set up OIDC single sign-on](../Administration/OIDC-Setup.md) for the OIDC variables.
 

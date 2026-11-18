@@ -56,6 +56,33 @@ public class S3CredentialService {
         return credentialRepository.save(credential);
     }
 
+    /**
+     * Stores keys a user typed in, so they show up in the key picker next time. Used when
+     * {@code AUTOSTOREKEYS} is on (desktop edition). The name is derived from the access key and endpoint host,
+     * so entering the same key again updates the stored one instead of creating a duplicate. Stored keys are
+     * handed to every signed-in user.
+     */
+    @Transactional
+    public S3Credential saveAutoStored(String accessKey, String secretKey, String endpointUrl, String region,
+                                       boolean insecureSkipTlsVerify, String createdBy) {
+        String name = accessKey + " @ " + endpointUrl.replaceFirst("^[a-zA-Z][a-zA-Z0-9+.-]*://", "")
+                .replaceFirst("/+$", "");
+        Optional<S3Credential> existing = credentialRepository.findByNameIgnoreCase(name);
+        if (existing.isPresent()) {
+            S3Credential credential = existing.get();
+            credential.setEndpointUrl(endpointUrl);
+            credential.setRegion(blankToDefault(region));
+            credential.setAccessKey(accessKey);
+            credential.setSecretKey(secretKey);
+            credential.setInsecureSkipTlsVerify(insecureSkipTlsVerify);
+            credential.setEnabled(true);
+            return credentialRepository.save(credential);
+        }
+        return create(new CredentialForm(name, endpointUrl, region, accessKey, secretKey,
+                insecureSkipTlsVerify, true, false,
+                List.of(new GrantForm(GrantType.ALL_AUTHENTICATED, null))), createdBy);
+    }
+
     @Transactional
     public S3Credential update(Long id, CredentialForm form) {
         S3Credential credential = get(id);

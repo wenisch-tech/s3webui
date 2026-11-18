@@ -8,6 +8,7 @@ const sidebars = {
       items: [
         'Installation/Docker',
         'Installation/Helm',
+        'Installation/Desktop',
         'Installation/Configuration',
         'Installation/Reverse-Proxy',
       ],

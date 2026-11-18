@@ -26,6 +26,7 @@ class S3ConnectionSettingsServiceTest {
 
     private S3CredentialAccessService accessService;
     private AppSettingsService appSettingsService;
+    private S3CredentialService credentialService;
     private S3ConnectionSettingsService service;
     private MockHttpServletRequest request;
 
@@ -34,6 +35,7 @@ class S3ConnectionSettingsServiceTest {
     void setUp() {
         accessService = mock(S3CredentialAccessService.class);
         appSettingsService = mock(AppSettingsService.class);
+        credentialService = mock(S3CredentialService.class);
         when(appSettingsService.isUserSuppliedCredentialsAllowed()).thenReturn(true);
 
         request = new MockHttpServletRequest();
@@ -42,7 +44,8 @@ class S3ConnectionSettingsServiceTest {
         ObjectProvider<HttpSession> sessionProvider = mock(ObjectProvider.class);
         when(sessionProvider.getIfAvailable()).thenReturn(null);
 
-        service = new S3ConnectionSettingsService(sessionProvider, accessService, appSettingsService);
+        service = new S3ConnectionSettingsService(sessionProvider, accessService, appSettingsService,
+                credentialService);
 
         SecurityContextHolder.getContext().setAuthentication(
                 new UsernamePasswordAuthenticationToken("bob@example.com", "n/a", List.of()));
@@ -172,6 +175,32 @@ class S3ConnectionSettingsServiceTest {
         when(appSettingsService.isUserSuppliedCredentialsAllowed()).thenReturn(false);
 
         assertThat(service.isSelectionRequired()).isTrue();
+    }
+
+    @Test
+    void typedInKeysAreStoredWhenAutoStoreIsOn() {
+        org.springframework.test.util.ReflectionTestUtils.setField(service, "autoStoreKeys", true);
+        var stored = tech.wenisch.s3webui.entity.S3Credential.builder().id(42L).name("own-access @ minio.local").build();
+        when(credentialService.saveAutoStored(eq("own-access"), eq("own-secret"), eq("https://minio.local"),
+                any(), eq(false), any())).thenReturn(stored);
+        when(accessService.resolve(any(), eq("42"))).thenReturn(
+                new ResolvedCredential("42", "own-access @ minio.local", "own-access", "own-secret",
+                        "https://minio.local", "us-east-1", false));
+
+        service.selectOwnCredentials(new S3ConnectionSettingsService.SubmittedS3Settings(
+                "own-access", "own-secret", "https://minio.local", null, false));
+
+        assertThat(service.getActiveCredentialId()).isEqualTo("42");
+        assertThat(service.isSelectionRequired()).isFalse();
+    }
+
+    @Test
+    void typedInKeysAreNotStoredByDefault() {
+        service.selectOwnCredentials(new S3ConnectionSettingsService.SubmittedS3Settings(
+                "own-access", "own-secret", "https://minio.local", null, false));
+
+        org.mockito.Mockito.verifyNoInteractions(credentialService);
+        assertThat(service.getActiveCredentialId()).isNull();
     }
 
     @Test
