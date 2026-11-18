@@ -4,9 +4,30 @@ sidebar_label: S3 keys
 
 # Share storage connections with S3 keys
 
-An S3 key in S3 Web UI is a named storage connection: endpoint URL, region, access key, secret key, TLS setting, and grants. It is not an application user. See [Authentication](Authentication.md) for who can sign in and [IAM management](IAM-Management.md) for creating backend identities.
+An S3 key in S3 Web UI is a named storage connection: endpoint URL, region, access key, secret key, TLS setting, and grants. It is not an application user. See [Choose a sign-in method](Authentication.md) for who can sign in and [IAM management](IAM-Management.md) for creating backend identities.
 
-## Create, edit, disable, and delete
+## Create and grant a key
+
+1. Open **Settings → S3 keys → New key**.
+2. Give the connection a recognisable name, then supply its endpoint URL, region, access key, and secret key. Secrets are encrypted at rest with AES-256-GCM.
+3. Keep the key enabled and leave TLS-verification bypass off for normal deployments.
+4. Under **Who may use this key**, add one or more grants, then save.
+
+| Grant | Who may select the key |
+|---|---|
+| Everyone signed in | Every authenticated local or OIDC user |
+| A user (e-mail) | The matching e-mail identity |
+| A role | Users whose application role or OIDC role matches it |
+| A group | Users whose OIDC `groups` claim matches it |
+| No grants | Administrators only |
+
+Grants are checked on each request. Removing a grant therefore takes effect immediately, including for a session that had already selected the key. Administrators can always select stored keys.
+
+For an OIDC role or group grant, enter the unprefixed value delivered by the identity provider. S3 Web UI recognises Keycloak-style realm roles, client roles, and the standard `groups` array; see [Map OIDC roles and groups to S3 keys](OIDC-Roles-And-Groups.md) for the exact claim shapes and examples.
+
+The configured built-in key (`S3_ACCESS_KEY`, `S3_SECRET_KEY`, `S3_ENDPOINT_URL`) appears in the picker for everyone but cannot be changed in the settings panel.
+
+## Edit, disable, and delete
 
 Use **Settings → S3 keys** to create or edit a stored connection. The secret is encrypted with AES-256-GCM before it is stored.
 
@@ -21,7 +42,7 @@ The environment-configured key (`S3_ACCESS_KEY`, `S3_SECRET_KEY`, `S3_ENDPOINT_U
 
 Grant a key to everyone signed in, a specific e-mail address, an application/OIDC role, or an OIDC group. A key with no grants is administrator-only. Authorization is rechecked for each request, so disabling a key or removing its grant takes effect without waiting for the user to sign out.
 
-For exact OIDC claim mappings, see [Map OIDC roles and groups to S3 keys](Authentication.md#map-oidc-roles-and-groups-to-s3-keys).
+For exact OIDC claim mappings, see [Map OIDC roles and groups to S3 keys](OIDC-Roles-And-Groups.md).
 
 ## Own credentials and reveal
 
