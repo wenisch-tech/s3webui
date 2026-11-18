@@ -19,7 +19,7 @@ ensure it returns to the same application instance and, when TLS is in front of 
 | Symptom | What to check |
 |---|---|
 | The sign-in button is missing | `OIDC_ENABLED` must be `true`, and `DISABLE_AUTHENTICATION` must not be `true`: it ignores OIDC. |
-| The provider reports a wrong redirect URI | Register exactly `https://<public-host>/login/oauth2/code/<registration-id>`. The registration ID is `keycloak` for the single-provider setup, or the one you set for indexed providers. |
+| The provider reports a wrong redirect URI | Register exactly `https://<public-host>/login/oauth2/code/<registration-id>`. The registration ID is `keycloak` for the single-provider setup, or the one you set for indexed providers; see [the registration ID](OIDC-Setup.md#the-registration-id). |
 | Sign-in succeeds at the provider but the application rejects it | The token must expose a stable e-mail address. Set `OIDC_PROVIDERS_<n>_USER_NAME_ATTRIBUTE` only if the provider uses another username claim. |
 | A new person is turned away | `OIDC_CREATEUSERS=false` requires an administrator to create the account first. `OIDC_REQUIRED_ROLE` also restricts entry to people with that role; administrators remain allowed. |
 | A person signs in but sees no storage | They need a matching grant on an S3 key: see [Map OIDC roles and groups to S3 keys](OIDC-Roles-And-Groups.md). Role and group changes at the provider apply after their next sign-in. |

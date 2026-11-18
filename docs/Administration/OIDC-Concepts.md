@@ -17,7 +17,7 @@ An OIDC client needs four pieces of information:
 | Issuer URI | The IdP's stable OIDC address. S3 Web UI uses it to discover authorization, token, and signing-key endpoints. |
 | Client ID | The IdP's identifier for this S3 Web UI installation. |
 | Client secret | A credential held by the application to authenticate the authorization-code exchange; store it in a secret manager or Kubernetes Secret. |
-| Redirect URI | The return address registered at the IdP, normally `https://<public-host>/login/oauth2/code/<registration-id>`. |
+| Redirect URI | The return address registered at the IdP, normally `https://<public-host>/login/oauth2/code/<registration-id>`. The registration ID is a label you choose; see [Set up OIDC](OIDC-Setup.md#the-registration-id). |
 
 At sign-in, the browser is redirected to the IdP, the user authenticates there, and the IdP returns an authorization code to the redirect URI. S3 Web UI exchanges that code server-side for OIDC tokens and validates their signature, issuer, audience, and expiry. The e-mail claim is the application's stable user identity. The app requests the standard `openid`, `profile`, and `email` scopes, plus any you add with `OIDC_ADDITIONAL_SCOPES` (see [Set up OIDC](OIDC-Setup.md)).
 

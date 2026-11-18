@@ -113,10 +113,18 @@ env:
   # browsers over plain HTTP, which would break sign-in entirely):
   # SERVER_SERVLET_SESSION_COOKIE_SAME_SITE: "None"
   # SERVER_SERVLET_SESSION_COOKIE_SECURE: "true"
-  # Multi-provider example:
+  # Multi-provider example. Full Keycloak and Authelia setups:
+  # https://s3webui.wenisch.tech/Administration/OIDC-Examples/
   # OIDC_PROVIDERS_0_NAME: "Company SSO"
+  # The registration ID is only a label, but it ends the redirect URI you register at the provider:
+  #   https://<your-host>/login/oauth2/code/<registration-id>
+  # They must match exactly. Optional: defaults to the lower-cased name ("company-sso"). The
+  # single-provider variables above always use "keycloak", whichever provider you use.
+  # OIDC_PROVIDERS_0_REGISTRATION_ID: "company-sso"
   # OIDC_PROVIDERS_0_CLIENT_ID: "s3webui"
   # OIDC_PROVIDERS_0_ISSUER_URI: "https://auth.example.com/realms/main"
+  # Extra scopes for this provider, e.g. "groups" for Authelia (replaces OIDC_ADDITIONAL_SCOPES):
+  # OIDC_PROVIDERS_0_ADDITIONAL_SCOPES: "groups"
   # OIDC_PROVIDERS_1_NAME: "Partner Login"
   # OIDC_PROVIDERS_1_CLIENT_ID: "s3webui-partner"
   # OIDC_PROVIDERS_1_ISSUER_URI: "https://login.partner.example/realms/partner"
