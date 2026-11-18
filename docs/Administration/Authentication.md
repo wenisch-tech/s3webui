@@ -1,4 +1,8 @@
-# Authentication
+---
+sidebar_label: Sign-in and OIDC
+---
+
+# Sign-in: local accounts, OIDC and open access
 
 S3 Web UI can use local accounts, OIDC single sign-on, or a deliberately unprotected mode for an already trusted network. This guide explains application identity; see the [administration overview](Administration.md) for granting the S3 keys that identities may select.
 

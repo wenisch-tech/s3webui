@@ -1,16 +1,36 @@
-# Helm chart reference
+---
+sidebar_label: Kubernetes (Helm)
+---
 
-The chart is located at [`charts/s3webui`](https://github.com/wenisch-tech/s3webui/tree/main/charts/s3webui). Use this guide with [Deployment](Deployment.md) for application configuration and persistence rationale.
+# Run on Kubernetes with Helm
 
-## Durable single-replica installation
+The Helm chart deploys S3 Web UI with persistence, Secrets, ingress, health probes and a hardened Pod. It is published on [Artifact Hub](https://artifacthub.io/packages/helm/jfwenisch/s3webui) and its source is in [`charts/s3webui`](https://github.com/wenisch-tech/s3webui/tree/main/charts/s3webui). Application settings, the database choice and the encryption key are explained in the [configuration reference](Configuration.md).
+
+## Install the chart
+
+Add the chart repository, or install straight from the OCI registry:
 
 ```bash
-helm install s3webui ./charts/s3webui \
+helm repo add wenisch-tech https://charts.wenisch.tech
+helm repo update
+helm install s3webui wenisch-tech/s3webui \
   --set persistence.enabled=true \
   --set secrets.ADMIN_PASSWORD='replace-with-a-strong-password'
 ```
 
-The default H2 database and generated encryption key live in `/app/data`. Enable persistence unless PostgreSQL is configured and `APP_ENCRYPTION_KEY` is supplied through a secret.
+```bash
+helm install s3webui oci://ghcr.io/wenisch-tech/helm-charts/s3webui \
+  --set persistence.enabled=true \
+  --set secrets.ADMIN_PASSWORD='replace-with-a-strong-password'
+```
+
+Reach the application with `kubectl port-forward svc/s3webui 8080:8080`, or enable the ingress below. Continue with [First sign-in](First-Steps.md).
+
+Upgrade with `helm upgrade s3webui wenisch-tech/s3webui --reuse-values`.
+
+## Durable single-replica installation
+
+The commands above create one replica with the default H2 database. The database and the generated encryption key live in `/app/data`. Enable persistence unless PostgreSQL is configured and `APP_ENCRYPTION_KEY` is supplied through a secret.
 
 ## Values that affect availability
 
@@ -66,10 +86,10 @@ ingress:
         - s3webui.example.com
 ```
 
-`SERVER_FORWARD_HEADERS_STRATEGY=framework` is enabled by default so S3 Web UI honors forwarded host and scheme headers. For an OIDC session-cookie callback issue behind TLS, see [Authentication](../Administration/Authentication.md#proxy-and-callback-configuration).
+`SERVER_FORWARD_HEADERS_STRATEGY=framework` is enabled by default so S3 Web UI honors forwarded host and scheme headers. For an OIDC session-cookie callback issue behind TLS, see [Authentication](../Administration/Authentication.md#proxy-and-callback-configuration) and [Reverse proxy and sub-path](Reverse-Proxy.md).
 
 ## Pod placement and security
 
 The chart runs as a non-root user, drops Linux capabilities, and lets you set `nodeSelector`, `tolerations`, and `affinity`. Its root filesystem is writable by default because H2 and the generated encryption key need application data storage; mounting the configured data path is the durable approach.
 
-For HA deployment design and PostgreSQL configuration, see [Deployment](Deployment.md#persistence-and-database).
+For HA deployment design and PostgreSQL configuration, see the [configuration reference](Configuration.md#persistence-and-database).

@@ -1,4 +1,8 @@
-# User guide
+---
+sidebar_label: Interface overview
+---
+
+# Get around the interface
 
 This is a short orientation for day-to-day work. For step-by-step object operations, see [Storage workflows](Storage-Workflows.md); for security-sensitive bucket settings, see [Bucket policies and CORS](Bucket-Configuration.md).
 

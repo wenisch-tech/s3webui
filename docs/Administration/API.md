@@ -1,4 +1,8 @@
-# Internal API surface
+---
+sidebar_label: Internal API
+---
+
+# Internal browser API (reference)
 
 S3 Web UI's browser interface uses JSON endpoints under `/api`. They require the same authenticated browser session and CSRF protections as the UI. They are an implementation surface for the bundled UI, not a versioned public integration API; endpoint shapes may change between releases.
 

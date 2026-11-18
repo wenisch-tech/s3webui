@@ -1,3 +1,7 @@
+---
+sidebar_label: Welcome
+---
+
 # S3 Web UI documentation
 
 S3 Web UI is a browser interface for S3-compatible object storage. It separates the person using the application from the S3 credentials used for a storage session: an administrator stores and grants named S3 keys, then users select an allowed key before browsing buckets.
@@ -8,9 +12,9 @@ S3 Web UI is a browser interface for S3-compatible object storage. It separates 
 
 Choose the section that matches your task:
 
-- [Installation](Installation/README.md) — first run, Docker and PostgreSQL deployment, and Helm.
-- [Usage](Usage/README.md) — buckets, objects, uploads, search, CORS, policies, and history.
-- [Administration](Administration/README.md) — S3 keys, grants, local users, OIDC, and storage-backend IAM.
+- [Install S3 Web UI](Installation/README.md) — run it with Docker or Helm, sign in for the first time, and configure the database and proxy.
+- [Use S3 Web UI](Usage/README.md) — buckets, objects, uploads, search, CORS, policies, and history.
+- [Administer S3 Web UI](Administration/README.md) — S3 keys, grants, local users, OIDC, and storage-backend IAM.
 
 ## How access fits together
 
@@ -36,4 +40,4 @@ An S3 key is a named endpoint, access key, secret key, and region. It is not an 
 - Do not enable **Skip TLS certificate verification** in production.
 - `DISABLE_AUTHENTICATION=true` makes every visitor an administrator. Put it behind a trusted network boundary only.
 
-For configuration reference and examples, begin with [Installation](Installation/README.md). For access configuration, continue to [Administration](Administration/README.md).
+For configuration reference and examples, begin with [Install S3 Web UI](Installation/README.md). For access configuration, continue to [Administer S3 Web UI](Administration/README.md).

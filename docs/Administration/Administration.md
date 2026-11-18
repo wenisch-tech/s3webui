@@ -1,9 +1,9 @@
 ---
 slug: /Administration/overview/
-sidebar_label: Overview
+sidebar_label: Settings panel
 ---
 
-# Administration
+# Manage users, S3 keys and options in Settings
 
 Only application administrators can open **Settings**. The panel has S3 keys, Users, Options, and IAM tabs. In disabled-authentication mode, the Users tab is intentionally absent.
 
