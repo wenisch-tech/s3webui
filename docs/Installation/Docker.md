@@ -19,7 +19,7 @@ docker run -d --name s3webui -p 8080:8080 \
   ghcr.io/wenisch-tech/s3webui:latest
 ```
 
-Open <http://localhost:8080> and continue with [First sign-in](First-Steps.md). The three `S3_*` values are optional: they create a built-in S3 key for every signed-in user. Without them you add keys in the application.
+Open <http://localhost:8080> and continue with [First sign-in](../First-Steps.md). The three `S3_*` values are optional: they create a built-in S3 key for every signed-in user. Without them you add keys in the application.
 
 Pin a version tag such as `ghcr.io/wenisch-tech/s3webui:1.9.1` instead of `latest` for reproducible deployments. Images are signed with cosign.
 
