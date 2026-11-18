@@ -4,8 +4,8 @@ description: A graphical web interface for S3 object storage
 type: application
 kubeVersion: ">=1.20.0-0"
 icon: https://raw.githubusercontent.com/wenisch-tech/s3webui/main/src/main/resources/static/img/logo.png
-version: 1.11.1
-appVersion: "1.11.1"
+version: 1.11.2
+appVersion: "1.11.2"
 keywords:
   - s3
   - object-storage
