@@ -6,9 +6,9 @@ const config = {
   title: 'S3 Web UI',
   tagline: 'A browser interface for S3-compatible object storage',
   favicon: 'img/favicon.png',
-  // Served at https://wenisch-tech.github.io/s3webui/; override through the environment for other hosts.
+  // Served from the root of its host; override through the environment for a sub-path or another host.
   url: process.env.DOCS_URL || 'https://wenisch-tech.github.io',
-  baseUrl: process.env.DOCS_BASE_URL || '/s3webui/',
+  baseUrl: process.env.DOCS_BASE_URL || '/',
   organizationName: 'wenisch-tech',
   projectName: 's3webui',
   onBrokenLinks: 'throw',
