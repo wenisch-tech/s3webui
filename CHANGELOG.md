@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.11.0 - 2026-11-18
+
+## [1.11.0](https://github.com/wenisch-tech/s3webui/compare/v1.10.0...v1.11.0) (2026-11-18)
+
+
+### Features
+
+* added supportion for optional additional scopes ([f36374c](https://github.com/wenisch-tech/s3webui/commit/f36374cde0f000d6d08fce9fc0ae489914f57873)), closes [#63](https://github.com/wenisch-tech/s3webui/issues/63)
+
+
+
+Docker image: ghcr.io/wenisch-tech/s3webui:1.11.0
+
+
 ## v1.10.0 - 2026-11-18
 
 ## [1.10.0](https://github.com/wenisch-tech/s3webui/compare/v1.9.2...v1.10.0) (2026-11-18)
