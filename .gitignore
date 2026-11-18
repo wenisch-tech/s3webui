@@ -24,3 +24,8 @@ skills-lock.json
 /docs-site/node_modules/
 /docs-site/build*/
 /docs-site/.docusaurus/
+
+# makepkg output
+packaging/arch/pkg/
+packaging/arch/src/
+packaging/arch/*.pkg.tar.*

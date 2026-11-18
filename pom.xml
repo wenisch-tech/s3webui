@@ -20,6 +20,8 @@
 
     <properties>
         <java.version>17</java.version>
+        <!-- desktop launcher needs JavaFX; only compiled with -Pdesktop -->
+        <desktop.exclude>tech/wenisch/s3webui/desktop/**</desktop.exclude>
         <aws-sdk.version>2.59.1</aws-sdk.version>
         <!-- Boot 4.1.1 still manages 11.0.24, which carries several CVEs (incl. CVE-2026-65182,
              a security constraint bypass) fixed in 11.0.25. Override until Boot's BOM catches up. -->
@@ -217,6 +219,12 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
+                    <excludes>
+                        <exclude>${desktop.exclude}</exclude>
+                    </excludes>
+                    <testExcludes>
+                        <testExclude>${desktop.exclude}</testExclude>
+                    </testExcludes>
                     <annotationProcessorPaths>
                         <path>
                             <groupId>org.projectlombok</groupId>
@@ -246,4 +254,286 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>desktop</id>
+            <properties>
+                <desktop.exclude>NONE</desktop.exclude>
+                <javafx.version>27.0.1.1</javafx.version>
+            </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>org.openjfx</groupId>
+                    <artifactId>javafx-controls</artifactId>
+                    <version>${javafx.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.openjfx</groupId>
+                    <artifactId>javafx-web</artifactId>
+                    <version>${javafx.version}</version>
+                </dependency>
+            </dependencies>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.openjfx</groupId>
+                        <artifactId>javafx-maven-plugin</artifactId>
+                        <version>0.0.8</version>
+                        <configuration>
+                            <mainClass>tech.wenisch.s3webui.desktop.DesktopApplication</mainClass>
+                            <options>
+                                <option>--enable-native-access=javafx.graphics,javafx.web,javafx.media</option>
+                            </options>
+                        </configuration>
+                    </plugin>
+                    <!-- keep the plain jar thin; the executable one gets the "exec" classifier -->
+                    <plugin>
+                        <groupId>org.springframework.boot</groupId>
+                        <artifactId>spring-boot-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>repackage</id>
+                                <configuration>
+                                    <classifier>exec</classifier>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <!-- Collects the jpackage input: thin jar + libs (classpath) + JavaFX jars (module path) -->
+        <profile>
+            <id>desktop-package</id>
+            <properties>
+                <desktop.input>${project.build.directory}/desktop/input</desktop.input>
+                <desktop.dist>${project.build.directory}/dist</desktop.dist>
+                <desktop.app.name>S3WEBUI</desktop.app.name>
+                <!-- jpackage needs a numeric X.Y.Z; CI overrides with -Ddesktop.app.version=... -->
+                <desktop.app.version>${project.version}</desktop.app.version>
+                <!-- modules the non-modular Spring app needs in the bundled runtime (verify with jdeps) -->
+                <desktop.modules>java.base,java.compiler,java.datatransfer,java.desktop,java.instrument,java.logging,java.management,java.management.rmi,java.naming,java.net.http,java.prefs,java.rmi,java.scripting,java.security.jgss,java.security.sasl,java.sql,java.sql.rowset,java.transaction.xa,java.xml,java.xml.crypto,jdk.crypto.ec,jdk.httpserver,jdk.jfr,jdk.management,jdk.net,jdk.unsupported,jdk.xml.dom,jdk.zipfs,jdk.jdi,jdk.jsobject</desktop.modules>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-dependency-plugin</artifactId>
+                        <version>3.11.0</version>
+                        <executions>
+                            <execution>
+                                <id>desktop-libs</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>copy-dependencies</goal>
+                                </goals>
+                                <configuration>
+                                    <outputDirectory>${desktop.input}/lib</outputDirectory>
+                                    <includeScope>runtime</includeScope>
+                                    <excludeGroupIds>org.openjfx</excludeGroupIds>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>desktop-javafx</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>copy-dependencies</goal>
+                                </goals>
+                                <configuration>
+                                    <outputDirectory>${desktop.input}/javafx</outputDirectory>
+                                    <includeGroupIds>org.openjfx</includeGroupIds>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.panteleyev</groupId>
+                        <artifactId>jpackage-maven-plugin</artifactId>
+                        <version>1.8.0</version>
+                        <configuration>
+                            <name>${desktop.app.name}</name>
+                            <appVersion>${desktop.app.version}</appVersion>
+                            <vendor>wenisch.tech</vendor>
+                            <description>Graphical web interface for S3 object storage</description>
+                            <copyright>wenisch.tech</copyright>
+                            <input>${desktop.input}</input>
+                            <destination>${desktop.dist}</destination>
+                            <mainJar>${project.build.finalName}.jar</mainJar>
+                            <mainClass>tech.wenisch.s3webui.desktop.DesktopLauncher</mainClass>
+                            <addModules>
+                                <addModule>${desktop.modules}</addModule>
+                            </addModules>
+                            <javaOptions>
+                                <option>--module-path=$APPDIR/javafx</option>
+                                <option>--add-modules=javafx.controls,javafx.web</option>
+                                <option>--enable-native-access=javafx.graphics,javafx.web,javafx.media</option>
+                                <option>-Xmx1g</option>
+                                <option>-Dfile.encoding=UTF-8</option>
+                            </javaOptions>
+                            <jLinkOptions>
+                                <jLinkOption>--strip-debug</jLinkOption>
+                                <jLinkOption>--no-header-files</jLinkOption>
+                                <jLinkOption>--no-man-pages</jLinkOption>
+                            </jLinkOptions>
+                        </configuration>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-resources-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>desktop-main-jar</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <configuration>
+                                    <outputDirectory>${desktop.input}</outputDirectory>
+                                    <resources>
+                                        <resource>
+                                            <directory>${project.build.directory}</directory>
+                                            <includes>
+                                                <include>${project.build.finalName}.jar</include>
+                                            </includes>
+                                        </resource>
+                                    </resources>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <id>desktop-linux-image</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.panteleyev</groupId>
+                        <artifactId>jpackage-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>app-image</id>
+                                <phase>pre-integration-test</phase>
+                                <goals>
+                                    <goal>jpackage</goal>
+                                </goals>
+                                <configuration>
+                                    <type>APP_IMAGE</type>
+                                    <icon>${project.basedir}/packaging/icons/s3webui.png</icon>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <id>desktop-linux-packages</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.panteleyev</groupId>
+                        <artifactId>jpackage-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>deb</id>
+                                <phase>pre-integration-test</phase>
+                                <goals>
+                                    <goal>jpackage</goal>
+                                </goals>
+                                <configuration>
+                                    <type>DEB</type>
+                                    <licenseFile>${project.basedir}/LICENSE</licenseFile>
+                                    <icon>${project.basedir}/packaging/icons/s3webui.png</icon>
+                                    <linuxPackageName>s3webui</linuxPackageName>
+                                    <linuxShortcut>true</linuxShortcut>
+                                    <linuxAppCategory>Utility</linuxAppCategory>
+                                    <linuxDebMaintainer>jean-fabian@wenisch.tech</linuxDebMaintainer>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>rpm</id>
+                                <phase>pre-integration-test</phase>
+                                <goals>
+                                    <goal>jpackage</goal>
+                                </goals>
+                                <configuration>
+                                    <type>RPM</type>
+                                    <licenseFile>${project.basedir}/LICENSE</licenseFile>
+                                    <icon>${project.basedir}/packaging/icons/s3webui.png</icon>
+                                    <linuxPackageName>s3webui</linuxPackageName>
+                                    <linuxShortcut>true</linuxShortcut>
+                                    <linuxAppCategory>Utility</linuxAppCategory>
+                                    <linuxRpmLicenseType>AGPL-3.0</linuxRpmLicenseType>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <id>desktop-windows</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.panteleyev</groupId>
+                        <artifactId>jpackage-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>msi</id>
+                                <phase>pre-integration-test</phase>
+                                <goals>
+                                    <goal>jpackage</goal>
+                                </goals>
+                                <configuration>
+                                    <type>MSI</type>
+                                    <licenseFile>${project.basedir}/LICENSE</licenseFile>
+                                    <icon>${project.basedir}/packaging/icons/s3webui.ico</icon>
+                                    <winMenu>true</winMenu>
+                                    <winShortcut>true</winShortcut>
+                                    <winPerUserInstall>true</winPerUserInstall>
+                                    <winUpgradeUuid>5d9c1f4e-7b0a-4c52-9a31-2f6e8d0b7a14</winUpgradeUuid>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <id>desktop-mac</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.panteleyev</groupId>
+                        <artifactId>jpackage-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>dmg</id>
+                                <phase>pre-integration-test</phase>
+                                <goals>
+                                    <goal>jpackage</goal>
+                                </goals>
+                                <configuration>
+                                    <type>DMG</type>
+                                    <licenseFile>${project.basedir}/LICENSE</licenseFile>
+                                    <icon>${project.basedir}/packaging/icons/s3webui.icns</icon>
+                                    <macPackageName>S3WEBUI</macPackageName>
+                                    <macPackageIdentifier>tech.wenisch.s3webui</macPackageIdentifier>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

@@ -1,11 +1,12 @@
 # Install S3 Web UI
 
-S3 Web UI runs as a single container. Choose how you want to run it, then continue with [First sign-in](../First-Steps.md) to connect your storage.
+S3 Web UI runs as a single container, or as an experimental desktop application. Choose how you want to run it, then continue with [First sign-in](../First-Steps.md) to connect your storage.
 
 | Guide | Use it when you want to… |
 |---|---|
 | [Run with Docker](Docker.md) | start S3 Web UI on one machine with `docker run` or Docker Compose |
 | [Run on Kubernetes with Helm](Helm.md) | deploy to a cluster with persistence, Secrets, ingress and health probes |
+| [Run as a desktop application (experimental)](Desktop.md) | use S3 Web UI as a native app on Linux, Windows or macOS without Docker |
 | [Configure the database, encryption key and environment variables](Configuration.md) | use PostgreSQL, keep the encryption key safe or look up a setting |
 | [Put S3 Web UI behind a reverse proxy](Reverse-Proxy.md) | add TLS, run behind nginx or an ingress, or publish under a path prefix |
 

@@ -3,6 +3,7 @@ package tech.wenisch.s3webui.service;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -32,6 +33,11 @@ public class S3ConnectionSettingsService {
     private final ObjectProvider<HttpSession> sessionProvider;
     private final S3CredentialAccessService credentialAccessService;
     private final AppSettingsService appSettingsService;
+    private final S3CredentialService credentialService;
+
+    /** When true, keys a user types in are saved as stored S3 keys (set automatically in the desktop edition). */
+    @Value("${app.auto-store-keys:false}")
+    private boolean autoStoreKeys;
 
     /** The keys the signed-in user may choose from. */
     public List<S3CredentialView> listAvailableCredentials() {
@@ -132,6 +138,15 @@ public class S3ConnectionSettingsService {
 
         if (accessKey == null || secretKey == null || endpointUrl == null) {
             throw new MissingS3ConfigurationException("Access key, secret key and endpoint URL are required");
+        }
+
+        if (autoStoreKeys) {
+            Authentication authentication = currentAuthentication();
+            var stored = credentialService.saveAutoStored(accessKey, secretKey, endpointUrl, region,
+                    submitted.insecureSkipTlsVerify(),
+                    authentication == null ? "auto" : authentication.getName());
+            store(new Selection(String.valueOf(stored.getId()), null, null, null, null, false));
+            return;
         }
 
         store(new Selection(null, accessKey, secretKey, endpointUrl, region == null ? "us-east-1" : region,

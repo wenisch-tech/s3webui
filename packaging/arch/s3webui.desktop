@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=S3WEBUI
+Comment=Graphical interface for S3 object storage
+Exec=s3webui
+Icon=s3webui
+Terminal=false
+Categories=Utility;Network;
+StartupWMClass=tech-wenisch-s3webui-desktop-DesktopLauncher
