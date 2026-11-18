@@ -188,7 +188,7 @@ public class SecurityConfig {
             var builder = ClientRegistrations.fromIssuerLocation(provider.issuerUri())
                     .registrationId(provider.registrationId())
                     .clientId(provider.clientId())
-                    .scope("openid", "profile", "email")
+                    .scope(provider.scopes())
                     .userNameAttributeName(provider.userNameAttribute())
                     .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
                     .redirectUri("{baseUrl}/login/oauth2/code/{registrationId}");

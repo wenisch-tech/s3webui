@@ -63,5 +63,6 @@ oidc:
   client-secret: ${OIDC_CLIENT_SECRET:}
   issuer-uri: ${OIDC_ISSUER_URI:}
   required-role: ${OIDC_REQUIRED_ROLE:}
+  additional-scopes: ${OIDC_ADDITIONAL_SCOPES:}
   create-users: ${OIDC_CREATEUSERS:true}
   insecure-skip-tls-verify: ${OIDC_INSECURE_SKIP_TLS_VERIFY:false}

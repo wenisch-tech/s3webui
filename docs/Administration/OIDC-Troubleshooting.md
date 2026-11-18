@@ -23,6 +23,7 @@ ensure it returns to the same application instance and, when TLS is in front of 
 | Sign-in succeeds at the provider but the application rejects it | The token must expose a stable e-mail address. Set `OIDC_PROVIDERS_<n>_USER_NAME_ATTRIBUTE` only if the provider uses another username claim. |
 | A new person is turned away | `OIDC_CREATEUSERS=false` requires an administrator to create the account first. `OIDC_REQUIRED_ROLE` also restricts entry to people with that role; administrators remain allowed. |
 | A person signs in but sees no storage | They need a matching grant on an S3 key: see [Map OIDC roles and groups to S3 keys](OIDC-Roles-And-Groups.md). Role and group changes at the provider apply after their next sign-in. |
+| Group grants never match (Authelia, others) | The provider may release `groups` only on request. Set `OIDC_ADDITIONAL_SCOPES=groups` and allow the scope on the client, then sign in again. |
 | A person is not an administrator although their provider role is `admin` | By design. Administrator status comes only from the local user record: see [Manage local user accounts](Local-Users.md). |
 | Certificate error talking to the provider | Repair the issuer's trust chain. Never enable `OIDC_INSECURE_SKIP_TLS_VERIFY` except while diagnosing a non-production issuer. |
 

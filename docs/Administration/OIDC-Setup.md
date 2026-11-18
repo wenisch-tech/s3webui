@@ -41,6 +41,10 @@ For more than one provider, configure indexed variables such as `OIDC_PROVIDERS_
 `OIDC_PROVIDERS_0_USER_NAME_ATTRIBUTE` selects the username claim (default:
 `preferred_username`).
 
+### Request extra scopes
+
+S3 Web UI always requests `openid`, `profile` and `email`. Some providers only release further claims when asked for them, for example Authelia, which sends the `groups` claim only when the `groups` scope is requested. Set `OIDC_ADDITIONAL_SCOPES` to a comma- or space-separated list to add scopes for every provider, for example `OIDC_ADDITIONAL_SCOPES=groups`. `OIDC_PROVIDERS_0_ADDITIONAL_SCOPES` replaces that list for one indexed provider. The default scopes cannot be removed, and the provider must also allow the client to use the extra scope.
+
 ### Account creation and roles
 
 `OIDC_CREATEUSERS` defaults to `true`, which creates a local record when an unknown OIDC identity

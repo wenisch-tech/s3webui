@@ -26,4 +26,8 @@ The application internally prefixes these values as `ROLE_` and `GROUP_`; enter 
 
 For another IdP, configure its claim/mapper settings to emit one of the shapes above as an array of strings. Arbitrary claim names and nested role formats are not configurable in the UI today. A custom IdP mapper or a future application extension is needed when the provider cannot emit `realm_access.roles`, `resource_access.*.roles`, or `groups` in this form.
 
+### Authelia and other providers that need a scope
+
+Authelia only includes `groups` when the client requests the `groups` scope. Allow it in the Authelia client (`scopes: [openid, profile, email, groups]`) and set `OIDC_ADDITIONAL_SCOPES=groups` in S3 Web UI. S3 Web UI reads the claim from both the ID token and the UserInfo response. If your Authelia version leaves `groups` out of the ID token, it still arrives through UserInfo, or you can attach a `claims_policy` to the client.
+
 Application administrator status is deliberately different: it is read from the local S3 Web UI user record. An IdP role named `admin` can match an S3-key role grant, but it cannot make a person an S3 Web UI administrator.

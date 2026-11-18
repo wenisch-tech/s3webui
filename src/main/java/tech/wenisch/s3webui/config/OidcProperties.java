@@ -4,6 +4,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
@@ -21,6 +22,7 @@ public class OidcProperties {
     private String clientId = "";
     private String clientSecret = "";
     private String issuerUri = "";
+    private String additionalScopes = "";
     private List<Provider> providers = new ArrayList<>();
 
     public boolean isEnabled() {
@@ -87,6 +89,14 @@ public class OidcProperties {
         this.issuerUri = issuerUri;
     }
 
+    public String getAdditionalScopes() {
+        return additionalScopes;
+    }
+
+    public void setAdditionalScopes(String additionalScopes) {
+        this.additionalScopes = additionalScopes;
+    }
+
     public List<Provider> getProviders() {
         return providers;
     }
@@ -108,7 +118,8 @@ public class OidcProperties {
                     provider.clientId,
                     provider.clientSecret,
                     provider.issuerUri,
-                    provider.resolveUserNameAttribute()
+                    provider.resolveUserNameAttribute(),
+                    resolveScopes(hasText(provider.additionalScopes) ? provider.additionalScopes : additionalScopes)
             ));
             fallbackIndex++;
         }
@@ -125,7 +136,8 @@ public class OidcProperties {
                     clientId.trim(),
                     trimToEmpty(clientSecret),
                     issuerUri.trim(),
-                    "preferred_username"
+                    "preferred_username",
+                    resolveScopes(additionalScopes)
             ));
         }
 
@@ -139,6 +151,17 @@ public class OidcProperties {
                         provider.registrationId(),
                         "/oauth2/authorization/" + provider.registrationId()))
                 .toList();
+    }
+
+    /** The scopes every login requests, plus any configured extras (comma or whitespace separated). */
+    static List<String> resolveScopes(String additional) {
+        Set<String> scopes = new LinkedHashSet<>(List.of("openid", "profile", "email"));
+        if (hasText(additional)) {
+            Arrays.stream(additional.trim().split("[,\\s]+"))
+                    .filter(OidcProperties::hasText)
+                    .forEach(scopes::add);
+        }
+        return List.copyOf(scopes);
     }
 
     private boolean isLegacyConfigured() {
@@ -170,6 +193,15 @@ public class OidcProperties {
         private String clientSecret = "";
         private String issuerUri = "";
         private String userNameAttribute = "preferred_username";
+        private String additionalScopes = "";
+
+        public String getAdditionalScopes() {
+            return additionalScopes;
+        }
+
+        public void setAdditionalScopes(String additionalScopes) {
+            this.additionalScopes = additionalScopes;
+        }
 
         public String getName() {
             return name;
@@ -255,7 +287,8 @@ public class OidcProperties {
             String clientId,
             String clientSecret,
             String issuerUri,
-            String userNameAttribute
+            String userNameAttribute,
+            List<String> scopes
     ) {
     }
 
