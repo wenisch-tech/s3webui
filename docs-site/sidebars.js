@@ -24,8 +24,24 @@ const sidebars = {
       items: [
         'Administration/Administration',
         'Administration/S3-Key-Management',
-        'Administration/Authentication',
-        'Administration/IAM-Management',
+        'Administration/Local-Users',
+        'Administration/Runtime-Options',
+        {
+          type: 'category', label: 'Sign-in and OIDC', collapsed: true,
+          link: { type: 'doc', id: 'Administration/Authentication' },
+          items: [
+            'Administration/OIDC-Concepts',
+            'Administration/OIDC-Setup',
+            'Administration/OIDC-Roles-And-Groups',
+            'Administration/OIDC-Troubleshooting',
+            'Administration/Open-Access',
+          ],
+        },
+        {
+          type: 'category', label: 'Storage IAM', collapsed: true,
+          link: { type: 'doc', id: 'Administration/IAM-Management' },
+          items: ['Administration/IAM-Users-Groups', 'Administration/IAM-Policies'],
+        },
         'Administration/API',
       ],
     },

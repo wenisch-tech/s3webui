@@ -86,4 +86,4 @@ With Compose, run `docker compose pull && docker compose up -d`.
 
 - [Configuration reference](Configuration.md): environment variables, PostgreSQL and the encryption key.
 - [Reverse proxy and sub-path](Reverse-Proxy.md): TLS and publishing under a path.
-- [Sign-in and OIDC](../Administration/Authentication.md): single sign-on.
+- [Choose a sign-in method](../Administration/Authentication.md): local accounts or single sign-on.

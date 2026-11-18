@@ -50,7 +50,7 @@ docker run -d -p 8080:8080 \
 | `IAM_ENABLED` | Shows storage-backend IAM management | `true` |
 | `DISABLE_AUTHENTICATION` | Makes all visitors administrators | `false` |
 
-See [Authentication](../Administration/Authentication.md) for the OIDC variables and security consequences.
+See [Choose a sign-in method](../Administration/Authentication.md) for the sign-in modes, and [Set up OIDC single sign-on](../Administration/OIDC-Setup.md) for the OIDC variables.
 
 ## Health endpoints
 

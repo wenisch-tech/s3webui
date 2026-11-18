@@ -86,7 +86,7 @@ ingress:
         - s3webui.example.com
 ```
 
-`SERVER_FORWARD_HEADERS_STRATEGY=framework` is enabled by default so S3 Web UI honors forwarded host and scheme headers. For an OIDC session-cookie callback issue behind TLS, see [Authentication](../Administration/Authentication.md#proxy-and-callback-configuration) and [Reverse proxy and sub-path](Reverse-Proxy.md).
+`SERVER_FORWARD_HEADERS_STRATEGY=framework` is enabled by default so S3 Web UI honors forwarded host and scheme headers. For an OIDC session-cookie callback issue behind TLS, see [Troubleshoot OIDC sign-in](../Administration/OIDC-Troubleshooting.md) and [Reverse proxy and sub-path](Reverse-Proxy.md).
 
 ## Pod placement and security
 
