@@ -17,3 +17,5 @@ node_modules/
 /data/
 *.mv.db
 *.trace.db
+.agents/*
+skills-lock.json

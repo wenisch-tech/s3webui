@@ -534,14 +534,14 @@
     @apply fixed inset-0 z-50 grid place-items-center bg-slate-950/55 p-4 backdrop-blur-sm;
   }
   .modal-card {
-    @apply w-full max-w-lg overflow-hidden rounded-xl border border-slate-700/25 bg-white shadow-2xl;
+    @apply flex max-h-[calc(100dvh-2rem)] w-full max-w-lg flex-col overflow-hidden rounded-xl border border-slate-700/25 bg-white shadow-2xl;
   }
   html[data-theme='dark'] .modal-card {
     @apply border-slate-700 bg-slate-900;
   }
   .modal-header,
   .modal-footer {
-    @apply flex items-center justify-between gap-3 p-4;
+    @apply flex shrink-0 items-center justify-between gap-3 p-4;
   }
   .modal-header {
     @apply border-b;
@@ -549,8 +549,9 @@
   .modal-footer {
     @apply border-t;
   }
+  /* The card is a flex column capped to the viewport: header and footer stay pinned, only the body scrolls. */
   .modal-body {
-    @apply p-4;
+    @apply min-h-0 overflow-y-auto overscroll-contain p-4;
   }
   .dropdown-menu {
     @apply absolute right-0 z-20 mt-2 w-40 rounded-lg border border-slate-700/20 bg-white p-1 shadow-xl;
@@ -639,8 +640,39 @@
   .drop-zone.dragover {
     @apply border-brand-500 bg-brand-500/15;
   }
+  .drop-zone.compact {
+    @apply p-4;
+  }
+  .drop-zone.compact svg {
+    @apply hidden;
+  }
+  .drop-zone.compact p {
+    @apply mt-0;
+  }
+  .upload-summary {
+    @apply sticky -top-4 z-10 -mx-4 mb-2 mt-1 flex items-center justify-between gap-3 border-b border-slate-700/15 bg-white px-4 py-2 text-xs text-slate-500;
+  }
+  html[data-theme='dark'] .upload-summary {
+    @apply border-slate-700 bg-slate-900 text-slate-300;
+  }
+  .upload-summary strong {
+    @apply font-semibold text-slate-950;
+  }
+  html[data-theme='dark'] .upload-summary strong {
+    @apply text-white;
+  }
   .upload-item {
-    @apply mb-2 flex items-start gap-3 rounded-lg border border-slate-700/15 bg-slate-800/5 p-3;
+    @apply mb-2 flex items-center gap-2 rounded-lg border border-slate-700/15 bg-slate-800/5 py-2 pl-3 pr-2;
+  }
+  .upload-remove {
+    @apply inline-flex size-8 shrink-0 items-center justify-center rounded-md text-slate-500 transition hover:bg-bad-500/10 hover:text-bad-500;
+  }
+  .upload-remove svg {
+    @apply size-4;
+  }
+  .is-uploading .upload-remove,
+  .is-uploading .upload-clear {
+    @apply hidden;
   }
   html[data-theme='dark'] .upload-item {
     @apply border-slate-700 bg-slate-850;
