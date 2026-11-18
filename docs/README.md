@@ -15,7 +15,7 @@ Choose the section that matches your task:
 - [Install S3 Web UI](Installation/README.md) — run it with Docker or Helm, and configure the database and proxy.
 - [First sign-in and connecting storage](First-Steps.md) — sign in, connect an S3 endpoint and upload a first file.
 - [Usage](Usage/README.md) — buckets, objects, uploads, search, CORS, policies, and history.
-- [Administer S3 Web UI](Administration/README.md) — S3 keys, grants, local users, OIDC, and storage-backend IAM.
+- [Administration](Administration/README.md) — S3 keys, grants, local users, OIDC, and storage-backend IAM.
 
 ## How access fits together
 

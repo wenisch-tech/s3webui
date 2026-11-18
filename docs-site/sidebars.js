@@ -19,7 +19,7 @@ const sidebars = {
       items: ['Usage/User-Guide', 'Usage/Storage-Workflows', 'Usage/Bucket-Configuration', 'Usage/Audit-History'],
     },
     {
-      type: 'category', label: 'Administer', collapsed: true,
+      type: 'category', label: 'Administration', collapsed: true,
       link: { type: 'doc', id: 'Administration/README' },
       items: [
         'Administration/Administration',
@@ -44,6 +44,11 @@ const sidebars = {
         },
         'Administration/API',
       ],
+    },
+    { type: 'html', value: '<hr class="sidebar-divider" />', defaultStyle: false },
+    {
+      type: 'link', label: 'Release notes', href: 'https://github.com/wenisch-tech/s3webui/releases',
+      className: 'sidebar-icon-link sidebar-icon-link--release',
     },
   ],
 };
