@@ -41,7 +41,7 @@ For JSON examples and troubleshooting, see [Bucket policies and CORS](Bucket-Con
 
 **History** shows activity performed through S3 Web UI, including uploads, downloads, deletes, renames, and IAM changes. Filter the table by user or action to investigate a workflow.
 
-![The History page can filter the activity log by user and action](../.img/history.png)
+![The History page lists newest actions first and can filter by user and action](../.img/history.png)
 
 The history is an application audit trail, not an exhaustive S3 server audit log. Actions performed outside S3 Web UI are not added to it.
 

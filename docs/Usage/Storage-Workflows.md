@@ -18,6 +18,8 @@ The table sorts by name, creation date, size, and object count. The active S3 ke
 
 ## Browse and search objects
 
+![The object browser for the media-assets bucket](../.img/bucket-objects.png)
+
 Open a bucket to browse prefixes using the breadcrumb. S3 uses object keys, so folders are virtual prefixes rather than filesystem directories. **New folder** writes the prefix marker used by the interface.
 
 - Sort the object table by name, size, or last-modified time.
@@ -28,6 +30,8 @@ Open a bucket to browse prefixes using the breadcrumb. S3 uses object keys, so f
 ## Upload files
 
 Select **Upload** and choose files or drop them onto the dialog. Duplicate selections with the same name and size are ignored. Files are uploaded one at a time, so progress and a final success/failure count are clear for each file.
+
+![The upload dialog with four files queued: a summary row, Clear all, and an Upload button that stays visible however long the list gets](../.img/upload-dialog.png)
 
 | File size | Transfer method |
 |---|---|
