@@ -1,6 +1,6 @@
 # Helm chart reference
 
-The chart is located at [`charts/s3webui`](../../charts/s3webui). Use this guide with [Deployment](Deployment.md) for application configuration and persistence rationale.
+The chart is located at [`charts/s3webui`](https://github.com/wenisch-tech/s3webui/tree/main/charts/s3webui). Use this guide with [Deployment](Deployment.md) for application configuration and persistence rationale.
 
 ## Durable single-replica installation
 

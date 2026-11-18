@@ -4,6 +4,7 @@
 [![CI](https://github.com/wenisch-tech/s3webui/actions/workflows/ci.yml/badge.svg)](https://github.com/wenisch-tech/s3webui/actions/workflows/ci.yml)
 [![GitHub Release](https://img.shields.io/github/v/release/wenisch-tech/s3webui?logo=github)](https://github.com/wenisch-tech/Kairos/releases)
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPLv3-blue.svg)](LICENSE)
+[![Documentation](https://img.shields.io/badge/docs-wenisch--tech.github.io%2Fs3webui-079bb8)](https://wenisch-tech.github.io/s3webui/)
 [![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/jfwenisch)](https://artifacthub.io/packages/helm/jfwenisch/s3webui)
 [![Container](https://img.shields.io/badge/container-ghcr.io-blue?logo=github)](https://github.com/wenisch-tech/s3webui/pkgs/container/s3webui)
 [![Signed](https://img.shields.io/badge/signed-cosign-green?logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0id2hpdGUiIGQ9Ik0xMiAxTDMgNXY2YzAgNS41NSAzLjg0IDEwLjc0IDkgMTIgNS4xNi0xLjI2IDktNi40NSA5LTEyVjVsLTktNHoiLz48L3N2Zz4=)](https://github.com/wenisch-tech/Kairos/releases)
@@ -36,7 +37,7 @@ A modern, clean graphical web interface for S3-compatible object storage, with l
 
 ## Documentation
 
-The extended documentation lives in [docs/README.md](docs/README.md):
+The extended documentation is published at **<https://wenisch-tech.github.io/s3webui/>** (source in [docs/](docs/README.md)):
 
 - [Installation](docs/Installation/README.md)
 - [Usage](docs/Usage/README.md)

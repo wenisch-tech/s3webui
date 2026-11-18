@@ -52,7 +52,7 @@ The application listens on port 8080 and exposes health endpoints at `/actuator/
 
 ## Helm
 
-The chart is in [`charts/s3webui`](../../charts/s3webui). A minimal durable release is:
+The chart is in [`charts/s3webui`](https://github.com/wenisch-tech/s3webui/tree/main/charts/s3webui). A minimal durable release is:
 
 ```bash
 helm install s3webui ./charts/s3webui \
