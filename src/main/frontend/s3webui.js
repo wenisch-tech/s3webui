@@ -7,6 +7,7 @@ import { createObjectTableController, syncObjectSelectAll,
   toggleVisibleObjectSelection } from './object-sort.mjs';
 import { appUrl } from './url.js';
 import { interceptDownloadClick, startDownload } from './download.mjs';
+import { interceptExternalClick } from './external-links.mjs';
 import { globalSearchPagePath, globalSearchResultPath } from './global-search.mjs';
 import { bucketSearchApiPath, formatObjectSize, relativeBucketResultParent,
   relativeBucketResultPath } from './bucket-search.mjs';
@@ -25,7 +26,7 @@ window.principalDisplayName = principalDisplayName;
 window.appUrl = appUrl;
 window.startDownload = startDownload;
 // Capture phase, so it runs before any other click handler sees a download link.
-document.addEventListener('click', event => interceptDownloadClick(event), true);
+document.addEventListener('click', event => interceptDownloadClick(event) || interceptExternalClick(event), true);
 const objectTable = createObjectTableController();
 window.filterObjectTable = query => objectTable.filter(query);
 window.sortObjectTable = key => objectTable.sort(key);

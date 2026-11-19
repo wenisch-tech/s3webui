@@ -13,26 +13,39 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 
+import javafx.application.HostServices;
 import javafx.application.Platform;
 import javafx.scene.control.Alert;
 import javafx.stage.FileChooser;
 import javafx.stage.Window;
 
 /**
- * Exposed to the page as {@code window.desktopBridge}. JavaFX's WebView ignores
- * "Content-Disposition: attachment", so the page hands download URLs to this class, which asks where to
- * save the file and streams it there. The request reuses the WebView's session cookie, so the
- * selected S3 key applies exactly as in the browser.
+ * Exposed to the page as {@code window.desktopBridge}.
+ *
+ * <p>Downloads: JavaFX's WebView ignores "Content-Disposition: attachment", so the page hands download URLs
+ * to this class, which asks where to save the file and streams it there. The request reuses the WebView's
+ * session cookie, so the selected S3 key applies exactly as in the browser.
+ *
+ * <p>External links: anything outside the app opens in the default browser instead of the app window.
  */
-public class DownloadBridge {
+public class DesktopBridge {
 
     private final int port;
     private final Window owner;
+    private final HostServices hostServices;
     private File lastDirectory;
 
-    DownloadBridge(int port, Window owner) {
+    DesktopBridge(int port, Window owner, HostServices hostServices) {
         this.port = port;
         this.owner = owner;
+        this.hostServices = hostServices;
+    }
+
+    /** Called from JavaScript and from the WebView fallbacks: opens a link in the default browser. */
+    public void openExternal(String url) {
+        if (LinkRules.isOpenableExternally(url)) {
+            Platform.runLater(() -> hostServices.showDocument(url));
+        }
     }
 
     /** Called from JavaScript. */

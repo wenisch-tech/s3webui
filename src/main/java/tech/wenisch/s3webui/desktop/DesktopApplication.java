@@ -14,6 +14,7 @@ import javafx.scene.image.Image;
 import javafx.scene.control.ProgressIndicator;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.web.WebEngine;
 import javafx.scene.web.WebView;
 import javafx.stage.Stage;
 import netscape.javascript.JSObject;
@@ -33,7 +34,7 @@ public class DesktopApplication extends Application {
     private ConfigurableApplicationContext context;
     private Stage stage;
     // JavaFX keeps only a weak reference to objects exposed to JavaScript, so hold on to it
-    private DownloadBridge downloadBridge;
+    private DesktopBridge desktopBridge;
 
     public static void main(String[] args) {
         Application.launch(DesktopApplication.class, args);
@@ -92,15 +93,49 @@ public class DesktopApplication extends Application {
                 System.err.println("WebView failed to load page");
             }
         });
-        downloadBridge = new DownloadBridge(port, stage);
+        desktopBridge = new DesktopBridge(port, stage, getHostServices());
+        keepExternalLinksOutOfTheWindow(web.getEngine(), port, desktopBridge);
         web.getEngine().getLoadWorker().stateProperty().addListener((o, a, b) -> {
             if (b == Worker.State.SUCCEEDED) {
-                // the page calls this for downloads, because WebView cannot save attachments itself
-                ((JSObject) web.getEngine().executeScript("window")).setMember("desktopBridge", downloadBridge);
+                // the page uses this for downloads (WebView cannot save attachments) and for external links
+                ((JSObject) web.getEngine().executeScript("window")).setMember("desktopBridge", desktopBridge);
             }
         });
         web.getEngine().load("http://127.0.0.1:" + port + "/");
         stage.getScene().setRoot(new StackPane(web));
+    }
+
+    /**
+     * The page itself routes external link clicks to the bridge. These two cover what it cannot see:
+     * links that open a new window, and navigations started by script or a redirect.
+     */
+    static void keepExternalLinksOutOfTheWindow(WebEngine engine, int port, DesktopBridge bridge) {
+        engine.setCreatePopupHandler(config -> {
+            WebEngine popup = new WebEngine();
+            popup.locationProperty().addListener((o, previous, url) -> {
+                if (url == null || url.isBlank() || "about:blank".equals(url)) {
+                    return;
+                }
+                if (LinkRules.isInternal(url, port)) {
+                    engine.load(url);
+                } else {
+                    bridge.openExternal(url);
+                }
+            });
+            return popup;
+        });
+        engine.locationProperty().addListener((o, previous, url) -> {
+            if (url == null || url.isBlank() || "about:blank".equals(url) || LinkRules.isInternal(url, port)) {
+                return;
+            }
+            bridge.openExternal(url);
+            // step back to the page that started the navigation instead of leaving the app
+            if (engine.getHistory().getCurrentIndex() > 0) {
+                Platform.runLater(() -> engine.getHistory().go(-1));
+            } else {
+                Platform.runLater(() -> engine.load("http://127.0.0.1:" + port + "/"));
+            }
+        });
     }
 
     private void showError(Exception e) {
