@@ -1,5 +1,25 @@
 # Changelog
 
+## v1.12.0 - 2026-11-19
+
+## [1.12.0](https://github.com/wenisch-tech/s3webui/compare/v1.11.4...v1.12.0) (2026-11-19)
+
+
+### Features
+
+* initial commit desktop version ([f0c0007](https://github.com/wenisch-tech/s3webui/commit/f0c0007f2fa17e654c78e5534023e6b1bff97af6))
+
+
+### Bug Fixes
+
+* ensure external links are properly handled in native application ([2bd8de6](https://github.com/wenisch-tech/s3webui/commit/2bd8de60c94eedaef8b9b7283a74e6c85b8ced35))
+* update native artifacts ([69153b3](https://github.com/wenisch-tech/s3webui/commit/69153b3de41069011234b8fa8c64eebba6fd9d11))
+
+
+
+Docker image: ghcr.io/wenisch-tech/s3webui:1.12.0
+
+
 ## v1.11.4 - 2026-11-18
 
 ### [1.11.4](https://github.com/wenisch-tech/s3webui/compare/v1.11.3...v1.11.4) (2026-11-18)
