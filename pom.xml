@@ -22,7 +22,7 @@
         <java.version>17</java.version>
         <!-- desktop launcher needs JavaFX; only compiled with -Pdesktop -->
         <desktop.exclude>tech/wenisch/s3webui/desktop/**</desktop.exclude>
-        <aws-sdk.version>2.59.1</aws-sdk.version>
+        <aws-sdk.version>2.59.7</aws-sdk.version>
         <!-- Boot 4.1.1 still manages 11.0.24, which carries several CVEs (incl. CVE-2026-65182,
              a security constraint bypass) fixed in 11.0.25. Override until Boot's BOM catches up. -->
         <tomcat.version>11.0.27</tomcat.version>
