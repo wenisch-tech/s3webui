@@ -103,6 +103,7 @@ a real deployment.
 -  **File management** — upload with multipart progress and ETA, download objects, rename files without re-uploading, and delete objects or buckets
 -  **Folder download** — download any folder, or a multi-selection of files and folders, as a ZIP (streamed, up to 10,000 objects)
 -  **Create buckets** — create new buckets directly from the UI
+-  **Migration** — copy or move whole buckets, folders or files to another S3 key in a two-pane dialog; the transfer runs on the server (nothing is downloaded), survives closing the browser or restarting the server, and shows live progress with a cancel button ([docs](docs/Usage/Migration.md))
 -  **Visual permission editor** — grant users (or everyone) List / Read / Write / Delete / Full control on a bucket, or give an IAM user or group access to buckets, with toggle chips; switch to the JSON policy editor (syntax highlighting, inline validation) at any time
 -  **CORS editor** — edit a bucket's CORS rules in the same editor, in the `aws s3api` JSON shape
 -  **Versioning & retention** — enable or suspend bucket versioning and limit how many older versions are kept; browse, download, restore and permanently delete individual object versions

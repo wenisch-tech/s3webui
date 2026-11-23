@@ -196,6 +196,15 @@
                   Lifecycle
                 </a>
                 <button
+                  class="dropdown-item"
+                  type="button"
+                  th:attr="data-bucket=${bucket.name}"
+                  onclick="openMigration(this.dataset.bucket)"
+                >
+                  <i data-icon="arrows-right-left"></i>
+                  Migrate…
+                </button>
+                <button
                   class="dropdown-item text-bad-500"
                   th:attr="data-bucket=${bucket.name}"
                   onclick="confirmDeleteBucket(this.dataset.bucket)"

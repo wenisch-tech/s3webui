@@ -41,6 +41,13 @@ app:
   encryption-key: ${APP_ENCRYPTION_KEY:}
   # save keys users type in as stored S3 keys (the desktop edition turns this on)
   auto-store-keys: ${AUTOSTOREKEYS:false}
+  # server-side migrations between S3 keys
+  migration:
+    max-concurrent-jobs: ${MIGRATION_MAX_CONCURRENT_JOBS:2}
+    threads-per-job: ${MIGRATION_THREADS_PER_JOB:4}
+    multipart-threshold-mb: ${MIGRATION_MULTIPART_THRESHOLD_MB:64}
+    part-size-mb: ${MIGRATION_PART_SIZE_MB:16}
+    retention-days: ${MIGRATION_RETENTION_DAYS:30}
   admin:
     email: ${ADMIN_EMAIL:admin@s3webui.local}
     password: ${ADMIN_PASSWORD:admin}

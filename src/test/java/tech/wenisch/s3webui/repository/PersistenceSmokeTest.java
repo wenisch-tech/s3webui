@@ -9,11 +9,15 @@ import tech.wenisch.s3webui.entity.AppUser;
 import tech.wenisch.s3webui.entity.AuthProvider;
 import tech.wenisch.s3webui.entity.EncryptedStringConverter;
 import tech.wenisch.s3webui.entity.GrantType;
+import tech.wenisch.s3webui.entity.MigrationJob;
 import tech.wenisch.s3webui.entity.S3Credential;
 import tech.wenisch.s3webui.entity.S3CredentialGrant;
 import tech.wenisch.s3webui.entity.UserRole;
+import tech.wenisch.s3webui.model.ConflictPolicy;
+import tech.wenisch.s3webui.model.MigrationStatus;
 import tech.wenisch.s3webui.service.CryptoService;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -37,6 +41,9 @@ class PersistenceSmokeTest {
 
     @Autowired
     private S3CredentialRepository credentialRepository;
+
+    @Autowired
+    private MigrationJobRepository migrationJobRepository;
 
     @Test
     void storesAndFindsAUserByEmailIgnoringCase() {
@@ -90,5 +97,36 @@ class PersistenceSmokeTest {
         List<S3Credential> enabled = credentialRepository.findByEnabledTrueOrderByNameAsc();
 
         assertThat(enabled).extracting(S3Credential::getName).containsExactly("Enabled");
+    }
+
+    @Test
+    void storesMigrationJobsAndFindsTheUnfinishedOnes() {
+        migrationJobRepository.save(migrationJob("running", MigrationStatus.RUNNING, null, "x".repeat(5000)));
+        migrationJobRepository.save(migrationJob("done", MigrationStatus.COMPLETED, Instant.parse("2025-01-01T00:00:00Z"), "[]"));
+
+        assertThat(migrationJobRepository.findByStatusIn(MigrationStatus.activeStatuses()))
+                .extracting(MigrationJob::getId).containsExactly("running");
+        assertThat(migrationJobRepository.findById("running")).get()
+                .extracting(MigrationJob::getSelectedKeys).isEqualTo("x".repeat(5000));
+        assertThat(migrationJobRepository.findAllByOrderByCreatedAtDesc(org.springframework.data.domain.PageRequest.of(0, 10)))
+                .hasSize(2);
+        assertThat(migrationJobRepository.findByOwnerNameOrderByCreatedAtDesc("nobody",
+                org.springframework.data.domain.PageRequest.of(0, 10))).isEmpty();
+
+        assertThat(migrationJobRepository.deleteByFinishedAtBefore(Instant.parse("2026-01-01T00:00:00Z"))).isEqualTo(1);
+        assertThat(migrationJobRepository.findById("done")).isEmpty();
+        assertThat(migrationJobRepository.findById("running")).isPresent();
+    }
+
+    private static MigrationJob migrationJob(String id, MigrationStatus status, Instant finishedAt, String keys) {
+        return MigrationJob.builder()
+                .id(id)
+                .ownerName("alice@example.com")
+                .status(status)
+                .conflictPolicy(ConflictPolicy.SKIP)
+                .selectedKeys(keys)
+                .createdAt(Instant.parse("2025-01-01T00:00:00Z"))
+                .finishedAt(finishedAt)
+                .build();
     }
 }

@@ -1,0 +1,111 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org">
+  <body>
+    <div th:fragment="migration">
+      <div
+        id="migrationModal"
+        class="modal-backdrop hidden"
+        aria-hidden="true"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="migrationTitle"
+        data-static="true"
+      >
+        <div class="modal-card modal-card-wide">
+          <div class="modal-header">
+            <h2 id="migrationTitle" class="modal-title">Migrate to another S3 key</h2>
+            <button class="btn-icon" onclick="closeDialog('migrationModal')" aria-label="Close">
+              <i data-icon="x-mark"></i>
+            </button>
+          </div>
+          <div class="modal-body">
+            <div class="migration-split">
+              <section class="migration-pane" aria-labelledby="migrationSourceTitle">
+                <div class="migration-pane-head">
+                  <h3 id="migrationSourceTitle">Source</h3>
+                  <span class="migration-key"><i data-icon="key"></i><span id="migrationSourceKey">…</span></span>
+                </div>
+                <div class="migration-pathbar">
+                  <button id="migrationSourceUp" type="button" class="btn-icon" aria-label="Up one folder">
+                    <i data-icon="arrow-up"></i>
+                  </button>
+                  <nav id="migrationSourceCrumbs" class="migration-crumbs" aria-label="Source path"></nav>
+                </div>
+                <label class="migration-selectall">
+                  <input id="migrationSelectAll" type="checkbox" />
+                  Select all in this folder
+                </label>
+                <div id="migrationSourceList" class="migration-list"></div>
+              </section>
+
+              <section class="migration-pane" aria-labelledby="migrationTargetTitle">
+                <div class="migration-pane-head">
+                  <h3 id="migrationTargetTitle">Target</h3>
+                </div>
+                <label class="migration-label" for="migrationTargetKey">S3 key</label>
+                <select id="migrationTargetKey" class="input"></select>
+                <label class="migration-label" for="migrationTargetBucket">Bucket</label>
+                <select id="migrationTargetBucket" class="input"></select>
+                <div id="migrationNewBucketRow" class="hidden">
+                  <label class="migration-label" for="migrationNewBucket">New bucket name</label>
+                  <input id="migrationNewBucket" class="input" placeholder="my-bucket" autocomplete="off" />
+                </div>
+                <div class="migration-pathbar">
+                  <button id="migrationTargetUp" type="button" class="btn-icon" aria-label="Up one folder">
+                    <i data-icon="arrow-up"></i>
+                  </button>
+                  <nav id="migrationTargetCrumbs" class="migration-crumbs" aria-label="Target path"></nav>
+                </div>
+                <div id="migrationTargetFolders" class="migration-list"></div>
+                <label class="migration-label" for="migrationTargetPrefix">Target folder (optional)</label>
+                <input id="migrationTargetPrefix" class="input" placeholder="e.g. backup/2026" autocomplete="off" />
+              </section>
+            </div>
+
+            <div class="migration-options">
+              <div>
+                <label class="migration-label" for="migrationConflict">If a file already exists in the target</label>
+                <select id="migrationConflict" class="input"></select>
+              </div>
+              <div>
+                <label class="migration-check-label">
+                  <input id="migrationDeleteSource" type="checkbox" />
+                  Delete source after copy (move)
+                </label>
+                <p id="migrationDeleteHint" class="migration-hint hidden">
+                  Each source object is deleted only after it has arrived in the target.
+                </p>
+              </div>
+            </div>
+            <p id="migrationSummary" class="migration-summary" aria-live="polite"></p>
+            <p class="migration-hint">
+              The copy runs on the server and continues if you close this page. Versions, ACLs and tags are not copied.
+            </p>
+            <div id="migrationError" class="alert alert-error mt-3 hidden" role="alert"></div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn-secondary" onclick="closeDialog('migrationModal')">Cancel</button>
+            <button id="migrationStart" class="btn-primary" disabled>Start migration</button>
+          </div>
+        </div>
+      </div>
+
+      <aside id="migrationWidget" class="migration-widget hidden" aria-label="Migrations">
+        <div id="migrationWidgetPanel" class="migration-widget-panel hidden">
+          <div class="migration-widget-head">
+            <strong>Migrations</strong>
+            <button id="migrationWidgetClose" type="button" class="btn-icon" aria-label="Collapse">
+              <i data-icon="chevron-down"></i>
+            </button>
+          </div>
+          <div id="migrationWidgetList" class="migration-widget-list"></div>
+        </div>
+        <button id="migrationWidgetToggle" type="button" class="migration-widget-pill" aria-expanded="false" aria-controls="migrationWidgetPanel">
+          <i data-icon="arrows-right-left"></i>
+          <span id="migrationWidgetLabel">Migration</span>
+          <span class="migration-widget-track" aria-hidden="true"><span id="migrationWidgetBar"></span></span>
+        </button>
+      </aside>
+    </div>
+  </body>
+</html>

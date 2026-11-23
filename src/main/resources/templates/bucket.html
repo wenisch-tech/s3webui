@@ -72,7 +72,7 @@
       </header>
       <section class="panel" th:if="${!#lists.isEmpty(objects)}">
         <div class="panel-header flex-wrap gap-3">
-          <label class="relative block min-w-0 flex-1" for="objectSearch">
+          <label class="relative block min-w-[14rem] flex-1" for="objectSearch">
             <span class="sr-only">Search files and folders</span>
             <i
               data-icon="magnifying-glass"
@@ -123,6 +123,15 @@
           >
             <i data-icon="folder-arrow-down"></i>
             <span id="moveSelectedLabel">Move selected</span>
+          </button>
+          <button
+            id="migrateSelectedBtn"
+            type="button"
+            class="btn-secondary hidden"
+            onclick="openMigrationFromSelection()"
+          >
+            <i data-icon="arrows-right-left"></i>
+            <span id="migrateSelectedLabel">Migrate selected</span>
           </button>
           <button
             id="deleteSelectedBtn"
@@ -905,6 +914,8 @@
         moveSelectedBtn.classList.toggle('hidden', n === 0);
         copySelectedBtn.classList.toggle('hidden', n === 0);
         zipSelectedBtn.classList.toggle('hidden', n === 0);
+        migrateSelectedBtn.classList.toggle('hidden', n === 0);
+        migrateSelectedLabel.textContent = `Migrate selected (${n})`;
         zipSelectedLabel.textContent = `Download selected as ZIP (${n})`;
         copySelectedLabel.textContent = `Copy selected (${n})`;
         moveSelectedLabel.textContent = `Move selected (${n})`;
@@ -912,6 +923,10 @@
       document.addEventListener('change', (e) => {
         if (e.target.matches('.obj-check, #selectAll')) updateDeleteSelected();
       });
+      function openMigrationFromSelection() {
+        const keys = selectedObjectKeys();
+        if (keys.length) openMigration(BUCKET, { prefix: PREFIX, keys });
+      }
       function downloadSelectedZip() {
         const keys = selectedObjectKeys();
         if (!keys.length) return;

@@ -48,6 +48,27 @@ public class AuditHistoryService {
         trimHistory();
     }
 
+    /**
+     * Records an event for a known actor and key, for work that runs off the request thread (such as a
+     * migration) where neither the security context nor the session selection is available.
+     */
+    @Transactional
+    public void recordFor(String actor, String credentialName, String action, String resourceType,
+                          String bucket, String key, String details) {
+        auditLogEntryRepository.save(AuditLogEntry.builder()
+                .timestamp(Instant.now())
+                .userEmail(actor == null || actor.isBlank() ? "anonymous" : actor)
+                .credentialName(credentialName)
+                .action(action)
+                .resourceType(resourceType)
+                .bucket(bucket)
+                .objectKey(key)
+                .details(details)
+                .build());
+
+        trimHistory();
+    }
+
     /** History visible to the current user, newest first. */
     @Transactional(readOnly = true)
     public List<AuditEvent> list() {

@@ -23,6 +23,8 @@ Select **Upload** in a bucket to add one or more files. The dialog accepts drag 
 
 Use the object row controls to download or rename an object. Select multiple objects to copy, move, or delete them. Moving and renaming create keys at the destination; do not interrupt the operation or assume an object is atomic across different S3 providers.
 
+To copy or move data to a different S3 key, use **Migrate** from the bucket menu or **Migrate selected** in a bucket. It runs on the server and reports progress in a widget in the bottom-right corner; see [Migrate data between S3 keys](Migration.md).
+
 Use **New folder** to create a virtual prefix. Removing a folder means deleting its contents; S3 does not have physical folders.
 
 ## Bucket settings

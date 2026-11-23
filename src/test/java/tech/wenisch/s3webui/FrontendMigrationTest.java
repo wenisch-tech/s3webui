@@ -130,4 +130,25 @@ class FrontendMigrationTest {
     assertThat(frontend).contains("initGlobalSearch", "globalSearchResultPath", "data-search-selectable",
         "setTimeout(() => search(query), 300)", "globalSearchPagePath(query)");
   }
+
+  @Test
+  void migrationIsReachableFromTheBucketMenuAndTheSelectionAndShowsItsProgressEverywhere() throws IOException {
+    String buckets = Files.readString(Path.of("src/main/resources/templates/buckets.html"));
+    String bucket = Files.readString(Path.of("src/main/resources/templates/bucket.html"));
+    String shell = Files.readString(Path.of("src/main/resources/templates/fragments/shell.html"));
+    String migration = Files.readString(Path.of("src/main/resources/templates/fragments/migration.html"));
+    String frontend = Files.readString(Path.of("src/main/frontend/s3webui.js"));
+
+    assertThat(buckets).contains("openMigration(this.dataset.bucket)");
+    assertThat(bucket).contains("id=\"migrateSelectedBtn\"", "openMigrationFromSelection()",
+        "migrateSelectedBtn.classList.toggle");
+    assertThat(shell).contains("fragments/migration :: migration");
+    assertThat(migration).contains("id=\"migrationModal\"", "id=\"migrationSourceList\"",
+        "id=\"migrationTargetKey\"", "id=\"migrationTargetBucket\"", "id=\"migrationConflict\"",
+        "id=\"migrationDeleteSource\"", "id=\"migrationStart\"", "id=\"migrationWidget\"",
+        "id=\"migrationWidgetToggle\"", "id=\"migrationWidgetList\"");
+    assertThat(frontend).contains("./migration.js");
+    assertThat(Files.readString(Path.of("src/main/frontend/migration.js")))
+        .contains("window.openMigration", "/api/migrations", "data-migration-action");
+  }
 }

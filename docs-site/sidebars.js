@@ -17,7 +17,7 @@ const sidebars = {
     {
       type: 'category', label: 'Usage', collapsed: true,
       link: { type: 'doc', id: 'Usage/README' },
-      items: ['Usage/User-Guide', 'Usage/Storage-Workflows', 'Usage/Bucket-Configuration', 'Usage/Audit-History'],
+      items: ['Usage/User-Guide', 'Usage/Storage-Workflows', 'Usage/Migration', 'Usage/Bucket-Configuration', 'Usage/Audit-History'],
     },
     {
       type: 'category', label: 'Administration', collapsed: true,

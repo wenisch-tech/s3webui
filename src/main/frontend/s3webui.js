@@ -1,5 +1,6 @@
 import Alpine from 'alpinejs';
 import './upload.js';
+import './migration.js';
 import { createJsonEditor } from './editor.js';
 import { createPolicyView } from './policy-view.mjs';
 import { principalDisplayName } from './grant-editor.mjs';
@@ -94,7 +95,7 @@ window.cfgPretty = s => { try { return JSON.stringify(JSON.parse(s), null, 2); }
 
 window.openDialog = id => { const dialog = document.getElementById(id); if (!dialog) return; dialog.classList.remove('hidden'); dialog.setAttribute('aria-hidden', 'false'); dialog.querySelector('[data-autofocus]')?.focus(); };
 window.closeDialog = id => { const dialog = document.getElementById(id); if (!dialog) return; dialog.classList.add('hidden'); dialog.setAttribute('aria-hidden', 'true'); dialog.dispatchEvent(new CustomEvent('s3webui:dialogclosed', { bubbles: true })); };
-document.addEventListener('keydown', event => { if (event.key !== 'Escape') return; const dialogs = [...document.querySelectorAll('.modal-backdrop:not(.hidden)')]; const dialog = dialogs.at(-1); if (dialog?.dataset.static !== 'true') closeDialog(dialog.id); });
+document.addEventListener('keydown', event => { if (event.key !== 'Escape') return; const dialogs = [...document.querySelectorAll('.modal-backdrop:not(.hidden)')]; const dialog = dialogs.at(-1); if (dialog && dialog.dataset.static !== 'true') closeDialog(dialog.id); });
 document.addEventListener('click', event => { if (event.target.classList.contains('modal-backdrop') && event.target.dataset.static !== 'true') closeDialog(event.target.id); });
 
 const csrfToken = () => { const match = document.cookie.match(/(?:^|;\s*)XSRF-TOKEN=([^;]*)/); return match ? decodeURIComponent(match[1]) : null; };

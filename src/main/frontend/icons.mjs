@@ -7,9 +7,11 @@ import arrowDownTray from 'heroicons/24/outline/arrow-down-tray.svg';
 import arrowPath from 'heroicons/24/outline/arrow-path.svg';
 import arrowRightEndOnRectangle from 'heroicons/24/outline/arrow-right-end-on-rectangle.svg';
 import arrowRightStartOnRectangle from 'heroicons/24/outline/arrow-right-start-on-rectangle.svg';
+import arrowRight from 'heroicons/24/outline/arrow-right.svg';
 import arrowUp from 'heroicons/24/outline/arrow-up.svg';
 import arrowUpRight from 'heroicons/24/outline/arrow-up-right.svg';
 import arrowUpTray from 'heroicons/24/outline/arrow-up-tray.svg';
+import arrowsRightLeft from 'heroicons/24/outline/arrows-right-left.svg';
 import arrowsUpDown from 'heroicons/24/outline/arrows-up-down.svg';
 import bookOpen from 'heroicons/24/outline/book-open.svg';
 import bars3 from 'heroicons/24/outline/bars-3.svg';
@@ -66,9 +68,11 @@ export const ICONS = {
   'arrow-path': arrowPath,
   'arrow-right-end-on-rectangle': arrowRightEndOnRectangle,
   'arrow-right-start-on-rectangle': arrowRightStartOnRectangle,
+  'arrow-right': arrowRight,
   'arrow-up': arrowUp,
   'arrow-up-right': arrowUpRight,
   'arrow-up-tray': arrowUpTray,
+  'arrows-right-left': arrowsRightLeft,
   'arrows-up-down': arrowsUpDown,
   'bars-3': bars3,
   'book-open': bookOpen,

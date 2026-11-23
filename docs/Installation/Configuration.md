@@ -51,6 +51,18 @@ docker run -d -p 8080:8080 \
 | `DISABLE_AUTHENTICATION` | Makes all visitors administrators | `false` |
 | `AUTOSTOREKEYS` | Saves S3 keys that a user types in as stored keys, so they appear in the key picker next time. Needs **Users may use their own credentials** to be on. The desktop edition turns it on | `false` |
 
+## Migration settings
+
+Server-side [migrations](../Usage/Migration.md) can be tuned with these optional variables.
+
+| Variable | Purpose | Default |
+|---|---|---|
+| `MIGRATION_MAX_CONCURRENT_JOBS` | Migrations that run at the same time; further ones wait | `2` |
+| `MIGRATION_THREADS_PER_JOB` | Objects copied in parallel within one migration | `4` |
+| `MIGRATION_MULTIPART_THRESHOLD_MB` | Objects larger than this are copied as multipart uploads | `64` |
+| `MIGRATION_PART_SIZE_MB` | Size of one multipart part (at least 5) | `16` |
+| `MIGRATION_RETENTION_DAYS` | Finished migrations are removed from the list after this many days | `30` |
+
 See [Choose a sign-in method](../Administration/Authentication.md) for the sign-in modes, and [Set up OIDC single sign-on](../Administration/OIDC-Setup.md) for the OIDC variables.
 
 ## Health endpoints

@@ -5,6 +5,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import tech.wenisch.s3webui.service.DuplicateBucketException;
+import tech.wenisch.s3webui.service.JobNotFoundException;
 import tech.wenisch.s3webui.service.MissingS3ConfigurationException;
 import tech.wenisch.s3webui.service.SecretDecryptionException;
 import tech.wenisch.s3webui.service.iam.RustFsAdminException;
@@ -24,6 +25,11 @@ public class ApiExceptionHandler {
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<Map<String, String>> handleAccessDenied(AccessDeniedException exception) {
         return ResponseEntity.status(403).body(Map.of("message", resolveMessage(exception)));
+    }
+
+    @ExceptionHandler(JobNotFoundException.class)
+    public ResponseEntity<Map<String, String>> handleJobNotFound(JobNotFoundException exception) {
+        return ResponseEntity.status(404).body(Map.of("message", resolveMessage(exception)));
     }
 
     @ExceptionHandler(IllegalArgumentException.class)

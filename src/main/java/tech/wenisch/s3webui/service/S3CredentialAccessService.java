@@ -75,6 +75,20 @@ public class S3CredentialAccessService {
     /** Resolves a key by id and fails if the user is not (or no longer) allowed to use it. */
     @Transactional(readOnly = true)
     public ResolvedCredential resolve(Authentication authentication, String credentialId) {
+        return resolve(authentication, credentialId, true);
+    }
+
+    /**
+     * Resolves a key for work that runs without a signed-in user, such as a migration that continues
+     * after the browser closed or the server restarted. Access was checked when the work was
+     * submitted, so only existence and the enabled flag are verified here.
+     */
+    @Transactional(readOnly = true)
+    public ResolvedCredential resolveForBackground(String credentialId) {
+        return resolve(null, credentialId, false);
+    }
+
+    private ResolvedCredential resolve(Authentication authentication, String credentialId, boolean checkAccess) {
         if (ENV_CREDENTIAL_ID.equals(credentialId)) {
             if (!hasEnvironmentCredential()) {
                 throw new MissingS3ConfigurationException("The environment S3 key is no longer configured");
@@ -97,7 +111,7 @@ public class S3CredentialAccessService {
         if (!credential.isEnabled()) {
             throw new AccessDeniedException("The S3 key '" + credential.getName() + "' has been disabled");
         }
-        if (!isAccessible(credential, authentication)) {
+        if (checkAccess && !isAccessible(credential, authentication)) {
             throw new AccessDeniedException("You are not allowed to use the S3 key '" + credential.getName() + "'");
         }
 

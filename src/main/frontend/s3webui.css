@@ -536,6 +536,9 @@
   .modal-card {
     @apply flex max-h-[calc(100dvh-2rem)] w-full max-w-lg flex-col overflow-hidden rounded-xl border border-slate-700/25 bg-white shadow-2xl;
   }
+  .modal-card.modal-card-wide {
+    @apply max-w-6xl;
+  }
   html[data-theme='dark'] .modal-card {
     @apply border-slate-700 bg-slate-900;
   }
@@ -682,6 +685,181 @@
   }
   .progress-bar {
     @apply h-full bg-brand-500 transition-[width];
+  }
+  /* ── Migration ─────────────────────────────────────────────────────── */
+  .btn-sm {
+    @apply min-h-8 px-2.5 py-1 text-xs;
+  }
+  .migration-split {
+    @apply grid gap-4 md:grid-cols-2;
+  }
+  .migration-pane {
+    @apply flex min-w-0 flex-col gap-2 rounded-lg border border-slate-700/20 p-3;
+  }
+  html[data-theme='dark'] .migration-pane {
+    @apply border-slate-700;
+  }
+  .migration-pane-head {
+    @apply flex items-center justify-between gap-2;
+  }
+  .migration-pane-head h3 {
+    @apply text-sm font-semibold uppercase tracking-wide text-slate-500;
+  }
+  .migration-key {
+    @apply inline-flex min-w-0 items-center gap-1.5 text-sm font-medium;
+  }
+  .migration-key svg {
+    @apply size-4 shrink-0 text-brand-700;
+  }
+  .migration-key span {
+    @apply truncate;
+  }
+  .migration-label {
+    @apply mt-1 block text-xs font-medium text-slate-500;
+  }
+  .migration-pathbar {
+    @apply flex items-center gap-1;
+  }
+  .migration-crumbs {
+    @apply flex min-w-0 flex-wrap items-center gap-1 text-sm text-slate-500;
+  }
+  .migration-crumb {
+    @apply max-w-48 truncate rounded px-1 text-slate-700 hover:bg-slate-800/8 hover:text-brand-700;
+  }
+  html[data-theme='dark'] .migration-crumb {
+    @apply text-slate-300 hover:bg-slate-800;
+  }
+  .migration-selectall {
+    @apply flex items-center gap-2 text-xs text-slate-500;
+  }
+  .migration-list {
+    @apply max-h-72 min-h-48 flex-1 overflow-y-auto rounded-md border border-slate-700/15;
+  }
+  html[data-theme='dark'] .migration-list {
+    @apply border-slate-700;
+  }
+  .migration-row {
+    @apply flex items-center gap-2 px-2 py-1 text-sm hover:bg-slate-800/5;
+  }
+  html[data-theme='dark'] .migration-row {
+    @apply hover:bg-slate-800;
+  }
+  .migration-name {
+    @apply flex min-w-0 flex-1 items-center gap-2 text-left;
+  }
+  button.migration-name:hover {
+    @apply text-brand-700;
+  }
+  .migration-name svg {
+    @apply size-4 shrink-0 text-slate-500;
+  }
+  .migration-name span {
+    @apply truncate;
+  }
+  .migration-size {
+    @apply shrink-0 text-xs text-slate-500;
+  }
+  .migration-empty {
+    @apply p-3 text-sm text-slate-500;
+  }
+  .migration-options {
+    @apply mt-4 grid gap-4 md:grid-cols-2 md:items-end;
+  }
+  .migration-check-label {
+    @apply flex items-center gap-2 text-sm;
+  }
+  .migration-hint {
+    @apply mt-1 text-xs text-slate-500;
+  }
+  .migration-summary {
+    @apply mt-4 rounded-md bg-brand-500/10 px-3 py-2 text-sm font-medium;
+  }
+  .migration-widget {
+    @apply fixed bottom-4 right-4 z-[55] flex w-[min(26rem,calc(100vw-2rem))] flex-col items-end gap-2;
+  }
+  body.has-migration-widget .toast-stack {
+    bottom: 4.5rem;
+  }
+  /* On wide screens the toasts sit beside the widget instead of covering its job details. */
+  @media (min-width: 1100px) {
+    body.has-migration-widget .toast-stack {
+      right: 28rem;
+      bottom: 1rem;
+    }
+  }
+  .migration-widget-pill {
+    @apply relative flex w-full items-center gap-2 overflow-hidden rounded-full border border-slate-700/25 bg-white px-4 py-2.5 text-sm font-medium shadow-xl;
+  }
+  html[data-theme='dark'] .migration-widget-pill {
+    @apply border-slate-700 bg-slate-900;
+  }
+  .migration-widget-pill svg {
+    @apply size-4 shrink-0 text-brand-700;
+  }
+  .migration-widget-track {
+    @apply absolute inset-x-0 bottom-0 h-1 bg-slate-700/15;
+  }
+  .migration-widget-track > span {
+    @apply block h-full bg-brand-500 transition-[width];
+  }
+  .migration-indeterminate {
+    animation: migration-pulse 1.4s ease-in-out infinite;
+  }
+  @keyframes migration-pulse {
+    50% {
+      opacity: 0.35;
+    }
+  }
+  .migration-widget-panel {
+    @apply flex max-h-[min(32rem,70dvh)] w-full flex-col overflow-hidden rounded-xl border border-slate-700/25 bg-white shadow-2xl;
+  }
+  html[data-theme='dark'] .migration-widget-panel {
+    @apply border-slate-700 bg-slate-900;
+  }
+  .migration-widget-head {
+    @apply flex items-center justify-between border-b border-slate-700/15 px-3 py-2 text-sm;
+  }
+  .migration-widget-list {
+    @apply grid gap-3 overflow-y-auto p-3;
+  }
+  .migration-job {
+    @apply rounded-lg border border-slate-700/15 p-3 text-sm;
+  }
+  html[data-theme='dark'] .migration-job {
+    @apply border-slate-700;
+  }
+  .migration-job > header {
+    @apply flex items-start justify-between gap-2;
+  }
+  .migration-job small {
+    @apply text-xs text-slate-500;
+  }
+  .migration-job > footer {
+    @apply mt-2 flex justify-end;
+  }
+  .migration-facts {
+    @apply mt-1 text-xs text-slate-500;
+  }
+  .migration-current {
+    @apply mt-1 truncate font-mono text-xs text-slate-500;
+  }
+  .migration-failure {
+    @apply mt-1 text-xs text-bad-500;
+  }
+  .migration-errors {
+    @apply mt-1 text-xs;
+  }
+  .migration-errors ul {
+    @apply mt-1 max-h-32 list-disc overflow-y-auto pl-4 text-bad-500;
+  }
+  .migration-status-good {
+    @apply border-good-500/25 bg-good-500/10 text-good-500;
+  }
+  .migration-status-bad {
+    @apply border-bad-500/25 bg-bad-500/10 text-bad-500;
+  }
+  .migration-status-brand {
+    @apply border-brand-500/25 bg-brand-500/10 text-brand-700;
   }
   .json-editor .cm-editor {
     @apply overflow-hidden rounded-lg border border-slate-700/25;

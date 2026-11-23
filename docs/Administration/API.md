@@ -14,10 +14,15 @@ Use an S3 SDK or the storage provider's API for programmatic object-storage inte
 |---|---|
 | `/api/s3/session` | List/select the session's S3 key, submit own credentials, and conditionally reveal an assigned key. |
 | `/api/buckets` | Create/list/delete buckets; list, search, upload, download, rename, copy, move, delete objects; bucket statistics, policies, CORS, versioning and retention, and multipart upload lifecycle. |
+| `/api/migrations` | Start, list, cancel and dismiss server-side migrations to another S3 key, and browse the target key's buckets and folders. The source is the session's current key. |
 | `/api/search` | Global search over the selected key's accessible buckets. |
 | `/api/history` | Audit entries visible to the signed-in identity. |
 | `/api/admin` | Administrator-only stored credentials, local users, and runtime options. |
 | `/api/admin/iam` | Administrator-only storage-backend IAM capability, identity, key, group, membership, and policy operations. |
+
+## Migrations
+
+`POST /api/migrations` starts a copy and answers `202 Accepted` with the job. Send `sourceBucket`, `sourcePrefix`, `keys` (empty for everything below the prefix; folders end in `/`), `targetCredentialId`, `targetBucket`, `targetPrefix`, `conflictPolicy` (`SKIP`, `OVERWRITE` or `NEWER_ONLY`) and `deleteSource`. See [Migrate data between S3 keys](../Usage/Migration.md) for how the feature behaves. Poll `GET /api/migrations/{id}` (or the list at `GET /api/migrations`) for `status`, the object and byte counters and the most recent errors. `POST /api/migrations/{id}/cancel` stops a job and `DELETE /api/migrations/{id}` removes a finished one. Users see only their own jobs; administrators see all.
 
 ## Browser requirements
 

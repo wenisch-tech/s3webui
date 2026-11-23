@@ -53,6 +53,7 @@ Use the object-row actions for one file, or select multiple rows for bulk action
 | Copy | Copies selected objects or complete selected folders to a bucket and optional destination prefix; sources remain. |
 | Move | Performs the same transfer, then removes the sources. |
 | Delete | Removes selected objects. Selecting a folder applies to its contents. |
+| Migrate | Copies or moves buckets, folders or files to a different S3 key on the server, with live progress. See [Migrate data between S3 keys](Migration.md). |
 
 ### Download as ZIP
 
@@ -64,6 +65,7 @@ Deleting a non-empty bucket requires an explicit **Delete everything** confirmat
 
 ## Related guides
 
+- [Migrate data between S3 keys](Migration.md)
 - [Bucket policies and CORS](Bucket-Configuration.md)
 - [Audit history](Audit-History.md)
 - [S3 key management](../Administration/S3-Key-Management.md)
