@@ -22,10 +22,10 @@
         <java.version>17</java.version>
         <!-- desktop launcher needs JavaFX; only compiled with -Pdesktop -->
         <desktop.exclude>tech/wenisch/s3webui/desktop/**</desktop.exclude>
-        <aws-sdk.version>2.59.1</aws-sdk.version>
+        <aws-sdk.version>2.59.7</aws-sdk.version>
         <!-- Boot 4.1.1 still manages 11.0.24, which carries several CVEs (incl. CVE-2026-65182,
              a security constraint bypass) fixed in 11.0.25. Override until Boot's BOM catches up. -->
-        <tomcat.version>11.0.27</tomcat.version>
+        <tomcat.version>11.0.29</tomcat.version>
         <!-- Boot 4.1.2 manages Netty 4.2.19.Final; override to the newer 4.2.20.Final. -->
         <netty.version>4.2.20.Final</netty.version>
         <!-- Boot 4.1.2 still manages Thymeleaf 3.1.5, affected by SSTI sandbox bypasses
@@ -34,7 +34,7 @@
         <thymeleaf-extras-springsecurity.version>3.1.7.RELEASE</thymeleaf-extras-springsecurity.version>
         <!-- Boot 4.1.1 manages Jackson 3.1.5; override until its BOM includes 3.1.6. -->
         <jackson-bom.version>3.1.8</jackson-bom.version>
-        <postgresql.version>42.7.14</postgresql.version>
+        <postgresql.version>42.7.15</postgresql.version>
     </properties>
 
     <dependencies>
