@@ -80,7 +80,7 @@ jobs:
             type=sha,format=short,prefix=sha-
 
       - name: Set up Trivy
-        uses: aquasecurity/setup-trivy@v0.2.6
+        uses: aquasecurity/setup-trivy@v0.3.1
 
       - name: Run Trivy scan
         shell: bash
