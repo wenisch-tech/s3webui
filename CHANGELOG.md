@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.12.3 - 2026-11-23
+
+### [1.12.3](https://github.com/wenisch-tech/s3webui/compare/v1.12.2...v1.12.3) (2026-11-23)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @codemirror/lint to v6.9.8 ([d4afcdb](https://github.com/wenisch-tech/s3webui/commit/d4afcdb115652b2c96c3b2f0101725c284b7b6e3))
+
+
+
+Docker image: ghcr.io/wenisch-tech/s3webui:1.12.3
+
+
 ## v1.12.1 - 2026-11-23
 
 ### [1.12.1](https://github.com/wenisch-tech/s3webui/compare/v1.12.0...v1.12.1) (2026-11-23)
