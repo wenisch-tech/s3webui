@@ -92,7 +92,7 @@ public class RustFsIamProvider implements IamProvider {
     public List<IamGroup> listGroups() {
         JsonNode groups = client.get("/groups");
         List<IamGroup> result = new ArrayList<>();
-        groups.forEach(group -> result.add(new IamGroup(group.asText(), null, null)));
+        groups.forEach(group -> result.add(new IamGroup(group.asString(), null, null)));
         result.sort(Comparator.comparing(IamGroup::groupName, String.CASE_INSENSITIVE_ORDER));
         return result;
     }
@@ -109,7 +109,7 @@ public class RustFsIamProvider implements IamProvider {
         if (!members.isEmpty()) {
             updateGroupMembers(groupName, members, true);
         }
-        for (String policy : commaSeparated(group.path("policy").asText())) {
+        for (String policy : commaSeparated(group.path("policy").asString())) {
             detachPolicy(IamTarget.group(groupName), policy);
         }
         client.delete("/group/" + pathSegment(groupName), Map.of());
@@ -192,8 +192,8 @@ public class RustFsIamProvider implements IamProvider {
     @Override
     public List<IamPolicySummary> listAttachedPolicies(IamTarget target) {
         String names = target.type() == IamTarget.Type.USER
-                ? client.get("/user-info", Map.of("accessKey", target.name())).path("policyName").asText()
-                : group(target.name()).path("policy").asText();
+                ? client.get("/user-info", Map.of("accessKey", target.name())).path("policyName").asString()
+                : group(target.name()).path("policy").asString();
         return commaSeparated(names).stream().map(RustFsIamProvider::policySummary).toList();
     }
 
@@ -248,12 +248,12 @@ public class RustFsIamProvider implements IamProvider {
         JsonNode user = client.get("/user-info", Map.of("accessKey", userName));
         List<IamAccessKeySummary> keys = new ArrayList<>();
         keys.add(new IamAccessKeySummary(
-                userName, user.path("status").asText("enabled"), instant(user.get("updatedAt")), true, false));
+                userName, user.path("status").asString("enabled"), instant(user.get("updatedAt")), true, false));
 
         JsonNode response = client.get("/list-service-accounts", Map.of("user", userName));
         response.path("accounts").forEach(account -> keys.add(new IamAccessKeySummary(
-                account.path("accessKey").asText(),
-                account.path("accountStatus").asText(),
+                account.path("accessKey").asString(),
+                account.path("accountStatus").asString(),
                 null,
                 false,
                 true)));
@@ -269,8 +269,8 @@ public class RustFsIamProvider implements IamProvider {
         JsonNode credentials = response.path("credentials");
         return new IamAccessKey(
                 userName,
-                credentials.path("accessKey").asText(),
-                credentials.path("secretKey").asText());
+                credentials.path("accessKey").asString(),
+                credentials.path("secretKey").asString());
     }
 
     @Override
@@ -308,7 +308,7 @@ public class RustFsIamProvider implements IamProvider {
 
     private static List<String> strings(JsonNode values) {
         List<String> result = new ArrayList<>();
-        values.forEach(value -> result.add(value.asText()));
+        values.forEach(value -> result.add(value.asString()));
         return result;
     }
 
@@ -324,11 +324,11 @@ public class RustFsIamProvider implements IamProvider {
     }
 
     private static Instant instant(JsonNode value) {
-        if (value == null || value.isNull() || value.asText().isBlank()) {
+        if (value == null || value.isNull() || value.asString().isBlank()) {
             return null;
         }
         try {
-            return Instant.parse(value.asText());
+            return Instant.parse(value.asString());
         } catch (DateTimeParseException ignored) {
             return null;
         }

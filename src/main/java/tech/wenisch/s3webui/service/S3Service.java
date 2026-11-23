@@ -798,6 +798,8 @@ public class S3Service {
         }
     }
 
+    // Legacy rules (pre-Filter API) only carry the deprecated rule-level prefix, so it is read as a fallback.
+    @SuppressWarnings("deprecation")
     static LifecycleRuleDto toDto(LifecycleRule rule) {
         boolean editable = rule.id() != null && !rule.id().isBlank() && !RETENTION_RULE_ID.equals(rule.id());
         String prefix = rule.prefix() == null ? "" : rule.prefix();

@@ -6,35 +6,22 @@ import software.amazon.awssdk.services.iam.IamClient;
 import software.amazon.awssdk.services.iam.model.AccessKey;
 import software.amazon.awssdk.services.iam.model.AccessKeyMetadata;
 import software.amazon.awssdk.services.iam.model.AttachedPolicy;
-import software.amazon.awssdk.services.iam.model.CreateAccessKeyRequest;
 import software.amazon.awssdk.services.iam.model.CreateAccessKeyResponse;
-import software.amazon.awssdk.services.iam.model.CreatePolicyVersionRequest;
-import software.amazon.awssdk.services.iam.model.CreateUserRequest;
 import software.amazon.awssdk.services.iam.model.CreateUserResponse;
 import software.amazon.awssdk.services.iam.model.DeletePolicyVersionRequest;
-import software.amazon.awssdk.services.iam.model.DeleteUserRequest;
-import software.amazon.awssdk.services.iam.model.DetachUserPolicyRequest;
-import software.amazon.awssdk.services.iam.model.GetPolicyRequest;
 import software.amazon.awssdk.services.iam.model.GetPolicyResponse;
-import software.amazon.awssdk.services.iam.model.GetPolicyVersionRequest;
 import software.amazon.awssdk.services.iam.model.GetPolicyVersionResponse;
 import software.amazon.awssdk.services.iam.model.Group;
-import software.amazon.awssdk.services.iam.model.ListAccessKeysRequest;
 import software.amazon.awssdk.services.iam.model.ListAccessKeysResponse;
-import software.amazon.awssdk.services.iam.model.ListAttachedUserPoliciesRequest;
 import software.amazon.awssdk.services.iam.model.ListAttachedUserPoliciesResponse;
-import software.amazon.awssdk.services.iam.model.ListGroupsForUserRequest;
 import software.amazon.awssdk.services.iam.model.ListGroupsForUserResponse;
 import software.amazon.awssdk.services.iam.model.ListPoliciesRequest;
-import software.amazon.awssdk.services.iam.model.ListPolicyVersionsRequest;
 import software.amazon.awssdk.services.iam.model.ListPolicyVersionsResponse;
 import software.amazon.awssdk.services.iam.model.PolicyScopeType;
 import software.amazon.awssdk.services.iam.paginators.ListPoliciesIterable;
-import software.amazon.awssdk.services.iam.model.ListUserPoliciesRequest;
 import software.amazon.awssdk.services.iam.model.ListUserPoliciesResponse;
 import software.amazon.awssdk.services.iam.model.Policy;
 import software.amazon.awssdk.services.iam.model.PolicyVersion;
-import software.amazon.awssdk.services.iam.model.RemoveUserFromGroupRequest;
 import tech.wenisch.s3webui.model.iam.IamAccessKey;
 
 import software.amazon.awssdk.awscore.exception.AwsErrorDetails;
@@ -70,10 +57,20 @@ class AwsIamProviderTest {
     private final IamClient iamClient = mock(IamClient.class);
     private final AwsIamProvider provider = new AwsIamProvider(iamClient);
 
+    @SuppressWarnings("unchecked")
+    private static <T> Consumer<T> anyConsumer() {
+        return any(Consumer.class);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T> ArgumentCaptor<Consumer<T>> consumerCaptor() {
+        return ArgumentCaptor.forClass(Consumer.class);
+    }
+
     @Test
     void creatingAUserAlsoMintsItsFirstAccessKey() {
-        when(iamClient.createUser(any(Consumer.class))).thenReturn(CreateUserResponse.builder().build());
-        when(iamClient.createAccessKey(any(Consumer.class))).thenReturn(CreateAccessKeyResponse.builder()
+        when(iamClient.createUser(anyConsumer())).thenReturn(CreateUserResponse.builder().build());
+        when(iamClient.createAccessKey(anyConsumer())).thenReturn(CreateAccessKeyResponse.builder()
                 .accessKey(AccessKey.builder().accessKeyId("AKIA1").secretAccessKey("s3cr3t").build())
                 .build());
 
@@ -84,52 +81,52 @@ class AwsIamProviderTest {
         assertEquals("s3cr3t", key.secretAccessKey());
 
         var order = inOrder(iamClient);
-        order.verify(iamClient).createUser(any(Consumer.class));
-        order.verify(iamClient).createAccessKey(any(Consumer.class));
+        order.verify(iamClient).createUser(anyConsumer());
+        order.verify(iamClient).createAccessKey(anyConsumer());
     }
 
     @Test
     void deletingAUserClearsWhatWouldBlockTheDelete() {
-        when(iamClient.listAttachedUserPolicies(any(Consumer.class)))
+        when(iamClient.listAttachedUserPolicies(anyConsumer()))
                 .thenReturn(ListAttachedUserPoliciesResponse.builder()
                         .attachedPolicies(AttachedPolicy.builder()
                                 .policyName("ReadOnly").policyArn("arn:aws:iam::1:policy/ReadOnly").build())
                         .build());
-        when(iamClient.listUserPolicies(any(Consumer.class)))
+        when(iamClient.listUserPolicies(anyConsumer()))
                 .thenReturn(ListUserPoliciesResponse.builder().policyNames("inline-1").build());
-        when(iamClient.listGroupsForUser(any(Consumer.class)))
+        when(iamClient.listGroupsForUser(anyConsumer()))
                 .thenReturn(ListGroupsForUserResponse.builder()
                         .groups(Group.builder().groupName("devs").build()).build());
-        when(iamClient.listAccessKeys(any(Consumer.class)))
+        when(iamClient.listAccessKeys(anyConsumer()))
                 .thenReturn(ListAccessKeysResponse.builder()
                         .accessKeyMetadata(AccessKeyMetadata.builder().accessKeyId("AKIA1").build()).build());
 
         provider.deleteUser("alice");
 
         var order = inOrder(iamClient);
-        order.verify(iamClient).detachUserPolicy(any(Consumer.class));
-        order.verify(iamClient).deleteUserPolicy(any(Consumer.class));
-        order.verify(iamClient).removeUserFromGroup(any(Consumer.class));
-        order.verify(iamClient).deleteAccessKey(any(Consumer.class));
-        order.verify(iamClient).deleteUser(any(Consumer.class));
+        order.verify(iamClient).detachUserPolicy(anyConsumer());
+        order.verify(iamClient).deleteUserPolicy(anyConsumer());
+        order.verify(iamClient).removeUserFromGroup(anyConsumer());
+        order.verify(iamClient).deleteAccessKey(anyConsumer());
+        order.verify(iamClient).deleteUser(anyConsumer());
     }
 
     @Test
     void updatingAPolicyAddsANewDefaultVersion() {
-        when(iamClient.listPolicyVersions(any(Consumer.class)))
+        when(iamClient.listPolicyVersions(anyConsumer()))
                 .thenReturn(ListPolicyVersionsResponse.builder()
                         .versions(version("v1", true, Instant.parse("2026-01-01T00:00:00Z")))
                         .build());
 
         provider.updatePolicy("arn:aws:iam::1:policy/Custom", "{\"Version\":\"2012-10-17\"}");
 
-        verify(iamClient, never()).deletePolicyVersion(any(Consumer.class));
-        verify(iamClient).createPolicyVersion(any(Consumer.class));
+        verify(iamClient, never()).deletePolicyVersion(anyConsumer());
+        verify(iamClient).createPolicyVersion(anyConsumer());
     }
 
     @Test
     void updatingAPolicyAtTheVersionCapPrunesTheOldestNonDefaultVersion() {
-        when(iamClient.listPolicyVersions(any(Consumer.class)))
+        when(iamClient.listPolicyVersions(anyConsumer()))
                 .thenReturn(ListPolicyVersionsResponse.builder()
                         .versions(
                                 version("v5", true, Instant.parse("2026-05-01T00:00:00Z")),
@@ -141,13 +138,13 @@ class AwsIamProviderTest {
 
         provider.updatePolicy("arn:aws:iam::1:policy/Custom", "{}");
 
-        ArgumentCaptor<Consumer<DeletePolicyVersionRequest.Builder>> captor = ArgumentCaptor.forClass(Consumer.class);
+        ArgumentCaptor<Consumer<DeletePolicyVersionRequest.Builder>> captor = consumerCaptor();
         verify(iamClient).deletePolicyVersion(captor.capture());
         var request = DeletePolicyVersionRequest.builder();
         captor.getValue().accept(request);
         assertEquals("v1", request.build().versionId(), "the oldest non-default version should go");
 
-        verify(iamClient).createPolicyVersion(any(Consumer.class));
+        verify(iamClient).createPolicyVersion(anyConsumer());
     }
 
     @Test
@@ -156,15 +153,15 @@ class AwsIamProviderTest {
 
         assertThrows(IllegalArgumentException.class, () -> provider.updatePolicy(awsManaged, "{}"));
         assertThrows(IllegalArgumentException.class, () -> provider.deletePolicy(awsManaged));
-        verify(iamClient, never()).createPolicyVersion(any(Consumer.class));
-        verify(iamClient, never()).deletePolicy(any(Consumer.class));
+        verify(iamClient, never()).createPolicyVersion(anyConsumer());
+        verify(iamClient, never()).deletePolicy(anyConsumer());
     }
 
     @Test
     void policyDocumentsAreUrlDecoded() {
-        when(iamClient.getPolicy(any(Consumer.class))).thenReturn(GetPolicyResponse.builder()
+        when(iamClient.getPolicy(anyConsumer())).thenReturn(GetPolicyResponse.builder()
                 .policy(Policy.builder().defaultVersionId("v2").build()).build());
-        when(iamClient.getPolicyVersion(any(Consumer.class))).thenReturn(GetPolicyVersionResponse.builder()
+        when(iamClient.getPolicyVersion(anyConsumer())).thenReturn(GetPolicyVersionResponse.builder()
                 .policyVersion(PolicyVersion.builder()
                         .document("%7B%22Version%22%3A%222012-10-17%22%7D").build())
                 .build());
@@ -181,7 +178,7 @@ class AwsIamProviderTest {
 
         provider.listPolicies();
 
-        ArgumentCaptor<Consumer<ListPoliciesRequest.Builder>> captor = ArgumentCaptor.forClass(Consumer.class);
+        ArgumentCaptor<Consumer<ListPoliciesRequest.Builder>> captor = consumerCaptor();
         verify(iamClient, atLeastOnce()).listPoliciesPaginator(captor.capture());
         var request = ListPoliciesRequest.builder();
         captor.getValue().accept(request);
@@ -210,7 +207,7 @@ class AwsIamProviderTest {
     void aProviderWithoutStandalonePoliciesStaysAvailableWithThatOneFeatureOff() {
         stubUsers();
         stubGroups();
-        when(iamClient.listPoliciesPaginator(any(Consumer.class))).thenThrow(awsError("NotImplemented", 501));
+        when(iamClient.listPoliciesPaginator(anyConsumer())).thenThrow(awsError("NotImplemented", 501));
 
         var capabilities = provider.capabilities();
 
@@ -224,7 +221,7 @@ class AwsIamProviderTest {
     void withoutStandalonePoliciesTheBuiltInCatalogueIsListedInstead() {
         stubUsers();
         stubGroups();
-        when(iamClient.listPoliciesPaginator(any(Consumer.class))).thenThrow(awsError("NotImplemented", 501));
+        when(iamClient.listPoliciesPaginator(anyConsumer())).thenThrow(awsError("NotImplemented", 501));
 
         var policies = provider.listPolicies();
 
@@ -261,7 +258,7 @@ class AwsIamProviderTest {
 
     @Test
     void inlineUserPolicyDocumentsAreUrlDecoded() {
-        when(iamClient.getUserPolicy(any(Consumer.class))).thenReturn(GetUserPolicyResponse.builder()
+        when(iamClient.getUserPolicy(anyConsumer())).thenReturn(GetUserPolicyResponse.builder()
                 .policyDocument("%7B%22Version%22%3A%222012-10-17%22%7D").build());
 
         assertEquals("{\"Version\":\"2012-10-17\"}",
@@ -275,17 +272,17 @@ class AwsIamProviderTest {
         provider.deleteInlinePolicy(IamTarget.user("alice"), "p");
         provider.deleteInlinePolicy(IamTarget.group("devs"), "p");
 
-        verify(iamClient).putUserPolicy(any(Consumer.class));
-        verify(iamClient).putGroupPolicy(any(Consumer.class));
-        verify(iamClient).deleteUserPolicy(any(Consumer.class));
-        verify(iamClient).deleteGroupPolicy(any(Consumer.class));
+        verify(iamClient).putUserPolicy(anyConsumer());
+        verify(iamClient).putGroupPolicy(anyConsumer());
+        verify(iamClient).deleteUserPolicy(anyConsumer());
+        verify(iamClient).deleteGroupPolicy(anyConsumer());
     }
 
     @Test
     void inlinePolicyNamesComeFromTheRightListCall() {
-        when(iamClient.listUserPolicies(any(Consumer.class)))
+        when(iamClient.listUserPolicies(anyConsumer()))
                 .thenReturn(ListUserPoliciesResponse.builder().policyNames("on-user").build());
-        when(iamClient.listGroupPolicies(any(Consumer.class)))
+        when(iamClient.listGroupPolicies(anyConsumer()))
                 .thenReturn(ListGroupPoliciesResponse.builder().policyNames("on-group").build());
 
         assertEquals(List.of("on-user"), provider.listInlinePolicies(IamTarget.user("alice")));
@@ -312,7 +309,7 @@ class AwsIamProviderTest {
         ListPoliciesIterable paginator = mock(ListPoliciesIterable.class);
         SdkIterable<Policy> none = Collections::emptyIterator;
         when(paginator.policies()).thenReturn(none);
-        when(iamClient.listPoliciesPaginator(any(Consumer.class))).thenReturn(paginator);
+        when(iamClient.listPoliciesPaginator(anyConsumer())).thenReturn(paginator);
     }
 
     private static IamException awsError(String errorCode, int statusCode) {

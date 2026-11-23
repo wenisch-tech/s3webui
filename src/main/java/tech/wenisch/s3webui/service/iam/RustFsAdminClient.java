@@ -1,11 +1,10 @@
 package tech.wenisch.s3webui.service.iam;
 
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
-import software.amazon.awssdk.auth.signer.Aws4Signer;
-import software.amazon.awssdk.auth.signer.params.Aws4SignerParams;
+import software.amazon.awssdk.http.ContentStreamProvider;
+import software.amazon.awssdk.http.auth.aws.signer.AwsV4HttpSigner;
 import software.amazon.awssdk.http.SdkHttpFullRequest;
 import software.amazon.awssdk.http.SdkHttpMethod;
-import software.amazon.awssdk.regions.Region;
 import tech.wenisch.s3webui.service.S3ConnectionSettingsService;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.JsonNode;
@@ -139,13 +138,17 @@ public class RustFsAdminClient {
                 sdkRequest.putHeader("Content-Type", "application/json")
                         .contentStreamProvider(() -> new ByteArrayInputStream(body));
             }
-            SdkHttpFullRequest signedRequest = Aws4Signer.create().sign(sdkRequest.build(), Aws4SignerParams.builder()
-                    .awsCredentials(credentials)
-                    .signingName("s3")
-                    .signingRegion(Region.of(region))
-                    .doubleUrlEncode(false)
-                    .normalizePath(false)
-                    .build());
+            var signedRequest = AwsV4HttpSigner.create().sign(signing -> signing
+                    .request(sdkRequest.build())
+                    .identity(credentials)
+                    .payload(body == null ? null : ContentStreamProvider.fromByteArray(body))
+                    .putProperty(AwsV4HttpSigner.SERVICE_SIGNING_NAME, "s3")
+                    .putProperty(AwsV4HttpSigner.REGION_NAME, region)
+                    .putProperty(AwsV4HttpSigner.DOUBLE_URL_ENCODE, false)
+                    .putProperty(AwsV4HttpSigner.NORMALIZE_PATH, false)
+                    .putProperty(AwsV4HttpSigner.PAYLOAD_SIGNING_ENABLED, false)
+                    .putProperty(AwsV4HttpSigner.CHUNK_ENCODING_ENABLED, false))
+                    .request();
             signedRequest.headers().forEach((name, values) -> copyHeader(request, name, values));
         }
 
@@ -177,7 +180,7 @@ public class RustFsAdminClient {
         }
         try {
             JsonNode body = parseJson(response.body());
-            return "rustfs-endpoint".equals(body.path("service").asText());
+            return "rustfs-endpoint".equals(body.path("service").asString());
         } catch (RuntimeException ignored) {
             return false;
         }
@@ -189,8 +192,8 @@ public class RustFsAdminClient {
         String message = match(XML_MESSAGE, text);
         try {
             JsonNode json = jsonMapper.readTree(text);
-            code = firstNonBlank(json.path("code").asText(), json.path("Code").asText(), code);
-            message = firstNonBlank(json.path("message").asText(), json.path("Message").asText(), message);
+            code = firstNonBlank(json.path("code").asString(), json.path("Code").asString(), code);
+            message = firstNonBlank(json.path("message").asString(), json.path("Message").asString(), message);
         } catch (JacksonException ignored) {
             // RustFS normally uses the S3 XML error envelope; JSON is accepted for future versions.
         }

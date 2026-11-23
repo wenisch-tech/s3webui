@@ -161,8 +161,8 @@ class RustFsIamProviderTest {
         assertEquals("alice", key.accessKeyId());
         assertEquals(40, key.secretAccessKey().length());
         JsonNode body = json.readTree(request("PUT", "/rustfs/admin/v3/add-user?accessKey=alice").body());
-        assertEquals("enabled", body.path("status").asText());
-        assertEquals(key.secretAccessKey(), body.path("secretKey").asText());
+        assertEquals("enabled", body.path("status").asString());
+        assertEquals(key.secretAccessKey(), body.path("secretKey").asString());
         assertNotEquals("root-secret-key", key.secretAccessKey());
     }
 
@@ -201,10 +201,10 @@ class RustFsIamProviderTest {
         provider.detachPolicy(IamTarget.group("devs"), "readonly");
 
         JsonNode group = jsonNode(request("PUT", "/rustfs/admin/v3/update-group-members").body());
-        assertEquals("devs", group.path("group").asText());
+        assertEquals("devs", group.path("group").asString());
         assertEquals(0, group.path("members").size());
         assertFalse(group.path("isRemove").asBoolean());
-        assertEquals("enabled", group.path("groupStatus").asText());
+        assertEquals("enabled", group.path("groupStatus").asString());
         List<RecordedRequest> associations = requests.stream()
                 .filter(recorded -> recorded.pathAndQuery().contains("/idp/builtin/policy/"))
                 .toList();
