@@ -1,5 +1,24 @@
 # Changelog
 
+## v1.13.0 - 2026-11-23
+
+## [1.13.0](https://github.com/wenisch-tech/s3webui/compare/v1.12.3...v1.13.0) (2026-11-23)
+
+
+### Features
+
+* Added migration feature ([9cb28d9](https://github.com/wenisch-tech/s3webui/commit/9cb28d939281cdedba10667bb67edeb298d196b3))
+
+
+### Bug Fixes
+
+* code cleanup removing warnings an unused imports ([1e92c0c](https://github.com/wenisch-tech/s3webui/commit/1e92c0cfa7e72d2174e06ef76ed649436ff6f1d8))
+
+
+
+Docker image: ghcr.io/wenisch-tech/s3webui:1.13.0
+
+
 ## v1.12.3 - 2026-11-23
 
 ### [1.12.3](https://github.com/wenisch-tech/s3webui/compare/v1.12.2...v1.12.3) (2026-11-23)
